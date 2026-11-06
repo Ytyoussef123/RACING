@@ -1,0 +1,89 @@
+# JOURNAL DU PROJET : Corniche Rush
+
+Règle : après chaque modification, ajouter une ligne datée dans la section du sujet (version + décision + raison). Pour travailler sur un sujet, lire sa section et celles listées dans « Liens ». Ne pas relire tout le fichier.
+
+| Sujet | Liens |
+|---|---|
+| 1. Direction et joystick | 2, 4, 9 |
+| 2. Voiture : physique, freins | 1, 3, 4 |
+| 3. Route et virages de Casa | 2, 5, 8 |
+| 4. Collisions et trafic | 2, 3 |
+| 5. Graphismes et rendu | 3, 8 |
+| 6. Cockpit, volant, mains | 1, 5 |
+| 7. Modèles 3D et licences | 5, 6 |
+| 8. Fluidité et performances | 3, 5 |
+| 9. Écran, boutons, plein écran | 1 |
+| 10. Tests et méthode | tous |
+| 11. À faire | |
+
+## 1. Direction et joystick
+- Joystick flottant : la zone tactile est le bas gauche (46 % × 72 %), le stick apparaît sous le pouce. Réponse proportionnelle, zone morte 3 %.
+- Sensibilité : **80 %** (V24). Braquage à fond à 1,3 rayon, courbe douce en fin de course. Cercle en pointillés = braquage à fond.
+- Taille du stick et distance de braquage calculées depuis le **côté court de l'écran** (`joyFull = 0,22 × côté court`, 80 à 170 px), pas en pixels fixes : dans Chrome Android la page est affichée avec des pixels ~2× plus petits, et le braquage à fond arrivait à 7 mm (V24).
+- Ressort critique exact sur `S.steer`. En mode analogique (`S.analog`), les réglages rapides **restent après le lâcher** : sinon la voiture glissait encore ~1 m à 200 km/h (corrigé V20). Ne pas revenir aux réglages clavier au lâcher.
+- Un nouvel appui reprend toujours la main du stick, blur et visibilitychange le réinitialisent.
+- Mesure : à 200 km/h, glissement après lâcher 26 cm à fond, 11 cm à mi-course.
+- Historique : V16-V17 flèches ◀ ▶ puis pilule, V18 stick flottant, V19 90 %, V20 braquage plus loin, V24 80 % + tailles relatives.
+
+## 2. Voiture : physique et freins
+- Boîte auto 6 rapports, vitesse max ~236 km/h, nitro. Direction latérale : `latTarget = steer × min(6,8; 3,2 + 0,075 v) × grip`.
+- Freins (V24) : décélération `12 + 0,0009 v²` m/s² (≈1,25 g en ville, ≈2 g à 250 km/h), montée en 1/14 s. 250→0 en 4,5 s sur 147 m. Rétrogradage anticipé en freinant fort avec coup de gaz, ABS qui vibre, plongée du nez.
+- Joints de route espacés et doux à haute vitesse (V21).
+- Le virage pousse la voiture vers l'extérieur : terme `-0,3 × courbure × v²` dans `latTarget`. À 200 km/h il faut ~30 % de stick dans les grands virages, ~45 % dans le serré.
+
+## 3. Route et virages de Casa
+- Le jeu tourne sur une route droite (x travers, z avance, voiture en z=0). Les virages sont une **déformation d'affichage** : le monde droit est courbé avant chaque image, trafic et collisions restent en repère droit.
+- Trajet (7,5 km, boucle) : Av. des FAR, Casa Port, Bd des Almohades, La Sqala, mosquée Hassan II, El Hank, av. TanTan, Aïn Diab. 8 virages dans `ROUTE` (début, longueur, angle). Angles de la carte, resserrés pour être sentis à 200 km/h. Mer à droite (décor construit à gauche puis miroir `worldG.scale.x = -1`). Le soleil et le ciel tournent avec le cap.
+- Noms de lieux annoncés avant les virages (toasts).
+- **LEÇON V21-V23 : ne jamais courber la route dans un shader modifié (`onBeforeCompile`).** Le téléphone de l'utilisateur (Chrome Android) refusait le programme : écran vide, seuls le ciel et les aiguilles s'affichaient. Les émulateurs l'acceptaient.
+- Solution actuelle (V25) : courbure calculée en JavaScript par image (`updateBend` points tous les 5 m, `bendForRender`) : bandes longues sommet par sommet (coupées tous les 6 m, mer et sol tous les 12 m, couture à 60 m de la route), objets déplacés et tournés puis remis en place, tirets et poteaux en `InstancedMesh`. Coût ≈0,3 ms/image.
+- Le cockpit n'est jamais courbé.
+
+## 4. Collisions et trafic
+- Règle V25 : **seul le choc de l'avant de la voiture dans l'arrière d'une autre = accident (fin de partie)**. Choc de côté, accrochage d'un coin, ou voiture qui tape notre arrière : secousse, son, vibration, perte de vitesse, voitures écartées, la partie continue (`bump()`). Raison : l'utilisateur ne voit pas l'arrière.
+- Distinction : chevauchement le long de la route plus petit que celui en travers = bout à bout.
+- Trafic urbain : vitesses 60/70/80 km/h (camions 50-65). Peu de voitures au départ, plus dense tous les 2 km (`niveau = floor(dist/2000)`), écarts qui se resserrent. Ombres de contact sous chaque voiture.
+- Frôlement : bonus, nitro, ralenti au-dessus de 130 km/h.
+
+## 5. Graphismes et rendu
+- Three.js r128, ciel peint une fois sur CPU (le ciel shader devenait noir sur certains téléphones), HD : bloom, flou de vitesse, FXAA ; SD : rendu direct.
+- Palmiers : modèle importé de près, image (sprite) de loin, mipmaps qui conservent la couverture des feuilles.
+- Ombres du monde recalculées **à chaque image** (V21) : un rafraîchissement 1 image sur 3 faisait sauter les ombres.
+- Le mode SD sur téléphone : résolution 1,0, pas d'ombres dans le cockpit, rétroviseur 320×80 rafraîchi une image sur 2.
+
+## 6. Cockpit, volant, mains
+- Intérieur importé (Gerhald XJ220), pilote importé (BELAZ), cockpit rendu dans une scène séparée avec profondeur effacée. Pilote centré derrière le volant, coudes naturels, poignets droits, gants gris foncé avec dos visibles.
+- Sans visières ni toit dans la vue, montants coupés, rétroviseur en haut à droite.
+- Le volant et les bras suivent le joystick instantanément.
+- Pilote : os trouvés par `name.replace(/_\d+$/,'')`, IK 2 os, transfert de torsion de l'avant-bras, doigts fermés sur la jante, manches amincies via `bindMatrix.clone().invert()` (**pas** `bindMatrixInverse`).
+- Repli procédural si les modèles ne chargent pas. Les sources sont dans `src/cockpit/p1..p6.js`.
+
+## 7. Modèles 3D et licences
+- `game/models/*.json + *.webp` : voiture héros, trafic, intérieur, pilote, palmier.
+- **CSP de l'artifact : `fetch()` d'URL `data:` bloqué.** Les textures doivent être des fichiers .webp séparés, les buffers en data URI sont acceptés.
+- Les `.glb` d'origine (≈28 Mo) ne sont pas dans ce dépôt. À conserver ailleurs. Outils de conversion : `tools/`.
+- Crédits (affichés dans le menu) : Car Concept (Eric Chadwick, CC BY 4.0, d'après Unity Fan CC0), Car interior (Gerhald, CC BY 4.0), race driver (BELAZ, CC BY 4.0), Date Palm (evolveduk, CC BY 4.0). La statue « Race Car Driver » (tomkart) n'était **qu'une référence de posture**, jamais utilisée.
+
+## 8. Fluidité et performances
+- Cause des saccades (V21) : ombres rafraîchies 1 image sur 3. Corrigé en les redessinant à chaque image, et en compensant : tirets et poteaux fusionnés en 2 objets.
+- Objets dessinés par image : 805 (V20) → ≈480 (V25).
+- Adaptation automatique de la résolution selon le temps d'image.
+- Non mesuré sur le vrai téléphone : demander à l'utilisateur son ressenti.
+
+## 9. Écran, boutons, plein écran
+- Paysage forcé : `#stage` tourné par CSS sur téléphone en portrait, détection par deviceorientation, bouton « retourner l'écran ».
+- Bouton plein écran (V22) : menu + barre de jeu, touche F. Dans l'appli Claude il peut être bloqué (message affiché). Chrome Android : fonctionne.
+- Boutons FREIN / GAZ / NOS (V25) : **ronds**, anneau translucide + disque (style eFootball), dimensionnés depuis le côté court de l'écran comme le stick.
+- Règles : pas de pop-up, pas d'inscription.
+
+## 10. Tests et méthode
+- Playwright + swiftshader. `python3 tests/mktest.py` fabrique `test4.html` avec des crochets (`__S`, `__input`, `__update`…) à partir de `index.html` (les chemins vers three.js y sont à adapter : il attend `dl/package/…`).
+- Tests clés : t36 joystick (2 orientations + écran type Chrome), t37 réponse de direction, t43 freinage 250 km/h, t44 règles de choc, t38 captures des virages, t39 conduite en virage, t40 HD + noms de lieux, t41 plein écran, t26 clavier.
+- Ne pas lancer plusieurs navigateurs en parallèle (délais).
+- Avant publication : `node --check` du script principal.
+- Piège connu : un commentaire `//` dans une instruction sur une seule ligne casse le script.
+
+## 11. À faire
+- **Adversaire IA** (compte à rebours 3-2-1, régime moteur, course dans le trafic, position et distance). Estimé, **pas commencé : attendre l'accord de l'utilisateur.**
+- **APK Android** (WebView plein écran paysage, hors connexion). L'utilisateur a demandé la faisabilité : réalisable, non construit.
+- Vérifier sur téléphone : virages visibles (V25), fluidité, boutons ronds, ressenti des freins.
