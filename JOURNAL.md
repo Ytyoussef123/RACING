@@ -79,6 +79,7 @@ Règle : après chaque modification, ajouter une ligne datée dans la section du
 - Boutons FREIN / GAZ / NOS (V25) : **ronds**, anneau translucide + disque (style eFootball), dimensionnés depuis le côté court de l'écran comme le stick.
 - Règles : pas de pop-up, pas d'inscription.
 - 2026-11-06, V26 : le jeu s'ouvre dans un parking couvert en 3D (Parking Casa Port, niveau -1), une place par voiture (3 places : P1, P2, P3). On passe d'une voiture à l'autre en glissant (ou flèches ‹ ›, points, touches ← →) ; JOUER part avec la voiture affichée. Choix mémorisé (localStorage `corniche-car`). Raison : demande de l'utilisateur (choisir la voiture dans un parking avant de jouer). Règles et crédits déplacés du menu vers un écran « Règles » (bouton en haut à droite du parking). Écrans pause et fin de partie : bouton « Parking » pour changer de voiture. HUD du jeu caché dans le parking. Sur téléphone à écran court, les stats de fin de partie passent en 3 colonnes pour tenir sans défilement.
+- 2026-11-06, V26 : jeu publié en artifact Claude : https://claude.ai/artifact/8vXQWpYdzaMUAEekkbYdMt (fichiers publiés : la page + models/ sauf index.json et pilot.json, inutilisés). Pour une mise à jour, republier au même lien.
 
 ## 10. Tests et méthode
 - Playwright + swiftshader. `python3 tests/mktest.py` fabrique `test4.html` avec des crochets (`__S`, `__input`, `__update`…) à partir de `index.html` (les chemins vers three.js y sont à adapter : il attend `dl/package/…`).

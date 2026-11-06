@@ -11,4 +11,5 @@ Jeu de conduite en vue cockpit sur la corniche de Casablanca (Casa Port → Aïn
 - `CLAUDE.md` : règles de travail pour Claude (modèles à utiliser).
 
 Lancer : servir `game/` avec un serveur statique (`npx serve game`) et ouvrir `index.html`. Les modèles se chargent par `fetch`, il faut donc un serveur.
+Jouer en ligne (artifact Claude, privé, partage depuis le menu Partager de la page) : https://claude.ai/artifact/8vXQWpYdzaMUAEekkbYdMt
 Les gros fichiers sources `.glb` ne sont pas dans ce dépôt (voir JOURNAL, Modèles 3D).
