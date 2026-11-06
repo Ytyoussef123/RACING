@@ -30,6 +30,7 @@ Règle : après chaque modification, ajouter une ligne datée dans la section du
 - Freins (V24) : décélération `12 + 0,0009 v²` m/s² (≈1,25 g en ville, ≈2 g à 250 km/h), montée en 1/14 s. 250→0 en 4,5 s sur 147 m. Rétrogradage anticipé en freinant fort avec coup de gaz, ABS qui vibre, plongée du nez.
 - Joints de route espacés et doux à haute vitesse (V21).
 - Le virage pousse la voiture vers l'extérieur : terme `-0,3 × courbure × v²` dans `latTarget`. À 200 km/h il faut ~30 % de stick dans les grands virages, ~45 % dans le serré.
+- 2026-11-06, V26 : chaque voiture de la liste `CARS` a un `perf` {top, pull, lat, brake} qui multiplie les vitesses max par rapport (GEAR_TOP), les reprises (GEAR_PULL), l'adhérence latérale (`latTarget`) et les freins ; tout à 1 pour la voiture standard, donc conduite identique à V25. Raison : une physique propre à chaque voiture. Précision sur « ~236 km/h » : c'est la limite du 6e rapport / avec nitro ; mesuré sans nitro : 222 km/h. Stats de la fiche mesurées avec la physique du jeu par t48 (ligne droite, sans trafic) : standard « CONCEPT » = 222 km/h max sans nitro, 0-100 km/h en 5,5 s, freinage 100-0 en 28 m.
 
 ## 3. Route et virages de Casa
 - Le jeu tourne sur une route droite (x travers, z avance, voiture en z=0). Les virages sont une **déformation d'affichage** : le monde droit est courbé avant chaque image, trafic et collisions restent en repère droit.
@@ -50,6 +51,7 @@ Règle : après chaque modification, ajouter une ligne datée dans la section du
 - Palmiers : modèle importé de près, image (sprite) de loin, mipmaps qui conservent la couverture des feuilles.
 - Ombres du monde recalculées **à chaque image** (V21) : un rafraîchissement 1 image sur 3 faisait sauter les ombres.
 - Le mode SD sur téléphone : résolution 1,0, pas d'ombres dans le cockpit, rétroviseur 320×80 rafraîchi une image sur 2.
+- 2026-11-06, V26 : parking dessiné dans une scène séparée (`G` dans le code), seule dessinée dans le menu (la route n'est ni dessinée ni courbée). Sol béton et lignes peintes, mur du fond peint (panneaux de places P1-P3, « CASA PORT », sortie « SORTIE → CORNICHE »), piliers rayés, un spot par place (celui de la voiture montrée monte, les autres baissent), une lumière principale dont les ombres ne sont recalculées que quand une voiture change, exposition 0,85 dans le parking. Caméra : vue trois-quarts avant, cadrée entre le titre et la fiche de la voiture, léger balancement ; un glissement déplace la rangée avec le doigt. Raison : demande de l'utilisateur (parking 3D), coût minimal.
 
 ## 6. Cockpit, volant, mains
 - Intérieur importé (Gerhald XJ220), pilote importé (BELAZ), cockpit rendu dans une scène séparée avec profondeur effacée. Pilote centré derrière le volant, coudes naturels, poignets droits, gants gris foncé avec dos visibles.
@@ -63,6 +65,7 @@ Règle : après chaque modification, ajouter une ligne datée dans la section du
 - **CSP de l'artifact : `fetch()` d'URL `data:` bloqué.** Les textures doivent être des fichiers .webp séparés, les buffers en data URI sont acceptés.
 - Les `.glb` d'origine (≈28 Mo) ne sont pas dans ce dépôt. À conserver ailleurs. Outils de conversion : `tools/`.
 - Crédits (affichés dans le menu) : Car Concept (Eric Chadwick, CC BY 4.0, d'après Unity Fan CC0), Car interior (Gerhald, CC BY 4.0), race driver (BELAZ, CC BY 4.0), Date Palm (evolveduk, CC BY 4.0). La statue « Race Car Driver » (tomkart) n'était **qu'une référence de posture**, jamais utilisée.
+- 2026-11-06, V26 : dossier `incoming/cars/` (avec README) = endroit où l'utilisateur déposera le zip des 2 nouvelles voitures, pour les places P2 et P3. En attendant, ces places montrent des voitures sous housse (forme simple en tissu) et le bouton jouer affiche BIENTÔT (désactivé). Au chargement, la voiture standard sort de sa housse quand son modèle est chargé. `game/models/index.json` (liste d'exemples Khronos) et `game/models/pilot.json` (référence de posture, jamais utilisé) ne sont pas chargés par le jeu et ne sont pas publiés avec l'artifact.
 
 ## 8. Fluidité et performances
 - Cause des saccades (V21) : ombres rafraîchies 1 image sur 3. Corrigé en les redessinant à chaque image, et en compensant : tirets et poteaux fusionnés en 2 objets.
@@ -75,6 +78,7 @@ Règle : après chaque modification, ajouter une ligne datée dans la section du
 - Bouton plein écran (V22) : menu + barre de jeu, touche F. Dans l'appli Claude il peut être bloqué (message affiché). Chrome Android : fonctionne.
 - Boutons FREIN / GAZ / NOS (V25) : **ronds**, anneau translucide + disque (style eFootball), dimensionnés depuis le côté court de l'écran comme le stick.
 - Règles : pas de pop-up, pas d'inscription.
+- 2026-11-06, V26 : le jeu s'ouvre dans un parking couvert en 3D (Parking Casa Port, niveau -1), une place par voiture (3 places : P1, P2, P3). On passe d'une voiture à l'autre en glissant (ou flèches ‹ ›, points, touches ← →) ; JOUER part avec la voiture affichée. Choix mémorisé (localStorage `corniche-car`). Raison : demande de l'utilisateur (choisir la voiture dans un parking avant de jouer). Règles et crédits déplacés du menu vers un écran « Règles » (bouton en haut à droite du parking). Écrans pause et fin de partie : bouton « Parking » pour changer de voiture. HUD du jeu caché dans le parking. Sur téléphone à écran court, les stats de fin de partie passent en 3 colonnes pour tenir sans défilement.
 
 ## 10. Tests et méthode
 - Playwright + swiftshader. `python3 tests/mktest.py` fabrique `test4.html` avec des crochets (`__S`, `__input`, `__update`…) à partir de `index.html` (les chemins vers three.js y sont à adapter : il attend `dl/package/…`).
@@ -82,8 +86,11 @@ Règle : après chaque modification, ajouter une ligne datée dans la section du
 - Ne pas lancer plusieurs navigateurs en parallèle (délais).
 - Avant publication : `node --check` du script principal.
 - Piège connu : un commentaire `//` dans une instruction sur une seule ligne casse le script.
+- 2026-11-06, V26 : nouveau t47 (parking : glisser vers la voiture sous housse = jeu refusé, flèches clavier, jouer la standard, pause → parking, fin de partie ; 4 écrans : téléphone paysage, bureau, fenêtre étroite, téléphone tenu droit) et t48 (stats de chaque voiture livrée, chiffres à copier dans `CARS[].stats`). `tests/mktest.py` expose aussi `__CARS`, `__useCar`, `__G`. t43 demande `test-v23.html`, fabriqué par `python3 tests/mktest.py versions/v23.html test-v23.html`.
+- 2026-11-06, V26 : règle de travail (aussi dans `CLAUDE.md`) : lire/écrire le journal et le README, et lire du code pour le comprendre, passent par un sous-agent Sonnet en effort medium ; modifier du code = Opus 5.5 en effort max, qui relit les lignes exactes qu'il change. Raison : demande de l'utilisateur.
 
 ## 11. À faire
 - **Adversaire IA** (compte à rebours 3-2-1, régime moteur, course dans le trafic, position et distance). Estimé, **pas commencé : attendre l'accord de l'utilisateur.**
 - **APK Android** (WebView plein écran paysage, hors connexion). L'utilisateur a demandé la faisabilité : réalisable, non construit.
-- Vérifier sur téléphone : virages visibles (V25), fluidité, boutons ronds, ressenti des freins.
+- Vérifier sur téléphone : virages visibles (V25), fluidité, boutons ronds, ressenti des freins, parking (glisser, cadrage de la voiture).
+- Intégrer les 2 nouvelles voitures quand le zip est dans `incoming/cars/` : conversion (tools/), places P2 et P3, `perf` puis t48 pour les stats, crédits dans « Règles ».
