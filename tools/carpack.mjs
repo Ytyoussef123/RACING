@@ -80,6 +80,13 @@ for (const m of root.listMaterials()) {
   }
   // blended parts that are not glass (badges, decals, grilles, cut-outs): drawn as cut-outs
   if (m.getAlphaMode() === 'BLEND' && !/glass/i.test(n) && m.getBaseColorTexture()) m.setAlphaMode('MASK').setAlphaCutoff(0.4);
+  // three.js r128 reads only the first UV set for these maps: one laid on another set would land in the wrong place
+  for (const [slot, info, drop] of [
+    ['baseColor', m.getBaseColorTextureInfo(), () => m.setBaseColorTexture(null)],
+    ['normal', m.getNormalTextureInfo(), () => m.setNormalTexture(null)],
+    ['metallicRoughness', m.getMetallicRoughnessTextureInfo(), () => m.setMetallicRoughnessTexture(null)],
+    ['emissive', m.getEmissiveTextureInfo(), () => m.setEmissiveTexture(null).setEmissiveFactor([0, 0, 0])],   // no glow without its map
+  ]) if (info && info.getTexCoord() > 0) { drop(); log('dropped', slot, 'map of', JSON.stringify(m.getName()), '(UV set', info.getTexCoord() + ')'); }
 }
 for (const e of root.listExtensionsUsed()) if (['KHR_materials_transmission', 'KHR_materials_specular', 'KHR_materials_emissive_strength'].includes(e.extensionName)) e.dispose();
 
