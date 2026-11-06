@@ -1,5 +1,7 @@
 # Nouvelles voitures (dépôt des fichiers)
 
+Reçu le 2026-11-06 : Alfa Romeo Giulia GTAm (P2) et Nissan Skyline R34 (P3), intégrées en V27.
+
 Dépose ici les **deux nouvelles voitures** du parking (places P2 et P3), en fichier `.zip`.
 
 ## Quoi mettre dans le zip
