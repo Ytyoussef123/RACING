@@ -313,7 +313,7 @@ body {
       <dt>Commandes</dt><dd id="ctrlText">↑ accélérer · ↓ freiner · ← → tourner · Maj nitro · C changer de vue · F plein écran</dd>
     </dl>
     <button class="btn" id="infoClose" type="button">RETOUR</button>
-    <p class="credits">Voiture 3D : « Car Concept » d'Eric Chadwick (Darmstadt Graphics Group), d'après un modèle CC0 de Unity Fan. Licence <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener">CC BY 4.0</a>, modifiée : simplifiée, plaque et logos remplacés. Intérieur 3D : <a href="https://sketchfab.com/3d-models/car-interior-c5f830a811af4917972de8fa47949de9" target="_blank" rel="noopener">« Car interior »</a> de Gerhald, licence <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener">CC BY 4.0</a>, modifié : mis à l'échelle, matières, ombrage et instruments ajoutés. Pilote 3D : <a href="https://sketchfab.com/3d-models/race-driver-e4e97df9865d466c8359fbb23e757308" target="_blank" rel="noopener">« race driver »</a> de BELAZ, licence <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener">CC BY 4.0</a>, modifié : seuls la veste et les mains sont gardés, bras et doigts posés sur le volant, gants de course. Palmiers : <a href="https://sketchfab.com/3d-models/date-palm-11acf710e6c149daa8d6fb8cdc5d087f" target="_blank" rel="noopener">« Date Palm »</a> de evolveduk, licence <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener">CC BY 4.0</a>, modifié : textures réduites, image lointaine.</p>
+    <p class="credits">Voiture 3D : « Car Concept » d'Eric Chadwick (Darmstadt Graphics Group), d'après un modèle CC0 de Unity Fan. Licence <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener">CC BY 4.0</a>, modifiée : simplifiée, plaque et logos remplacés. Intérieur 3D : <a href="https://sketchfab.com/3d-models/car-interior-c5f830a811af4917972de8fa47949de9" target="_blank" rel="noopener">« Car interior »</a> de Gerhald, licence <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener">CC BY 4.0</a>, modifié : mis à l'échelle, matières, ombrage et instruments ajoutés. Pilote 3D : <a href="https://sketchfab.com/3d-models/race-driver-e4e97df9865d466c8359fbb23e757308" target="_blank" rel="noopener">« race driver »</a> de BELAZ, licence <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener">CC BY 4.0</a>, modifié : seuls la veste et les mains sont gardés, bras et doigts posés sur le volant, gants de course. Palmiers : <a href="https://sketchfab.com/3d-models/date-palm-11acf710e6c149daa8d6fb8cdc5d087f" target="_blank" rel="noopener">« Date Palm »</a> de evolveduk, licence <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener">CC BY 4.0</a>, modifié : textures réduites, image lointaine. Alfa Romeo Giulia GTAm 3D : <a href="https://sketchfab.com/3d-models/2021-alfa-romeo-giulia-gtam-0809eafd171c497d82fa5d8735873f32" target="_blank" rel="noopener">« 2021 Alfa Romeo Giulia GTAm »</a> de <a href="https://sketchfab.com/ddiaz-design" target="_blank" rel="noopener">Ddiaz Design</a>, licence <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" target="_blank" rel="noopener">CC BY-NC-SA 4.0</a>, modifié : mis à l'échelle, allégé, vitres et feux adaptés, textures réduites. Nissan Skyline R34 3D : <a href="https://sketchfab.com/3d-models/eddies-nissan-skyline-r34-nfs-underground-9a6bc4ed690546a1bf02832764f1c888" target="_blank" rel="noopener">« Eddie's Nissan Skyline R34 NFS Underground »</a> de <a href="https://sketchfab.com/ddiaz-design" target="_blank" rel="noopener">Ddiaz Design</a>, licence <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" target="_blank" rel="noopener">CC BY-NC-SA 4.0</a>, modifié : mis à l'échelle, allégé, vitres et feux adaptés, textures réduites. Ces deux modèles modifiés sont partagés sous la même licence ; jeu gratuit, sans usage commercial.</p>
   </div>
 </div>
 
@@ -2067,9 +2067,29 @@ body {
     const root = new THREE.Group(); root.add(model);
     root.userData = { w: 1.95, l: 4.36, h: 1.3, tails, braking: false, bl: new THREE.Object3D(), br: new THREE.Object3D() };
     addBlob(root).position.z = 0.1;
-    scene.remove(playerCar); playerCar = root; scene.add(root);
     root.rotation.order = 'YXZ';
     hero.root = root; hero.model = model;
+    Object.assign(CARS[0], { root, model, wheels: hero.wheels, steer: hero.steer, wheelR: 0.36 });
+    if (S.car === 0) { scene.remove(playerCar); playerCar = root; scene.add(root); }   // (after a slow load, another car may be on the road)
+  }
+  // another car of the car park, from its model made by tools/carpack.mjs: real size, nose toward +z, tyres on y = 0,
+  // wheels named WheelFrontL… at their centres, windows 'Glass', rear lamp lenses 'Brakelight'. Its wheels turn and steer
+  function setupCar(c, gltf) {
+    const model = gltf.scene, tails = [];
+    fixMaterials(model, heroGlass);
+    model.traverse((o) => { if (o.isMesh && o.material.name === 'Brakelight') { o.userData.off = o.material; o.userData.on = brakeOn(o.material); tails.push(o); } });
+    const wheels = [];
+    for (const n of ['WheelFrontL', 'WheelFrontR', 'WheelRearL', 'WheelRearR']) {
+      const w = model.getObjectByName(n); if (!w) continue;
+      const steerP = new THREE.Object3D(); steerP.position.copy(w.position); w.position.set(0, 0, 0);
+      w.parent.add(steerP); steerP.add(w);
+      wheels.push({ steerP, spinP: w, front: n.includes('Front') });
+    }
+    model.rotation.y = Math.PI;                                // the game's cars face -z
+    const root = new THREE.Group(); root.add(model);
+    root.userData = { w: 1.95, l: 4.4, h: 1.3, tails, braking: false, bl: new THREE.Object3D(), br: new THREE.Object3D() };
+    addBlob(root); root.rotation.order = 'YXZ';
+    Object.assign(c, { root, model, wheels, ready: true });
   }
   // contact shadow: the dark patch right under a car's body that makes it sit on the road (the sun's shadow falls aside)
   const blobTex = canvasTex(64, 128, (x, w, h) => {
@@ -2116,8 +2136,21 @@ body {
     const show = () => { if (!done) btn.textContent = 'CHARGEMENT ' + Math.min(99, Math.round(((got.t + got.h + got.i + got.d + got.p) / TOTAL) * 100)) + ' %'; };
     const load = (url, k) => new Promise((res, rej) => loader.load(url, res, (e) => { got[k] = e.loaded; show(); }, rej));
     show();
+    // the other cars of the car park load one after the other once the game is ready (they do not hold it back);
+    // each comes out from under its cover when it is in
+    const loadCars = (i = 1) => {
+      const c = CARS[i]; if (!c) return;
+      if (!c.file || c.ready) return loadCars(i + 1);
+      loader.load(c.file, (g) => { try { setupCar(c, g); G.reveal(i); } catch (e) { console.error(e); } garageUI(); loadCars(i + 1); },
+        (e) => { c.pct = e.total ? e.loaded / e.total : 0; if (G.idx === i) garageUI(); }, () => { c.failed = true; garageUI(); loadCars(i + 1); });
+    };
     // ready: the standard car comes out from under its cover in the car park, and the play button follows the car shown
-    const finish = () => { if (done) return; done = true; if (!cockpit) useCockpit(newCockpit(null, null)); modelsReady = true; G.reveal(); garageUI(); applyCam(); };
+    const finish = () => {
+      if (done) return; done = true; if (!cockpit) useCockpit(newCockpit(null, null));
+      if (!CARS[0].root) CARS[0].root = playerCar;             // (the simple car, if its model failed)
+      CARS[0].ready = modelsReady = true; G.reveal(0); garageUI(); applyCam();
+      loadCars();
+    };
     // car interior (one JSON file: geometry, baked shading, anchors for gauges and mirror) and the driver's arms
     const fl = new THREE.FileLoader(); fl.setResponseType('json');
     const driverP = new Promise((res) => loader.load('models/driver.json', (g) => res(g.scene), (e) => { got.d = e.loaded; show(); }, () => res(null)));
@@ -2131,20 +2164,23 @@ body {
     Promise.allSettled([load('models/car-traffic.json', 't'), load('models/car-hero.json', 'h'), interior, palmP]).then(([t, h]) => {
       if (t.status === 'fulfilled') { const m = t.value.scene; fixMaterials(m, trafficGlass); m.rotation.y = Math.PI; m.position.set(0, 0.16, 0.24); MODELS.traffic = m; }
       if (h.status === 'fulfilled') { try { setupHero(h.value); } catch (e) { console.error(e); } }
-      G.reveal();                                              // (after a slow load, swaps the stand-in car for the real one)
+      G.reveal(0);                                             // (after a slow load, swaps the stand-in car for the real one)
       finish();
     });
   }
 
   // ---------------- the car park: choosing the car ----------------
   // the game opens in a covered car park under Casa Port, one bay per car: a swipe (or the arrows, or ← →) slides
-  // along the row and JOUER drives off in the car shown. A car not delivered yet waits under a cover.
+  // along the row and JOUER drives off in the car shown. A car waits under a cover until its model is in (a car
+  // marked soon, not delivered yet, stays under it).
   // perf scales the standard car (gear tops, pull, side grip, brakes). stats are measured with the game's own
-  // physics on the straight: top speed without nitro, 0-100 km/h at full throttle, braking from 100 km/h
+  // physics on the straight (tests/t48.js): top speed without nitro, 0-100 km/h at full throttle, braking from 100 km/h
   const CARS = [
     { id: 'concept', name: 'CONCEPT', tag: 'Voiture standard · boîte auto 6 rapports', perf: { top: 1, pull: 1, lat: 1, brake: 1 }, stats: { vmax: 222, t100: 5.5, b100: 28 } },
-    { id: 'voiture-2', name: 'VOITURE 2', tag: 'Sous la bâche : arrive bientôt', soon: true },
-    { id: 'voiture-3', name: 'VOITURE 3', tag: 'Sous la bâche : arrive bientôt', soon: true },
+    { id: 'giulia', name: 'GIULIA GTAm', tag: 'Alfa Romeo · berline de course', file: 'models/car-giulia.json', wheelR: 0.332,
+      perf: { top: 1.2, pull: 1.12, lat: 1.08, brake: 1.2 }, stats: { vmax: 247, t100: 4.5, b100: 25 } },        // the fastest, best brakes and grip
+    { id: 'r34', name: 'SKYLINE R34', tag: 'Nissan Skyline GT-R · préparée', file: 'models/car-r34.json', wheelR: 0.321,
+      perf: { top: 1, pull: 1.45, lat: 0.96, brake: 1 }, stats: { vmax: 238, t100: 3.9, b100: 28 } },             // the quickest off the line, less grip
   ];
   let carPick = 0, modelsReady = false;
   try { const id = localStorage.getItem('corniche-car'), k = CARS.findIndex((c) => c.id === id && !c.soon); if (k >= 0) carPick = k; } catch (e) {}
@@ -2267,12 +2303,12 @@ body {
     let shadowDirty = true;
     // a parked copy of a car model (shares its meshes and materials): no cabin lamp, wheels at rest
     function showcase(model) { const m = model.clone(true), lamps = []; m.traverse((o) => { if (o.isLight) lamps.push(o); }); lamps.forEach((l) => l.parent.remove(l)); return m; }
-    // the standard car once loaded (or the simple car if its model failed): its cover lifts off and fades
-    function reveal() {
-      const b = bays[0], src = hero.model || 'box';
-      if (b.shown === src) return;
+    // a car once its model is in (the standard car: the simple car if its model failed): its cover lifts off and fades
+    function reveal(i) {
+      const b = bays[i], c = CARS[i], src = c.model || (i === 0 ? 'box' : null);
+      if (!src || b.shown === src) return;
       if (b.show) b.holder.remove(b.show);
-      b.show = hero.model ? showcase(hero.model) : makeCar(0xe8562a, 'car'); b.shown = src; b.holder.add(b.show); shadowDirty = true;
+      b.show = c.model ? showcase(c.model) : makeCar(0xe8562a, 'car'); b.shown = src; b.holder.add(b.show); shadowDirty = true;
       if (b.cover && !b.unveil) {
         const mat = coverMat.clone(); mat.transparent = true;
         b.cover.traverse((o) => { if (!o.isMesh) return; o.castShadow = false; if (o.material === coverMat) o.material = mat; else o.visible = false; });
@@ -2354,7 +2390,11 @@ body {
     $('valBrk').textContent = st ? st.b100 + ' m' : '?';
     [...dotsEl.children].forEach((d, k) => { d.classList.toggle('on', k === i); d.setAttribute('aria-current', k === i ? 'true' : 'false'); });
     $('carPrev').disabled = i === 0; $('carNext').disabled = i === CARS.length - 1;
-    if (modelsReady) { const b = $('playBtn'); b.textContent = c.soon ? 'BIENTÔT' : 'JOUER'; b.disabled = !!c.soon; b.classList.toggle('soon', !!c.soon); }
+    if (modelsReady) {                                       // a car still loading: its progress; not delivered yet: BIENTÔT
+      const b = $('playBtn'), wait = !c.soon && !c.ready;
+      b.textContent = c.soon ? 'BIENTÔT' : c.failed ? 'INDISPONIBLE' : wait ? 'CHARGEMENT ' + Math.round((c.pct || 0) * 100) + ' %' : 'JOUER';
+      b.disabled = !!c.soon || wait; b.classList.toggle('soon', !!c.soon || wait);
+    }
   }
   CARS.forEach((c, i) => {
     const d = document.createElement('button'); d.type = 'button'; d.setAttribute('aria-label', 'Voiture ' + (i + 1));
@@ -2378,7 +2418,9 @@ body {
   const input = { gas: false, brake: false, left: false, right: false, nitro: false, axis: 0, axisOn: false };
   // the car driven: its scale of the standard car's gearing, side grip and brakes (all 1 for the standard car)
   function useCar(i, keep = true) {
-    S.car = i; PERF = CARS[i].perf;
+    const c = CARS[i];
+    S.car = i; PERF = c.perf;
+    if (c.root && playerCar !== c.root) { scene.remove(playerCar); playerCar = c.root; scene.add(playerCar); }   // its body on the road
     for (let g = 0; g < GEAR_TOP0.length; g++) { GEAR_TOP[g] = GEAR_TOP0[g] * PERF.top / 3.6; GEAR_PULL[g] = GEAR_PULL0[g] * PERF.pull; }
     if (keep) try { localStorage.setItem('corniche-car', CARS[i].id); } catch (e) {}
   }
@@ -2487,7 +2529,7 @@ body {
   // from the car park, JOUER drives off in the car shown (once everything has loaded, and only a delivered car)
   const start = () => {
     if (!cockpit) return;
-    if (S.mode === 'menu') { if (!modelsReady || CARS[G.idx].soon) return; useCar(G.idx); }
+    if (S.mode === 'menu') { if (!modelsReady || !CARS[G.idx].ready) return; useCar(G.idx); }
     tryLandscape(); ensureAudio(); newGame();
   };
   $('playBtn').addEventListener('click', start);
@@ -2964,10 +3006,10 @@ body {
 
     playerCar.position.set(S.x, S.heave, 0);
     playerCar.rotation.set(S.pitch, -S.yaw, S.roll);
-    if (hero.root) {
-      const v = S.speed;
-      for (const w of hero.wheels) { w.spinP.rotation.x += v * rawDt / 0.36; if (w.front) w.steerP.rotation.y = -S.steer * 0.35; }
-      if (hero.steer) hero.steer.piv.quaternion.copy(hero.steer.base).multiply(steerQ.setFromAxisAngle(ZAXIS, -S.steer * 2.0));
+    const rig = CARS[S.car];                                   // the car driven: its wheels turn and steer
+    if (rig.wheels && playerCar === rig.root) {
+      for (const w of rig.wheels) { w.spinP.rotation.x += S.speed * rawDt / rig.wheelR; if (w.front) w.steerP.rotation.y = -S.steer * 0.35; }
+      if (rig.steer) rig.steer.piv.quaternion.copy(rig.steer.base).multiply(steerQ.setFromAxisAngle(ZAXIS, -S.steer * 2.0));
     }
     const portrait = camera.aspect < 1;
     if (S.mode === 'menu') {
