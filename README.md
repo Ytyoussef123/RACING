@@ -2,11 +2,11 @@
 
 Jeu de conduite en vue cockpit sur la corniche de Casablanca (Casa Port → Aïn Diab). Three.js r128, interface en français, jouable sur téléphone en paysage.
 
-- `game/index.html` : le jeu (version actuelle : V27 ; le jeu s'ouvre sur un parking où le joueur choisit parmi 3 voitures). `game/models/` : modèles 3D et textures utilisés au chargement.
+- `game/index.html` : le jeu (version actuelle : V28 ; parking avec 3 voitures, mode libre (JOUER) et course contre l'IA (COURSE)). `game/models/` : modèles 3D et textures utilisés au chargement.
 - `JOURNAL.md` : mémoire du projet, découpée par sujet. **À lire avant toute modification, section concernée seulement.**
 - `src/cockpit/` : sources du cockpit (p1 à p6), incluses dans `index.html`.
 - `tools/` : conversion des modèles ; `tools/carpack.mjs` convertit une voiture Sketchfab au format du jeu. `tests/` : tests Playwright (voir JOURNAL, section Tests).
-- `versions/` : copies de versions antérieures, pour revenir en arrière. `vN.html` est le jeu juste avant la version N+1 ; `v27.html` = actuelle.
+- `versions/` : copies de versions antérieures, pour revenir en arrière. `vN.html` est le jeu juste avant la version N+1 ; `v28.html` = actuelle.
 - `incoming/cars/` : dossier où déposer le zip des nouvelles voitures (voir son README).
 - `CLAUDE.md` : règles de travail pour Claude (modèles à utiliser).
 

@@ -224,6 +224,38 @@ body {
 .btn-row { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; align-items: center; }
 /* in the car park the turn-the-screen button sits at the top, out of the card's way */
 #stage.garage .flip { bottom: auto; top: calc(10px + var(--sat)); left: 50%; transform: translateX(-50%); }
+
+/* the race: position, gap and distance left take the place of the points; a bar at the top shows both cars on the
+   way to the finish; big countdown numbers; under them, the launch meter (the revs, the green zone for a good start) */
+#stage:not(.racing) .race-only, #stage.racing .hud .free-only { display: none !important; }
+.race-bar { position: fixed; top: calc(16px + var(--sat)); left: 50%; transform: translateX(-50%); z-index: 6; pointer-events: none;
+  width: min(34vw, 340px); height: 20px; display: flex; align-items: center; gap: 6px; }
+.rb-track { position: relative; flex: 1; height: 4px; border-radius: 2px; background: rgba(255,255,255,0.32); box-shadow: 0 1px 3px rgba(0,0,0,0.35); }
+.rb-track i { position: absolute; top: 50%; width: 13px; height: 13px; margin: -6.5px 0 0 -6.5px; border-radius: 50%; border: 2px solid #fff; box-shadow: 0 1px 4px rgba(0,0,0,0.5); left: 0; }
+#rbMe { background: var(--sun); z-index: 1; }
+#rbOpp { background: var(--danger); }
+.rb-flag { width: 14px; height: 16px; border-radius: 2px; background: repeating-conic-gradient(#f4f4f4 0 25%, #111 0 50%) 0 0 / 7px 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.4); }
+#rGap.ahead { color: var(--sea); } #rGap.behind { color: var(--danger); }
+.count { position: fixed; left: 50%; top: 42%; z-index: 7; pointer-events: none; transform: translate(-50%, -50%); white-space: nowrap;
+  font-family: var(--font-display); font-style: italic; font-weight: 800; font-size: clamp(84px, calc(var(--vw) * 15), 160px); line-height: 1;
+  color: var(--sun); text-shadow: 0 6px 0 #b3540f, 0 14px 34px rgba(0,0,0,0.5); }
+.count.go { color: var(--sea); font-size: clamp(56px, calc(var(--vw) * 10), 112px); text-shadow: 0 6px 0 #0f6b78, 0 14px 34px rgba(0,0,0,0.5); }
+.count.pop { animation: pop 0.95s ease-out both; }
+@keyframes pop { 0% { transform: translate(-50%, -50%) scale(1.7); opacity: 0; } 18% { opacity: 1; } 100% { transform: translate(-50%, -50%) scale(1); opacity: 0.92; } }
+.launch { position: fixed; left: 50%; bottom: calc(26px + var(--sab)); transform: translateX(-50%); z-index: 7; width: min(42vw, 360px); text-align: center; pointer-events: none; }
+.ln-bar { position: relative; height: 12px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.55); box-shadow: 0 2px 8px rgba(0,0,0,0.35);
+  background: linear-gradient(90deg, rgba(13,27,42,0.55) 0 53.3%, rgba(46,196,214,0.95) 53.3% 84%, rgba(255,77,77,0.95) 84%); }
+.ln-mark { position: absolute; top: -5px; left: 12%; width: 4px; height: 22px; margin-left: -2px; border-radius: 2px; background: #fff; box-shadow: 0 0 6px rgba(0,0,0,0.7); }
+.ln-text { margin-top: 7px; font-size: 12px; font-weight: 500; text-shadow: 0 1px 3px rgba(0,0,0,0.8); }
+.btn.race { background: var(--sea); color: #06323a; box-shadow: 0 6px 0 #0f6b78; }
+.btn.race:active { box-shadow: 0 2px 0 #0f6b78; }
+.btn.race small { display: block; margin-top: 1px; font: 600 11px var(--font-body); font-style: normal; letter-spacing: 0.04em; opacity: 0.85; }
+.btn:disabled { opacity: 0.55; cursor: default; }
+.g-go { gap: 12px; }
+.crash-title.win { color: var(--sun); } .crash-title.second { color: var(--ink); }
+#stage.short #raceScreen .stats { grid-template-columns: repeat(4, 1fr); }
+#stage.short .g-go .btn { padding: 7px 34px; font-size: 22px; }
+@media (prefers-reduced-motion: reduce) { .count.pop { animation: none; } }
 </style>
 
 <div id="stage" class="garage">
@@ -231,9 +263,12 @@ body {
 
 <div class="hud" hidden>
   <div class="col">
-    <div class="chip"><span class="label">Points</span><span class="value" id="score">0</span></div>
-    <div class="chip"><span class="label">Distance</span><span class="value" id="dist">0.00</span><span class="unit">km</span></div>
-    <div class="chip"><span class="label">Risque</span><span class="value mult" id="mult">x1</span></div>
+    <div class="chip free-only"><span class="label">Points</span><span class="value" id="score">0</span></div>
+    <div class="chip free-only"><span class="label">Distance</span><span class="value" id="dist">0.00</span><span class="unit">km</span></div>
+    <div class="chip free-only"><span class="label">Risque</span><span class="value mult" id="mult">x1</span></div>
+    <div class="chip race-only"><span class="label">Position</span><span class="value" id="rPos">1er</span></div>
+    <div class="chip race-only"><span class="label">Écart</span><span class="value" id="rGap">0 m</span></div>
+    <div class="chip race-only"><span class="label">Arrivée</span><span class="value" id="rLeft">3,60</span><span class="unit">km</span></div>
   </div>
   <div class="col right">
     <div class="buttons">
@@ -254,6 +289,12 @@ body {
 <div class="danger" id="danger"></div>
 <div class="toast" id="toast"></div>
 <div class="flash" id="flash"></div>
+<div class="race-bar race-only" aria-hidden="true"><span class="rb-track"><i id="rbOpp"></i><i id="rbMe"></i></span><span class="rb-flag"></span></div>
+<div class="count" id="count" hidden></div>
+<div class="launch" id="launch" hidden>
+  <div class="ln-bar"><span class="ln-mark" id="lnMark"></span></div>
+  <div class="ln-text">Accélère : l'aiguille dans le vert au départ</div>
+</div>
 
 <div class="touch l" id="touchL" hidden>
   <div class="joy" id="joy" role="slider" aria-label="Direction : pose le pouce et glisse à gauche ou à droite" aria-valuemin="-100" aria-valuemax="100" aria-valuenow="0">
@@ -297,6 +338,7 @@ body {
       <div class="g-hint" id="carHint">Glisse pour voir les voitures</div>
     </div>
     <div class="g-go">
+      <button class="btn race" id="raceBtn" type="button" disabled>COURSE<small>contre l'IA · 3,6 km</small></button>
       <button class="btn" id="playBtn" type="button">JOUER</button>
     </div>
   </div>
@@ -310,6 +352,7 @@ body {
       <dt>Risque</dt><dd>Plus tu vas vite, plus tes points sont multipliés : x2 à 100 km/h, x3 à 150, x4 à 200.</dd>
       <dt>Frôlement</dt><dd>Double une voiture de très près à plus de 90 km/h : bonus et nitro. À plus de 130 km/h, le temps ralentit.</dd>
       <dt>Accident</dt><dd>Rentrer dans l'arrière d'une voiture termine la partie. Un choc de côté, ou une voiture qui te touche par derrière, te secoue et te ralentit, mais tu continues.</dd>
+      <dt>Course</dt><dd>Un contre un face à un pilote de l'IA, de Casa Port à la mosquée Hassan II (3,6 km), dans le trafic. Pendant le compte à rebours, accélère : l'aiguille dans le vert au départ, c'est un départ parfait ; dans le rouge, les roues patinent.</dd>
       <dt>Commandes</dt><dd id="ctrlText">↑ accélérer · ↓ freiner · ← → tourner · Maj nitro · C changer de vue · F plein écran</dd>
     </dl>
     <button class="btn" id="infoClose" type="button">RETOUR</button>
@@ -337,6 +380,21 @@ body {
     </div>
     <div class="kicker" id="bestOver">Record : 0</div>
     <div class="btn-row"><button class="btn" id="againBtn" type="button">REJOUER</button><button class="btn ghost" id="overGarage" type="button">Parking</button></div>
+  </div>
+</div>
+
+<div class="overlay" id="raceScreen" hidden>
+  <div class="panel">
+    <div class="kicker" id="rVs">Casa Port → Mosquée Hassan II</div>
+    <h2 class="crash-title win" id="rTitle">VICTOIRE !</h2>
+    <div class="stats">
+      <div><b id="rTime">0:00,0</b><span>Ton temps</span></div>
+      <div><b id="rGapEnd">0,0 s</b><span>Écart</span></div>
+      <div><b id="rTop">0</b><span>Vitesse max km/h</span></div>
+      <div><b id="rNear">0</b><span>Frôlements</span></div>
+    </div>
+    <div class="kicker" id="rBest">Record : –</div>
+    <div class="btn-row"><button class="btn race" id="raceAgain" type="button">REVANCHE</button><button class="btn ghost" id="raceGarage" type="button">Parking</button></div>
   </div>
 </div>
 <button class="icon-btn flip" id="flipBtn" type="button" hidden>⟲ Retourner l'écran</button>
@@ -783,11 +841,13 @@ body {
       if (on) { if (!u.bq) u.bq = new THREE.Quaternion(); u.bx = o.position.x; u.bz = o.position.z; u.bq.copy(o.quaternion); const b = bendPt(-o.position.x, o.position.z); o.position.x = -b.x; o.position.z = b.z; o.quaternion.premultiply(_bq.setFromAxisAngle(YUP, b.th)); }
       else { o.position.x = u.bx; o.position.z = u.bz; o.quaternion.copy(u.bq); }
     }
-    for (const c of S.traffic) {
-      const u = c.userData;
-      if (on) { if (!u.bq) u.bq = new THREE.Quaternion(); u.bx = c.position.x; u.bz = c.position.z; u.bq.copy(c.quaternion); const b = bendPt(c.position.x, c.position.z); c.position.x = b.x; c.position.z = b.z; c.quaternion.premultiply(_bq.setFromAxisAngle(YUP, -b.th)); }
-      else { c.position.x = u.bx; c.position.z = u.bz; c.quaternion.copy(u.bq); }
-    }
+    for (const c of S.traffic) bendMover(c, on);
+    for (const c of RC.objs) bendMover(c, on);                  // the race: the other driver, the start line, the finish arch
+  }
+  function bendMover(c, on) {
+    const u = c.userData;
+    if (on) { if (!u.bq) u.bq = new THREE.Quaternion(); u.bx = c.position.x; u.bz = c.position.z; u.bq.copy(c.quaternion); const b = bendPt(c.position.x, c.position.z); c.position.x = b.x; c.position.z = b.z; c.quaternion.premultiply(_bq.setFromAxisAngle(YUP, -b.th)); }
+    else { c.position.x = u.bx; c.position.z = u.bz; c.quaternion.copy(u.bq); }
   }
 
   // street lights on the right
@@ -1971,7 +2031,11 @@ body {
   const box = (w, h, d, mat, x, y, z) => { const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat); m.position.set(x, y, z); return m; };
   const wheel = (g, x, y, z) => { const t = new THREE.Mesh(tyreGeo, tyreMat), r = new THREE.Mesh(rimGeo, rimMat); t.position.set(x, y, z); r.position.set(x, y, z); g.add(t, r); };
 
-  function makeCar(color, kind) {
+  const TI = { ready: false, tpl: null };                      // traffic drawn in batches (buildTraffic, below)
+  // solid: a car with its own meshes (the car park's stand-in, the race opponent's); else, once the traffic model is
+  // in, a traffic car is an empty group drawn by the batches
+  function makeCar(color, kind, solid) {
+    if (TI.ready && !solid) return makeInstCar(color, kind);
     if (typeof MODELS !== 'undefined' && MODELS.traffic && kind !== 'truck') return makeModelCar(color, kind);
     const g = new THREE.Group(), body = paint(color);
     let w, l, h;
@@ -2003,6 +2067,10 @@ body {
   }
 
   let playerCar = makeCar(0xe8562a, 'car');
+  // a soft lamp in the cabin of the car driven (seen through the glass in chase view). It stays on the road whatever the
+  // car: a light that came and went with one car would change the scene's light count, and three.js would then rebuild
+  // every material's shader, a freeze of a second or more on a phone (driving another car, or racing against this one)
+  const cabinLight = new THREE.PointLight(col(0xfff2e0), 1.1, 2.6, 2); scene.add(cabinLight);
   playerCar.rotation.order = 'YXZ';
   scene.add(playerCar);
 
@@ -2063,8 +2131,7 @@ body {
     const tails = [];
     model.traverse((o) => { if (o.isMesh && o.material.name === 'Brakelight') { o.userData.off = o.material; o.userData.on = brakeOn(o.material); tails.push(o); } });
     model.rotation.y = Math.PI; model.position.set(0, 0.16, 0.24);
-    const cabin = new THREE.PointLight(col(0xfff2e0), 1.1, 2.6, 2); cabin.position.set(0, 1.0, 0.6); model.add(cabin);
-    const root = new THREE.Group(); root.add(model);
+    const root = new THREE.Group(); root.add(model);              // (its cabin lamp is cabinLight, on the road for every car)
     root.userData = { w: 1.95, l: 4.36, h: 1.3, tails, braking: false, bl: new THREE.Object3D(), br: new THREE.Object3D() };
     addBlob(root).position.z = 0.1;
     root.rotation.order = 'YXZ';
@@ -2127,6 +2194,99 @@ body {
     g.userData = { w: 2.0, l: 4.36, h: 1.3, bl, br, tails, braking: false };
     return g;
   }
+  // traffic in batches: each traffic car is an empty group that the game moves, turns and bends as before; before each
+  // picture its parts are copied into one instanced mesh per part (of the traffic model, or of the truck), with its
+  // paint colour, its brake lights on or off, its indicators, its taxi sign and its contact shadow. A few dozen draw
+  // calls for the whole traffic instead of about sixteen per car (twenty per truck), and as many again for the shadows
+  function makeInstCar(color, kind) {
+    const truck = kind === 'truck', w = truck ? 2.4 : 2.0, l = truck ? 8 : 4.36;
+    const g = new THREE.Group(), bl = new THREE.Object3D(), br = new THREE.Object3D();
+    if (truck) { bl.position.set(-w / 2 + 0.06, 0.95, l / 2 + 0.06); br.position.set(w / 2 - 0.06, 0.95, l / 2 + 0.06); }
+    else { bl.position.set(-0.82, 0.95, 2.12); br.position.set(0.82, 0.95, 2.12); }
+    bl.visible = br.visible = false; g.add(bl, br);
+    const c1 = col(color);
+    g.userData = { w, l, h: truck ? 3.2 : 1.3, bl, br, tails: [], braking: false, inst: { tpl: truck ? 1 : 0, c1, c2: c1.clone().multiplyScalar(0.35), taxi: kind === 'taxi' } };
+    return g;
+  }
+  // shaders prepared before they are needed: compiling one the first time it is drawn can freeze a phone for a moment
+  // (the start of a game, the first traffic car, a car shown in chase view). The road scene for the screen and for the
+  // mirror's picture (with the race's line and arch), the cockpit; with a car, that car's materials on the road
+  function warmShaders(car) {
+    const extra = car ? [car] : [raceProps.start, raceProps.finish];
+    try {
+      for (const o of extra) scene.add(o);
+      renderer.compile(scene, camera);
+      renderer.setRenderTarget(mirror.rt); renderer.compile(scene, mirror.cam); renderer.setRenderTarget(null);
+      if (cockpit && !car) renderer.compile(cockpit.scene, cockpit.cam);
+    } catch (e) { console.error(e); } finally { for (const o of extra) if (o !== playerCar) scene.remove(o); }
+  }
+  // A batch cannot leave out the cars a pass does not see, so the cars go into three sets by where they are:
+  // far ahead (drawn on the screen only: the sun's shadow does not reach there and the mirror never looks there),
+  // near ahead (screen and shadow), around and behind (screen, shadow and mirror)
+  function buildTraffic(model) {
+    const holder = new THREE.Group(); holder.add(model); holder.updateMatrixWorld(true);
+    const at = (...pts) => pts.map(([x, y, z]) => new THREE.Matrix4().makeTranslation(x, y, z));
+    // parts: [geometry, material, kind, where on the car (one place per copy), options]
+    const car = [];
+    model.traverse((o) => {
+      if (!o.isMesh) return;
+      const n = o.material.name || '', local = [o.matrixWorld.clone()];
+      if (/^Paint [12]/.test(n)) { const m = o.material.clone(); m.color = new THREE.Color(1, 1, 1); car.push([o.geometry, m, 'paint', local, { slot: /^Paint 2/.test(n) ? 2 : 1 }]); }
+      else if (n === 'Brakelight') { car.push([o.geometry, o.material, 'tailOff', local], [o.geometry, brakeOn(o.material), 'tailOn', local]); }
+      else car.push([o.geometry, o.material, 'body', local]);
+    });
+    holder.remove(model);
+    // (own copies of the materials ordinary meshes also use: shared, three.js would swap shader variants every frame)
+    const shared = [[blobGeo, blobMat.clone(), 'blob', null, { cast: false }], [new THREE.BoxGeometry(0.14, 0.1, 0.06), blinkMat.clone(), 'blink', null, { cast: false }]];
+    car.push(...shared, [new THREE.BoxGeometry(0.55, 0.2, 0.28), signMat.clone(), 'sign', at([0, 1.4, 0.3])]);
+    // the truck as makeCar builds it: white box, cab in the truck's colour, six wheels, two rear lamps
+    const cab = new THREE.MeshPhysicalMaterial({ color: 0xffffff, metalness: 0.5, roughness: 0.3, clearcoat: 1, clearcoatRoughness: 0.05 }), tl = new THREE.BoxGeometry(0.36, 0.2, 0.06);
+    const wheels6 = at(...[-2.8, 1.4, 2.95].flatMap((z) => [[-1.05, 0.4, z], [1.05, 0.4, z]])), tails2 = at([-0.95, 0.7, 3.93], [0.95, 0.7, 3.93]);
+    const truck = [
+      [new THREE.BoxGeometry(2.4, 2.8, 5.6), std(0xf0f0ee, { roughness: 0.5 }), 'body', at([0, 1.95, 1.1])],
+      [new THREE.BoxGeometry(2.3, 2.1, 2.2), cab, 'paint', at([0, 1.45, -2.8]), { slot: 1 }],
+      [new THREE.BoxGeometry(2.1, 0.8, 0.08), glassMat.clone(), 'body', at([0, 2.05, -3.92])],
+      [new THREE.BoxGeometry(2.36, 0.3, 7.6), trimMat.clone(), 'body', at([0, 0.55, 0.2])],
+      [tyreGeo, tyreMat.clone(), 'body', wheels6], [rimGeo, rimMat.clone(), 'body', wheels6],
+      [tl, tailMat.clone(), 'tailOff', tails2], [tl, tailOnMat.clone(), 'tailOn', tails2],
+      [new THREE.BoxGeometry(0.5, 0.14, 0.03), plateMat.clone(), 'body', at([0, 0.55, 3.94])],
+      ...shared.map(([g, m, k, l, o]) => [g, m.clone(), k, l, o]),
+    ];
+    // a batch cannot leave out the cars one pass does not see, so the cars go into three sets by where they are: far
+    // ahead (screen only: the sun's shadow does not reach there, the mirror never looks there), near ahead (screen and
+    // shadow), around and behind (screen, shadow and mirror)
+    TI.tpl = [[car, 26], [truck, 8]].map(([parts, max]) => ['far', 'near', 'around'].map((zone) => parts.map(([geo, mat, kind, local, o = {}]) => {
+      const cap = max * (kind === 'blink' ? 2 : local ? local.length : 1);
+      const im = new THREE.InstancedMesh(geo, mat, cap); im.count = 0; im.visible = false; im.frustumCulled = false;
+      im.castShadow = zone !== 'far' && o.cast !== false; im.receiveShadow = o.cast !== false;
+      if (kind === 'paint') im.instanceColor = new THREE.InstancedBufferAttribute(new Float32Array(cap * 3), 3);
+      scene.add(im); return Object.assign({ im, kind, local, cap, n: 0 }, o);
+    })));
+    TI.ready = true;
+  }
+  const eachBatch = (fn) => { for (const t of TI.tpl || []) for (const set of t) for (const p of set) fn(p, set === t[2]); };
+  // while the mirror's picture is drawn: the cars ahead are left out (on: hide them, off: back as they were)
+  function trafficAheadHidden(on) { eachBatch((p, around) => { if (!around) p.im.visible = !on && p.im.count > 0; }); }
+  const _ti = new THREE.Matrix4(), _tb = new THREE.Matrix4();
+  function syncTraffic() {
+    if (!TI.ready) return;
+    const put = (p, m, u) => { if (p.n >= p.cap) return; p.im.setMatrixAt(p.n, m); if (p.kind === 'paint') p.im.setColorAt(p.n, p.slot === 2 ? u.inst.c2 : u.inst.c1); p.n++; };
+    for (const c of S.traffic) {
+      const u = c.userData; if (!u.inst || !c.visible) continue;
+      c.updateMatrixWorld();
+      const z = c.position.z;
+      for (const p of TI.tpl[u.inst.tpl][z < -80 ? 0 : z < -3 ? 1 : 2]) {
+        if (p.kind === 'tailOff' && u.braking || p.kind === 'tailOn' && !u.braking || p.kind === 'sign' && !u.inst.taxi) continue;
+        if (p.kind === 'blob') put(p, _ti.multiplyMatrices(c.matrixWorld, _tb.makeScale(u.w * 1.18, 1, u.l * 1.08).setPosition(0, 0.045, 0)), u);
+        else if (p.kind === 'blink') { for (const b of [u.bl, u.br]) if (b.visible) put(p, _ti.multiplyMatrices(c.matrixWorld, b.matrix), u); }
+        else for (const L of p.local) put(p, _ti.multiplyMatrices(c.matrixWorld, L), u);
+      }
+    }
+    eachBatch((p) => {
+      p.im.count = p.n; p.im.visible = p.n > 0; p.n = 0;           // (an empty batch would still cost a draw call)
+      p.im.instanceMatrix.needsUpdate = true; if (p.im.instanceColor) p.im.instanceColor.needsUpdate = true;
+    });
+  }
   function loadModels() {
     const btn = $('playBtn');
     if (!THREE.GLTFLoader) { useCockpit(newCockpit(null)); return; }
@@ -2141,13 +2301,14 @@ body {
     const loadCars = (i = 1) => {
       const c = CARS[i]; if (!c) return;
       if (!c.file || c.ready) return loadCars(i + 1);
-      loader.load(c.file, (g) => { try { setupCar(c, g); G.reveal(i); } catch (e) { console.error(e); } garageUI(); loadCars(i + 1); },
+      loader.load(c.file, (g) => { try { setupCar(c, g); G.reveal(i); warmShaders(c.root); } catch (e) { console.error(e); } garageUI(); loadCars(i + 1); },
         (e) => { c.pct = e.total ? e.loaded / e.total : 0; if (G.idx === i) garageUI(); }, () => { c.failed = true; garageUI(); loadCars(i + 1); });
     };
     // ready: the standard car comes out from under its cover in the car park, and the play button follows the car shown
     const finish = () => {
       if (done) return; done = true; if (!cockpit) useCockpit(newCockpit(null, null));
       if (!CARS[0].root) CARS[0].root = playerCar;             // (the simple car, if its model failed)
+      warmShaders();                                           // (while the button still reads CHARGEMENT)
       CARS[0].ready = modelsReady = true; G.reveal(0); garageUI(); applyCam();
       loadCars();
     };
@@ -2162,7 +2323,7 @@ body {
     setTimeout(finish, 45000);
     const palmP = load('models/palm.json', 'p').then((g) => { try { setupPalms(g); } catch (e) { console.error(e); } }, () => {});
     Promise.allSettled([load('models/car-traffic.json', 't'), load('models/car-hero.json', 'h'), interior, palmP]).then(([t, h]) => {
-      if (t.status === 'fulfilled') { const m = t.value.scene; fixMaterials(m, trafficGlass); m.rotation.y = Math.PI; m.position.set(0, 0.16, 0.24); MODELS.traffic = m; }
+      if (t.status === 'fulfilled') { const m = t.value.scene; fixMaterials(m, trafficGlass); m.rotation.y = Math.PI; m.position.set(0, 0.16, 0.24); MODELS.traffic = m; try { buildTraffic(m); } catch (e) { console.error(e); } }
       if (h.status === 'fulfilled') { try { setupHero(h.value); } catch (e) { console.error(e); } }
       G.reveal(0);                                             // (after a slow load, swaps the stand-in car for the real one)
       finish();
@@ -2308,7 +2469,7 @@ body {
       const b = bays[i], c = CARS[i], src = c.model || (i === 0 ? 'box' : null);
       if (!src || b.shown === src) return;
       if (b.show) b.holder.remove(b.show);
-      b.show = c.model ? showcase(c.model) : makeCar(0xe8562a, 'car'); b.shown = src; b.holder.add(b.show); shadowDirty = true;
+      b.show = c.model ? showcase(c.model) : makeCar(0xe8562a, 'car', true); b.shown = src; b.holder.add(b.show); shadowDirty = true;
       if (b.cover && !b.unveil) {
         const mat = coverMat.clone(); mat.transparent = true;
         b.cover.traverse((o) => { if (!o.isMesh) return; o.castShadow = false; if (o.material === coverMat) o.material = mat; else o.visible = false; });
@@ -2351,6 +2512,8 @@ body {
       const sx = dist * th * asp * side;                                                // look a little left of the car: it shows right of centre
       cam.lookAt(aim.x - Math.cos(az) * sx, aim.y - dist * th * ndcY, aim.z + Math.sin(az) * sx);
     }
+    // at rest: no finger on it, the row settled on a car, its spot fully up, no cover lifting (only the slow sway moves)
+    const idle = () => !drag && Math.abs(bayX(idx) - cx) < 0.003 && Math.abs(spots[idx].intensity - 2.6) < 0.02 && !bays.some((b) => b.unveil);
     function dragStart(px) { const now = performance.now(); drag = { px, x0: cx, last: px, lastT: now, v: 0 }; }
     function dragMove(px) {
       if (!drag) return;
@@ -2376,7 +2539,7 @@ body {
       renderer.setRenderTarget(null); renderer.render(gs, cam);
       renderer.toneMappingExposure = ex;
     }
-    return { scene: gs, cam, bays, get idx() { return idx; }, set, go, step, render, reveal, dragStart, dragMove, dragEnd };
+    return { scene: gs, cam, bays, get idx() { return idx; }, set, go, step, render, reveal, idle, dragStart, dragMove, dragEnd };
   })();
   // the card, the dots, the arrows and the play button follow the car shown
   const dotsEl = $('carDots');
@@ -2394,6 +2557,7 @@ body {
       const b = $('playBtn'), wait = !c.soon && !c.ready;
       b.textContent = c.soon ? 'BIENTÔT' : c.failed ? 'INDISPONIBLE' : wait ? 'CHARGEMENT ' + Math.round((c.pct || 0) * 100) + ' %' : 'JOUER';
       b.disabled = !!c.soon || wait; b.classList.toggle('soon', !!c.soon || wait);
+      $('raceBtn').disabled = b.disabled;                      // (the race needs the car as much as JOUER)
     }
   }
   CARS.forEach((c, i) => {
@@ -2433,7 +2597,8 @@ body {
     if (!laneFree(lane, z, Math.max(18, 45 - 5 * trafficLevel()))) return;
     const r = Math.random(), kind = r < 0.15 ? 'truck' : r < 0.3 ? 'taxi' : r < 0.42 ? 'suv' : 'car', truck = kind === 'truck';
     const c = makeCar(kind === 'taxi' ? 0xc8102e : truck ? [0x2a5caa, 0xb02a2a, 0x2e7d4f, 0x444a52][Math.floor(Math.random() * 4)] : CAR_COLORS[Math.floor(Math.random() * CAR_COLORS.length)], kind);
-    addBlob(c); c.position.set(LANES[lane], -0.02, z);
+    if (!c.userData.inst) addBlob(c);                           // (a batched car's contact shadow is batched too)
+    c.position.set(LANES[lane], -0.02, z);
     // town speeds: cars at 60, 70 or 80 km/h, trucks slower
     Object.assign(c.userData, { lane, laneX: LANES[lane], speed: (truck ? rand(50, 65) : 60 + 10 * Math.floor(Math.random() * 3) + rand(-3, 3)) / 3.6, change: 0, fromX: 0, toX: 0, blinkT: 0, passed: false });
     c.userData.cruise = c.userData.speed;
@@ -2443,24 +2608,188 @@ body {
   const trafficLevel = () => Math.floor(S.dist / 2000);
   function trafficTarget() { return Math.min(hq ? 22 : 18, 6 + 2 * trafficLevel()); }
 
-  function newGame() {
-    clearTraffic();
+  // a game: free (points, from 70 km/h) or the race (standing start behind the line, a clear road ahead)
+  function newGame(race) {
+    endRace(); clearTraffic();
     Object.assign(S, { speed: 70 / 3.6, x: 1.75, lat: 0, steer: 0, dist: 0, score: 0, time: 0, top: 0, near: 0, nitro: 0.5, nitroOn: false, combo: 0, comboT: 0, crashT: 0, shake: 0, gear: 3, rpm: 4200, shiftT: 0, thr: 0, brk: 0, acc: 0, screech: 0, slowmo: 0, slowCd: 0, kick: 0, danger: 0, beatT: 0, mult: 1, milestone: 0, wasNitro: false, steerV: 0, aLat: 0, yaw: 0, roll: 0, rollV: 0, pitch: 0, pitchV: 0, heave: 0, heaveV: 0, hx: 0, hy: 0, hz: 0, hvx: 0, hvy: 0, hvz: 0, jointD: 30, bump2: 0, wheelAng: 0, lvl: 0, placeN: 0, blip: 0, absT: 0 });
-    for (let i = 0; i < 6; i++) spawnCar(60, 320);
+    if (race) Object.assign(S, { speed: 0, gear: 1, rpm: 900 });
+    for (let i = 0; i < 6; i++) spawnCar(race ? 150 : 60, race ? 340 : 320);
     if (camera.aspect < 1 && !S.camPicked) S.cam = 'chase';
-    setMode('play');
+    if (race) beginRace(); else setMode('play');
     if (camera.aspect < 1) toast('Tourne ton téléphone<small>en paysage pour la vue cockpit</small>', 2600);
+  }
+
+  // ---------------- the race: one against one, from Casa Port to the Hassan II mosque ----------------
+  // the corniche's first race: from the line at Casa Port to the arch at the mosque (3.6 km), through the traffic,
+  // against a driver in another car of the car park. A 3-2-1 countdown: hold the throttle to rev; the needle in the green
+  // at GO is a perfect start, in the red the wheels spin a moment. The other driver passes the traffic by changing lane
+  // and brakes when boxed in; it gains a little when far behind and eases off a little when far ahead, so the race
+  // stays open. Same rules as the traffic: our nose into its back ends the race, a knock on the side does not
+  const RACE = { len: 3600, title: 'Casa Port → Mosquée Hassan II', key: 'corniche-race1' };
+  const RC = { on: false, t: 0, count: 0, shown: 0, slip: 0, o: null, objs: [], won: false, time: 0, gapT: 0, finT: 0, resume: 'play' };
+  let raceBest = 0;
+  try { raceBest = parseFloat(localStorage.getItem(RACE.key)) || 0; } catch (e) {}
+  const fmtRace = (t) => Math.floor(t / 60) + ':' + (t % 60).toFixed(1).padStart(4, '0').replace('.', ',');
+  // the start line across the road at Casa Port, and at the mosque a chequered line under an arch with a banner
+  const raceProps = (() => {
+    const chk = canvasTex(512, 64, (x) => { for (let i = 0; i < 64; i++) for (let j = 0; j < 8; j++) { x.fillStyle = (i + j) % 2 ? '#141414' : '#f2f2f2'; x.fillRect(i * 8, j * 8, 8, 8); } });
+    chk.wrapS = chk.wrapT = THREE.ClampToEdgeWrapping;
+    const lineMat = new THREE.MeshStandardMaterial({ map: chk, roughness: 0.75, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 });
+    const line = () => { const g = new THREE.Group(), m = new THREE.Mesh(new THREE.PlaneGeometry(14, 1.75).rotateX(-Math.PI / 2), lineMat); m.position.y = 0.014; m.receiveShadow = true; g.add(m); return g; };
+    const start = line(), finish = line();
+    const bannerTex = canvasTex(1024, 128, (x, w, h) => {
+      x.fillStyle = '#0d1b2a'; x.fillRect(0, 0, w, h);
+      for (let i = 0; i < 128; i++) for (let j = 0; j < 2; j++) { x.fillStyle = (i + j) % 2 ? '#141414' : '#f2f2f2'; x.fillRect(i * 8, j * 8, 8, 8); x.fillRect(i * 8, h - 16 + j * 8, 8, 8); }
+      x.fillStyle = '#ffcc33'; x.font = 'italic 800 62px "Saira Condensed", "Arial Narrow", Impact, sans-serif'; x.textAlign = 'center'; x.textBaseline = 'middle';
+      x.fillText('ARRIVÉE · MOSQUÉE HASSAN II', w / 2, h / 2 + 2);
+    });
+    bannerTex.wrapS = bannerTex.wrapT = THREE.ClampToEdgeWrapping;
+    const steel = std(0x8e959e, { metalness: 0.8, roughness: 0.35 }), face = std(0xffffff, { map: bannerTex, roughness: 0.6, emissive: col(0x202020) });
+    for (const sx of [-7.9, 7.9]) { const p = new THREE.Mesh(new THREE.BoxGeometry(0.4, 7.3, 0.4), steel); p.position.set(sx, 3.65, 0); p.castShadow = true; finish.add(p); }
+    const banner = new THREE.Mesh(new THREE.BoxGeometry(16.2, 2, 0.3), [steel, steel, steel, steel, face, face]); banner.position.set(0, 6.4, 0); banner.castShadow = true; finish.add(banner);
+    return { start, finish };
+  })();
+  // the other driver: in the next car of the car park that is in (never the player's own), the simple car if none is.
+  // Its pace comes from that car's own stats: a(v) = A (1 - (v / vt)²) reaches 100 km/h in t100 and levels off at vt
+  function makeOpponent() {
+    let c = null;
+    for (let k = 1; k < CARS.length && !c; k++) { const q = CARS[(S.car + k) % CARS.length]; if (q.ready && q.root && q.root !== playerCar) c = q; }
+    const root = c ? c.root : makeCar(0x1f4e9e, 'car', true);
+    if (!c) addBlob(root);
+    const st = (c || CARS[0]).stats, vt = st.vmax / 3.6, A = vt * Math.log((vt + 27.78) / (vt - 27.78)) / (2 * st.t100);
+    root.rotation.order = 'YXZ'; root.rotation.set(0, 0, 0); root.visible = true; scene.add(root);
+    return { root, car: c, name: c ? c.name : 'IA', dist: 0, speed: 0, x: LANES[1], lane: 1, vt, A, brake: false, changeT: 0, hitT: 0, yaw: 0, done: 0 };
+  }
+  function beginRace() {
+    Object.assign(RC, { on: true, t: 0, count: 3.95, shown: 0, slip: 0, won: false });
+    RC.o = makeOpponent(); RC.objs = [RC.o.root, raceProps.start, raceProps.finish];
+    scene.add(raceProps.start, raceProps.finish);
+    stage.classList.add('racing');
+    setMode('countdown');
+    toast('PRÊTS ?<small>' + RACE.title + ' · contre ' + RC.o.name + '</small>', 1400);
+  }
+  function endRace() {
+    if (RC.o) { scene.remove(RC.o.root); if (RC.o.car) setTails(RC.o.root, false); RC.o = null; }
+    scene.remove(raceProps.start, raceProps.finish);
+    RC.on = false; RC.objs = []; stage.classList.remove('racing');
+    countEl.hidden = true; $('launch').hidden = true;
+  }
+  const countEl = $('count'); let countTimer;
+  function countShow(text, go) {
+    countEl.textContent = text; countEl.className = 'count' + (go ? ' go' : ''); countEl.hidden = false;
+    void countEl.offsetWidth; countEl.classList.add('pop');                 // (restart the animation)
+    clearTimeout(countTimer); if (go) countTimer = setTimeout(() => (countEl.hidden = true), 900);
+  }
+  // the countdown, frame by frame: revving on the spot (the throttle sends the needle up, letting go brings it down,
+  // the limiter cuts at 7200), the launch meter follows the needle, a beep on 3, 2 and 1
+  function raceCountdown(dt) {
+    RC.count -= dt;
+    const want = input.gas || input.nitro ? 1 : 0;
+    S.thr += (want - S.thr) * (1 - Math.exp(-10 * dt));
+    S.rpm += (900 + S.thr * 6600 - S.rpm) * (1 - Math.exp(-(want ? 2.2 : 1.8) * dt));
+    if (S.rpm > 7200) S.rpm = 6950;
+    $('lnMark').style.left = Math.min(100, S.rpm / 75).toFixed(1) + '%';
+    const n = Math.ceil(RC.count);
+    if (n !== RC.shown && n >= 1 && n <= 3) { RC.shown = n; countShow(String(n)); tone(440, 0.16, 'square', 0.05); buzz(25); }
+    if (RC.count <= 0) raceGo();
+  }
+  // GO: the needle in the green (4000-6300) is a perfect start, in the red the wheels spin a moment, lower a plain start
+  function raceGo() {
+    countShow('PARTEZ !', true); tone(880, 0.4, 'square', 0.07); buzz(90);
+    const r = S.rpm;
+    if (r >= 4000 && r <= 6300) { S.speed = 5.5; toast('DÉPART PARFAIT', 1200); tone(1200, 0.12, 'triangle', 0.06); }
+    else if (r > 6300) { RC.slip = 0.9; toast('PATINAGE !', 1200); }
+    S.gear = 1; S.shiftT = 0;
+    RC.o.speed = 1.5 + Math.random() * 3;                        // the other driver's start: average to good
+    setMode('play');
+  }
+  // the other driver, one step: looks ahead in its lane (traffic and the player), changes lane round a slower car when
+  // the next lane is clear, otherwise closes in and follows it; its own pull or brakes toward the speed it wants
+  function oppStep(dt) {
+    const o = RC.o, zO = S.dist - o.dist, look = 18 + o.speed * 1.4;
+    const ahead = (lx) => {                                       // [gap to the next car ahead in this lane, its speed]
+      let gap = 1e9, sp = 0;
+      for (const c of S.traffic) {
+        const u = c.userData; if (Math.abs(c.position.x - lx) > (u.w + 1.9) / 2 + 0.35 && Math.abs(u.laneX - lx) > 1) continue;
+        const d = zO - c.position.z - (u.l + 4.4) / 2; if (d > -2.5 && d < gap) { gap = d; sp = u.speed; }
+      }
+      if (Math.abs(S.x - lx) < 2.3) { const d = zO - 4.4; if (d > -2.5 && d < gap) { gap = d; sp = S.speed; } }
+      return [gap, sp];
+    };
+    const clear = (lane) => {                                     // nobody alongside, nobody close ahead in that lane
+      const lx = LANES[lane];
+      for (const c of S.traffic) {
+        const u = c.userData; if (Math.abs(c.position.x - lx) > 2.2 && Math.abs(u.laneX - lx) > 2.2) continue;
+        const d = zO - c.position.z; if (d > -(u.l / 2 + 6) && d < look) return false;
+      }
+      return !(Math.abs(S.x - lx) < 2.3 && zO > -7 && zO < look);
+    };
+    let [gap, lead] = ahead(o.x);
+    o.changeT -= dt;
+    if (gap < look && o.changeT <= 0 && Math.abs(o.x - LANES[o.lane]) < 0.4) {
+      const sides = [o.lane - 1, o.lane + 1].filter((l) => l >= 0 && l < 4); if (Math.random() < 0.5) sides.reverse();
+      const nl = sides.find((l) => clear(l) && ahead(LANES[l])[0] > gap + 20);
+      if (nl !== undefined) { o.lane = nl; o.changeT = 1.4; }
+      else o.changeT = 0.3;
+    }
+    let want = o.vt * (0.86 + Math.max(-0.1, Math.min(0.06, (S.dist - o.dist) / 400)));   // 76 % of its top speed far ahead, 92 % far behind
+    if (gap < look) want = Math.min(want, lead + Math.max(0, gap - 8) * 0.6);
+    if (o.speed < want) o.speed = Math.min(want, o.speed + o.A * Math.max(0, 1 - (o.speed / o.vt) ** 2) * dt);
+    else o.speed = Math.max(want, o.speed - Math.min(9, 2.5 + (o.speed - want) * 1.5) * dt);
+    o.brake = o.speed > want + 0.4 || gap < 12;
+    const vx = Math.max(-3.4, Math.min(3.4, (LANES[o.lane] - o.x) * 2.6));
+    o.x = Math.max(-ROAD_HALF + 1.1, Math.min(ROAD_HALF - 1.1, o.x + vx * dt)); o.yaw = Math.atan2(vx, Math.max(8, o.speed));
+    // a traffic car it still touches (one that changed lane onto it): it backs off behind it or is pushed aside
+    for (const c of S.traffic) {
+      const u = c.userData, ox = Math.abs(c.position.x - o.x) - (u.w + 1.9) / 2, d = zO - c.position.z, oz = Math.abs(d) - (u.l + 4.4) / 2;
+      if (ox < -0.1 && oz < -0.1) { if (-oz < -ox) { if (d > 0) { o.dist -= -oz; o.speed = Math.min(o.speed, u.speed); } } else o.x += (Math.sign(o.x - c.position.x) || 1) * -ox; }
+    }
+    o.dist += o.speed * dt;
+    if (o.dist >= RACE.len && !o.done) o.done = RC.t;
+  }
+  // over the line: first or second, the time, the gap (when we win, the time it still needs at its speed)
+  function raceFinish() {
+    const o = RC.o;
+    RC.won = !o.done; RC.time = RC.t;
+    RC.gapT = RC.won ? (RACE.len - o.dist) / Math.max(8, o.speed) : -(RC.t - o.done);
+    if (!raceBest || RC.time < raceBest) { raceBest = RC.time; try { localStorage.setItem(RACE.key, String(raceBest)); } catch (e) {} refreshBest(); }
+    RC.finT = 2.2; S.slowmo = 0;
+    setMode('finish');
+    toast((RC.won ? 'VICTOIRE !' : '2e PLACE') + '<small>' + fmtRace(RC.time) + '</small>', 2000);
+    tone(RC.won ? 660 : 330, 0.5, 'triangle', 0.08); if (RC.won) setTimeout(() => tone(990, 0.5, 'triangle', 0.08), 180);
+    buzz(RC.won ? [60, 40, 60, 40, 120] : 120);
+  }
+  function raceOver(crashed) {
+    $('rTitle').textContent = crashed ? 'ACCIDENT !' : RC.won ? 'VICTOIRE !' : '2e PLACE';
+    $('rTitle').className = 'crash-title' + (crashed ? '' : RC.won ? ' win' : ' second');
+    $('rVs').textContent = RACE.title + ' · contre ' + RC.o.name;
+    $('rTime').textContent = crashed ? '–' : fmtRace(RC.time);
+    $('rGapEnd').textContent = crashed ? '–' : (RC.gapT >= 0 ? '+' : '−') + Math.abs(RC.gapT).toFixed(1).replace('.', ',') + ' s';
+    $('rTop').textContent = Math.round(S.top * 3.6); $('rNear').textContent = S.near;
+    $('rBest').textContent = 'Record : ' + (raceBest ? fmtRace(raceBest) : '–');
+    setMode('raceover');
+  }
+  // the race's own readings, once a frame: position, gap, distance left, both cars on the bar
+  function raceHud() {
+    const o = RC.o, d = S.dist - o.dist, g = $('rGap');
+    $('rPos').textContent = d >= 0 ? '1er' : '2e';
+    g.textContent = (d >= 0 ? '+' : '−') + Math.abs(Math.round(d)) + ' m'; g.className = 'value ' + (d >= 0 ? 'ahead' : 'behind');
+    $('rLeft').textContent = (Math.max(0, RACE.len - S.dist) / 1000).toFixed(2).replace('.', ',');
+    $('rbMe').style.left = Math.min(100, S.dist / RACE.len * 100).toFixed(1) + '%';
+    $('rbOpp').style.left = Math.min(100, o.dist / RACE.len * 100).toFixed(1) + '%';
   }
 
   // ---------------- UI ----------------
   const toastEl = $('toast'); let toastTimer;
   function toast(html, ms = 900) { toastEl.innerHTML = html; toastEl.classList.add('show'); clearTimeout(toastTimer); toastTimer = setTimeout(() => toastEl.classList.remove('show'), ms); }
   const hudEl = document.querySelector('.hud');
+  // modes: menu (car park), play, paused, crash, over; the race adds countdown, finish (rolling past the line), raceover
   function setMode(m) {
     S.mode = m;
-    $('menu').hidden = m !== 'menu'; $('pauseScreen').hidden = m !== 'paused'; $('overScreen').hidden = m !== 'over'; $('infoScreen').hidden = true;
+    $('menu').hidden = m !== 'menu'; $('pauseScreen').hidden = m !== 'paused'; $('overScreen').hidden = m !== 'over'; $('raceScreen').hidden = m !== 'raceover'; $('infoScreen').hidden = true;
     hudEl.hidden = m === 'menu'; stage.classList.toggle('garage', m === 'menu');
-    const showTouch = isTouch && m === 'play';
+    $('launch').hidden = m !== 'countdown';
+    const showTouch = isTouch && (m === 'play' || m === 'countdown');
     $('touchL').hidden = $('touchR').hidden = $('nosBtn').hidden = !showTouch;
     if (m !== 'play') Object.keys(input).forEach((k) => (input[k] = false));
     applyCam();
@@ -2469,7 +2798,7 @@ body {
     const inside = S.cam === 'cockpit' && S.mode !== 'menu';
     playerCar.visible = !inside;
   }
-  function refreshBest() { $('bestMenu').textContent = 'Record : ' + best.toLocaleString('fr-FR'); $('bestOver').textContent = 'Record : ' + best.toLocaleString('fr-FR'); }
+  function refreshBest() { $('bestMenu').textContent = 'Record : ' + best.toLocaleString('fr-FR') + (raceBest ? ' · course ' + fmtRace(raceBest) : ''); $('bestOver').textContent = 'Record : ' + best.toLocaleString('fr-FR'); }
   refreshBest();
   if (isTouch) $('ctrlText').textContent = 'Pose le pouce en bas à gauche et glisse à gauche ou à droite pour tourner. GAZ et FREIN à droite, NOS pour la nitro.';
 
@@ -2506,6 +2835,7 @@ body {
     }
   }
   function gameOver() {
+    if (RC.on) return raceOver(true);                          // a crash in the race: the race's own result
     const sc = Math.floor(S.score);
     if (sc > best) { best = sc; saveBest(); }
     refreshBest();
@@ -2527,14 +2857,21 @@ body {
     } catch (e) {}
   };
   // from the car park, JOUER drives off in the car shown (once everything has loaded, and only a delivered car)
-  const start = () => {
+  // COURSE: the race, in the same car (from the car park, the car shown; after a race, again)
+  const start = (race) => {
     if (!cockpit) return;
     if (S.mode === 'menu') { if (!modelsReady || !CARS[G.idx].ready) return; useCar(G.idx); }
-    tryLandscape(); ensureAudio(); newGame();
+    tryLandscape(); ensureAudio(); newGame(race === true);
   };
-  $('playBtn').addEventListener('click', start);
-  $('againBtn').addEventListener('click', start);
-  $('resumeBtn').addEventListener('click', () => setMode('play'));
+  const startRace = () => start(true);
+  $('playBtn').addEventListener('click', () => start());
+  $('againBtn').addEventListener('click', () => start());
+  $('raceBtn').addEventListener('click', startRace);
+  $('raceAgain').addEventListener('click', startRace);
+  // pause and back: the countdown, if it was running, goes on where it stopped
+  const pauseGame = () => { if (S.mode === 'play' || S.mode === 'countdown') { RC.resume = S.mode; setMode('paused'); } };
+  const resumeGame = () => { if (S.mode === 'paused') setMode(RC.resume || 'play'); };
+  $('resumeBtn').addEventListener('click', resumeGame);
   // the car park: arrows, dots and swipes along the row, rules and credits, and the way back from a game
   const pickSnd = () => { ensureAudio(); tone(380, 0.06, 'triangle', 0.04); };
   $('carPrev').addEventListener('click', () => { if (G.go(-1)) pickSnd(); });
@@ -2552,9 +2889,9 @@ body {
   menuEl.addEventListener('pointerup', gUp); menuEl.addEventListener('pointercancel', gUp); menuEl.addEventListener('lostpointercapture', gUp);
   $('infoBtn').addEventListener('click', () => { $('infoScreen').hidden = false; });
   $('infoClose').addEventListener('click', () => { $('infoScreen').hidden = true; });
-  const toGarage = () => { G.set(S.car, true); setMode('menu'); };
-  $('pauseGarage').addEventListener('click', toGarage); $('overGarage').addEventListener('click', toGarage);
-  $('pauseBtn').addEventListener('click', () => { if (S.mode === 'play') setMode('paused'); else if (S.mode === 'paused') setMode('play'); });
+  const toGarage = () => { endRace(); G.set(S.car, true); setMode('menu'); };
+  $('pauseGarage').addEventListener('click', toGarage); $('overGarage').addEventListener('click', toGarage); $('raceGarage').addEventListener('click', toGarage);
+  $('pauseBtn').addEventListener('click', () => { if (S.mode === 'paused') resumeGame(); else pauseGame(); });
   $('soundBtn').addEventListener('click', () => { ensureAudio(); soundOn = !soundOn; $('soundBtn').style.opacity = soundOn ? 1 : 0.45; });
   const toggleCam = () => { S.camPicked = true; S.cam = S.cam === 'cockpit' ? 'chase' : 'cockpit'; applyCam(); };
   $('camBtn').addEventListener('click', toggleCam);
@@ -2563,7 +2900,7 @@ body {
   loadModels();
   $('hqBtn').addEventListener('click', () => { hq = !hq; try { localStorage.setItem('corniche-hq', hq ? '1' : '0'); } catch (e) {} if (hq) buildPost(); applyQuality(); });
   applyQuality();
-  document.addEventListener('visibilitychange', () => { if (document.hidden && S.mode === 'play') setMode('paused'); });
+  document.addEventListener('visibilitychange', () => { if (document.hidden) pauseGame(); });
 
   const KEYMAP = { arrowup: 'gas', w: 'gas', z: 'gas', arrowdown: 'brake', s: 'brake', arrowleft: 'left', a: 'left', q: 'left', arrowright: 'right', d: 'right', shift: 'nitro', n: 'nitro' };
   addEventListener('keydown', (e) => {
@@ -2572,8 +2909,11 @@ body {
     if (KEYMAP[k]) input[KEYMAP[k]] = true;
     if (k === ' ') input.brake = true;
     if (k === 'c') toggleCam();
-    if ((k === 'p' || k === 'escape') && (S.mode === 'play' || S.mode === 'paused')) setMode(S.mode === 'play' ? 'paused' : 'play');
-    if (k === 'enter' && (S.mode === 'menu' || S.mode === 'over') && !(document.activeElement && document.activeElement.tagName === 'BUTTON')) start();   // (a focused button takes Enter itself)
+    if (k === 'p' || k === 'escape') { if (S.mode === 'paused') resumeGame(); else pauseGame(); }
+    const noFocus = !(document.activeElement && document.activeElement.tagName === 'BUTTON');   // (a focused button takes Enter itself)
+    if (k === 'enter' && (S.mode === 'menu' || S.mode === 'over') && noFocus) start();
+    if (k === 'enter' && S.mode === 'raceover' && noFocus) startRace();
+    if (k === 'r' && S.mode === 'menu' && $('infoScreen').hidden && !e.repeat) startRace();
     if (S.mode === 'menu' && $('infoScreen').hidden && !e.repeat) { const d = k === 'arrowleft' || k === 'q' || k === 'a' ? -1 : k === 'arrowright' || k === 'd' ? 1 : 0; if (d && G.go(d)) pickSnd(); }
     if (k === 'escape' && !$('infoScreen').hidden) $('infoScreen').hidden = true;
     if (k === 'f' && !e.repeat) toggleFullscreen();
@@ -2773,6 +3113,7 @@ body {
   const sunLocal = new THREE.Vector3(), qInv = new THREE.Quaternion();
   function renderAll(now) {
     if (S.mode === 'menu') { G.render(); return; }          // the car park has its own scene
+    syncTraffic();                                           // traffic cars, where the bend has just put them, into their batches
     const n = (renderAll.n = (renderAll.n || 0) + 1);
     const inside = S.cam === 'cockpit' && S.mode !== 'menu';
     // shadows are redrawn every frame: the world slides past the car, and a shadow map refreshed only every
@@ -2784,9 +3125,9 @@ body {
       mirror.cam.position.set(S.x - 0.1, 1.3, 0.4);
       mirror.cam.lookAt(S.x - 0.1, 1.05, 40);
       const su = renderer.shadowMap.needsUpdate, vis = playerCar.visible;
-      renderer.shadowMap.needsUpdate = false; playerCar.visible = false;
+      renderer.shadowMap.needsUpdate = false; playerCar.visible = false; trafficAheadHidden(true);
       renderer.setRenderTarget(mirror.rt); renderer.render(scene, mirror.cam); renderer.setRenderTarget(null);
-      renderer.shadowMap.needsUpdate = su; playerCar.visible = vis; mirror.ready = true;
+      renderer.shadowMap.needsUpdate = su; playerCar.visible = vis; trafficAheadHidden(false); mirror.ready = true;
     }
     if (hq && post) {
       const k = Math.max(0, (S.speed - 30) / 40);
@@ -2825,6 +3166,7 @@ body {
     const band = Math.min(1, Math.max(0, (S.rpm - 1500) / 5200));
     const torque = 0.7 + 0.3 * Math.sin(band * Math.PI);
     let a = S.shiftT > 0 ? 0 : S.thr * GEAR_PULL[S.gear] * torque;
+    if (RC.slip > 0) { RC.slip -= dt; a *= 0.45; }                // a race start in the red: the wheels spin a moment
     if (S.nitroOn) { a += 6.5; S.nitro = Math.max(0, S.nitro - 0.22 * dt); }
     a -= 0.00042 * S.speed * S.speed + 0.22;                 // air and rolling drag
     if (S.thr < 0.05) a -= 0.5 + (S.rpm / 7000) * 1.5;      // engine braking
@@ -2835,6 +3177,7 @@ body {
     S.speed = Math.max(0, S.speed + a * dt);
     S.acc += (a - S.acc) * (1 - Math.exp(-5 * dt));
     S.screech = S.brk > 0.65 && S.speed > 15 ? Math.min(1, (S.speed - 15) / 22) * S.brk : Math.max(0, S.screech - dt * 5);
+    if (RC.slip > 0) S.screech = Math.max(S.screech, 0.8);
     S.top = Math.max(S.top, S.speed);
     setTails(playerCar, S.brk > 0.15);
 
@@ -2888,6 +3231,8 @@ body {
 
     // scenery
     scrollWorld(dz);
+    // the race: the race clock, the other driver, the line
+    if (RC.on) { RC.t += dt; oppStep(dt); if (S.dist >= RACE.len) { raceFinish(); return; } }
 
     // traffic
     let danger = 0;
@@ -2954,6 +3299,23 @@ body {
       }
       if (c.position.z > 30 || c.position.z < -460) { scene.remove(c); S.traffic.splice(i, 1); }
     }
+    // the other driver, by the traffic's rules: our nose into its back ends the race; a knock from the side, or it
+    // running into our back, shakes both cars and pushes them apart
+    if (RC.on && RC.o) {
+      const o = RC.o, d = S.dist - o.dist, ox = Math.abs(o.x - S.x) - 1.9, oz = Math.abs(d) - 4.4;
+      if (o.hitT > 0) o.hitT -= dt;
+      if (ox < -0.12 && oz < -0.15) {
+        const endOn = -oz < -ox, first = !(o.hitT > 0);
+        if (endOn && d < 0) { crash(); return; }
+        if (endOn) { o.dist = S.dist - 4.65; o.speed = Math.min(o.speed, S.speed - 2); if (first) { S.speed += 1; S.hvz -= 0.25; } }
+        else {
+          const side = Math.sign(S.x - o.x) || 1, push = -ox + 0.05;
+          S.x += side * push * 0.6; o.x -= side * push * 0.4;
+          if (first) { S.lat = side * Math.max(2.2, Math.abs(S.lat) * 0.6); S.rollV += side * 0.6; S.speed *= 0.95; o.speed *= 0.95; }
+        }
+        if (first) { o.hitT = 0.35; S.shake = Math.max(S.shake, 0.45); S.combo = 0; noise(0.25, 0.32); tone(110, 0.18, 'sawtooth', 0.08, -30); buzz([70, 30, 50]); }
+      }
+    }
     S.danger += (danger - S.danger) * (1 - Math.exp(-10 * dt));
     if (S.traffic.length < trafficTarget()) spawnCar(S.speed > 15 ? 230 : 120, 330);
 
@@ -2985,6 +3347,9 @@ body {
   }
   const steerQ = new THREE.Quaternion(), ZAXIS = new THREE.Vector3(0, 0, 1), flipBtn = $('flipBtn');
   function frame(now) {
+    // the car park at rest is drawn every other display frame (30 a second): half the work for the same picture.
+    // The skipped frame's time counts in the next one, and the resolution adapter still sees display frames
+    if (S.mode === 'menu' && G.idle() && (frame.skip = !frame.skip)) { frame.prev = now; requestAnimationFrame(frame); return; }
     const rawDt = Math.min(0.25, Math.max(0, (now - last) / 1000)); last = now;
     const dt = Math.min(0.05, rawDt);
     if (S.slowCd > 0) S.slowCd -= dt;
@@ -2992,6 +3357,7 @@ body {
     if (S.slowmo > 0 && S.mode === 'play') { S.slowmo -= dt; ts = 0.33; }
     canvas.style.filter = ts < 1 ? 'saturate(0.55) contrast(1.15)' : '';
     if (S.kick > 0) S.kick = Math.max(0, S.kick - dt * 4);
+    if (S.mode === 'countdown') raceCountdown(dt);
     if (S.mode === 'play') { let rem = rawDt * ts; while (rem > 1e-6 && S.mode === 'play') { const h = Math.min(rem, 1 / 60); update(h); bodyStep(h); rem -= h; } }
     if (S.mode === 'crash') {
       S.speed *= Math.pow(0.02, dt); S.crashT -= dt; S.aLat *= Math.pow(0.05, dt); S.acc *= Math.pow(0.05, dt); bodyStep(dt);
@@ -3000,16 +3366,35 @@ body {
       for (const c of S.traffic) c.position.z += (S.speed - c.userData.speed) * dt;
       if (S.crashT <= 0) gameOver();
     }
-    setAudio(S.rpm, S.speed, S.mode === 'play' ? Math.max(S.thr, S.blip > 0 ? 0.7 : 0) : 0, S.mode === 'play' ? S.screech : 0, S.mode === 'play' || S.mode === 'crash');
+    if (S.mode === 'finish') {                                 // past the line: the car rolls on and slows, then the result
+      RC.finT -= dt; S.speed *= Math.pow(0.45, dt); S.aLat *= Math.pow(0.05, dt); S.acc *= Math.pow(0.05, dt); bodyStep(dt);
+      const dz = S.speed * dt; S.dist += dz;
+      scrollWorld(dz);
+      for (const c of S.traffic) c.position.z += (S.speed - c.userData.speed) * dt;
+      if (RC.o) RC.o.dist += RC.o.speed * dt;
+      if (RC.finT <= 0) raceOver(false);
+    }
+    const live = S.mode === 'play' || S.mode === 'countdown';   // (in the countdown the engine revs on the spot)
+    setAudio(S.rpm, S.speed, live ? Math.max(S.thr, S.blip > 0 ? 0.7 : 0) : 0, S.mode === 'play' ? S.screech : 0, live || S.mode === 'crash' || S.mode === 'finish');
     updateBend(S.dist);
     { const hd = ROUTE.head(S.dist); sky.rotation.y = hd; cloudG.rotation.y = hd; SUN.copy(SUN0).applyAxisAngle(YUP, hd); }
 
     playerCar.position.set(S.x, S.heave, 0);
     playerCar.rotation.set(S.pitch, -S.yaw, S.roll);
+    cabinLight.position.set(S.x, S.heave + 1.16, -0.36);
     const rig = CARS[S.car];                                   // the car driven: its wheels turn and steer
     if (rig.wheels && playerCar === rig.root) {
       for (const w of rig.wheels) { w.spinP.rotation.x += S.speed * rawDt / rig.wheelR; if (w.front) w.steerP.rotation.y = -S.steer * 0.35; }
       if (rig.steer) rig.steer.piv.quaternion.copy(rig.steer.base).multiply(steerQ.setFromAxisAngle(ZAXIS, -S.steer * 2.0));
+    }
+    if (RC.on && RC.o) {                                       // the race on the road: the other car, the line, the arch
+      const o = RC.o, z = S.dist - o.dist;
+      o.root.position.set(o.x, 0, z); o.root.rotation.set(0, -o.yaw, 0); o.root.visible = z > -460 && z < 60;
+      setTails(o.root, o.brake);
+      if (o.car && o.car.wheels) for (const w of o.car.wheels) { w.spinP.rotation.x += o.speed * rawDt / o.car.wheelR; if (w.front) w.steerP.rotation.y = -o.yaw * 4; }
+      raceProps.start.position.set(0, 0, S.dist - 3.2); raceProps.start.visible = S.dist < 90;
+      raceProps.finish.position.set(0, 0, S.dist - RACE.len); raceProps.finish.visible = RACE.len - S.dist < 700;
+      raceHud();
     }
     const portrait = camera.aspect < 1;
     if (S.mode === 'menu') {
@@ -3055,7 +3440,7 @@ body {
     updateDanger(dt, now);
     palmLOD();
     adaptResolution(Math.min(100, now - (frame.prev || now))); frame.prev = now;
-    const fh = !(rotOn && S.mode !== 'play'); if (flipBtn.hidden !== fh) flipBtn.hidden = fh;
+    const fh = !(rotOn && S.mode !== 'play' && S.mode !== 'countdown' && S.mode !== 'finish'); if (flipBtn.hidden !== fh) flipBtn.hidden = fh;
     const onRoad = S.mode !== 'menu';                        // nothing to bend in the car park
     if (onRoad) bendForRender(true);
     try { renderAll(now); } finally { if (onRoad) bendForRender(false); }
