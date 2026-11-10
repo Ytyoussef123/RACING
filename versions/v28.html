@@ -2140,7 +2140,7 @@ body {
     addBlob(root).position.z = 0.1;
     root.rotation.order = 'YXZ';
     hero.root = root; hero.model = model;
-    Object.assign(CARS[0], { root, model, wheels: hero.wheels, steer: hero.steer, wheelR: 0.36 });
+    Object.assign(CARS[0], { root, model, wheels: hero.wheels, steer: hero.steer, wheelR: 0.36, warm: false });
     if (S.car === 0) { scene.remove(playerCar); playerCar = root; scene.add(root); }   // (after a slow load, another car may be on the road)
   }
   // another car of the car park, from its model made by tools/carpack.mjs: real size, nose toward +z, tyres on y = 0,
@@ -2215,6 +2215,7 @@ body {
   // shaders prepared before they are needed: compiling one the first time it is drawn can freeze a phone for a moment
   // (the start of a game, the first traffic car, a car shown in chase view). The road scene for the screen and for the
   // mirror's picture (with the race's line and arch), the cockpit; with a car, that car's materials on the road
+  // (warmCars, below, calls it for each car of the car park)
   function warmShaders(car) {
     const extra = car ? [car] : [raceProps.start, raceProps.finish];
     try {
@@ -2222,7 +2223,24 @@ body {
       renderer.compile(scene, camera);
       renderer.setRenderTarget(mirror.rt); renderer.compile(scene, mirror.cam); renderer.setRenderTarget(null);
       if (cockpit && !car) renderer.compile(cockpit.scene, cockpit.cam);
-    } catch (e) { console.error(e); } finally { for (const o of extra) if (o !== playerCar) scene.remove(o); }
+      // and once, while loading, one picture of the road into the mirror's small target (the first mirror picture
+      // draws over it): the sun's shadow pass prepares its own shaders, with a traffic batch shown for it, and the
+      // road's meshes and textures go to the graphics card now rather than in the first frames of the first game
+      if (!car) {
+        const p = TI.ready ? TI.tpl[0][1][0] : null;
+        if (p) { p.im.count = 1; p.im.visible = true; }
+        renderer.shadowMap.needsUpdate = true; renderer.setRenderTarget(mirror.rt); renderer.render(scene, camera); renderer.setRenderTarget(null);
+        if (p) { p.im.count = 0; p.im.visible = false; }
+      }
+    } catch (e) { console.error(e); } finally { for (const o of extra) if (o !== playerCar) scene.remove(o); renderer.setRenderTarget(null); }
+  }
+  // the cars of the car park, ready to be driven and to be shown: their shaders on the road and under the car park's
+  // own lights (else built the first time a car slides into view, a stall in mid-swipe). Only in the car park: a car
+  // that comes in during a game waits for the way back, a freeze in the middle of a game being worse
+  function warmCars() {
+    if (S.mode !== 'menu') return;
+    for (const c of CARS) if (c.ready && c.root && !c.warm) { c.warm = true; warmShaders(c.root); }
+    try { renderer.compile(G.scene, G.cam); } catch (e) { console.error(e); }
   }
   function buildTraffic(model) {
     const holder = new THREE.Group(); holder.add(model); holder.updateMatrixWorld(true);
@@ -2302,7 +2320,7 @@ body {
     const loadCars = (i = 1) => {
       const c = CARS[i]; if (!c) return;
       if (!c.file || c.ready) return loadCars(i + 1);
-      loader.load(c.file, (g) => { try { setupCar(c, g); G.reveal(i); warmShaders(c.root); } catch (e) { console.error(e); } garageUI(); loadCars(i + 1); },
+      loader.load(c.file, (g) => { try { setupCar(c, g); G.reveal(i); warmCars(); } catch (e) { console.error(e); } garageUI(); loadCars(i + 1); },
         (e) => { c.pct = e.total ? e.loaded / e.total : 0; if (G.idx === i) garageUI(); }, () => { c.failed = true; garageUI(); loadCars(i + 1); });
     };
     // ready: the standard car comes out from under its cover in the car park, and the play button follows the car shown
@@ -2310,7 +2328,7 @@ body {
       if (done) return; done = true; if (!cockpit) useCockpit(newCockpit(null, null));
       if (!CARS[0].root) CARS[0].root = playerCar;             // (the simple car, if its model failed)
       warmShaders();                                           // (while the button still reads CHARGEMENT)
-      CARS[0].ready = modelsReady = true; G.reveal(0); garageUI(); applyCam();
+      CARS[0].ready = modelsReady = true; G.reveal(0); garageUI(); applyCam(); warmCars();
       loadCars();
     };
     // car interior (one JSON file: geometry, baked shading, anchors for gauges and mirror) and the driver's arms
@@ -2327,7 +2345,7 @@ body {
       if (t.status === 'fulfilled') { const m = t.value.scene; fixMaterials(m, trafficGlass); m.rotation.y = Math.PI; m.position.set(0, 0.16, 0.24); MODELS.traffic = m; try { buildTraffic(m); } catch (e) { console.error(e); } }
       if (h.status === 'fulfilled') { try { setupHero(h.value); } catch (e) { console.error(e); } }
       G.reveal(0);                                             // (after a slow load, swaps the stand-in car for the real one)
-      finish();
+      if (done) warmCars(); else finish();                     // (and prepares the real one's shaders)
     });
   }
 
@@ -2663,6 +2681,7 @@ body {
     for (let k = 1; k < CARS.length && !c; k++) { const q = CARS[(S.car + k) % CARS.length]; if (q.ready && q.root && q.root !== playerCar) c = q; }
     const root = c ? c.root : makeCar(0x1f4e9e, 'car', true);
     if (!c) addBlob(root);
+    if (c && !c.warm) { c.warm = true; warmShaders(root); }    // (a car that came in during the last game: before the countdown)
     const st = (c || CARS[0]).stats, vt = st.vmax / 3.6, A = vt * Math.log((vt + 27.78) / (vt - 27.78)) / (2 * st.t100);
     root.rotation.order = 'YXZ'; root.rotation.set(0, 0, 0); root.visible = true; scene.add(root);
     return { root, car: c, name: c ? c.name : 'IA', dist: 0, speed: 0, x: LANES[1], lane: 1, vt, A, brake: false, changeT: 0, hitT: 0, yaw: 0, done: 0 };
@@ -2896,7 +2915,7 @@ body {
   menuEl.addEventListener('pointerup', gUp); menuEl.addEventListener('pointercancel', gUp); menuEl.addEventListener('lostpointercapture', gUp);
   $('infoBtn').addEventListener('click', () => { $('infoScreen').hidden = false; });
   $('infoClose').addEventListener('click', () => { $('infoScreen').hidden = true; });
-  const toGarage = () => { endRace(); G.set(S.car, true); setMode('menu'); };
+  const toGarage = () => { endRace(); G.set(S.car, true); setMode('menu'); warmCars(); };
   $('pauseGarage').addEventListener('click', toGarage); $('overGarage').addEventListener('click', toGarage); $('raceGarage').addEventListener('click', toGarage);
   $('pauseBtn').addEventListener('click', () => { if (S.mode === 'paused') resumeGame(); else pauseGame(); });
   $('soundBtn').addEventListener('click', () => { ensureAudio(); soundOn = !soundOn; $('soundBtn').style.opacity = soundOn ? 1 : 0.45; });
