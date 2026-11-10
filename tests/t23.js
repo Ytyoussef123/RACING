@@ -15,7 +15,7 @@ const serve = require('./serve.js');
     if (process.argv[4] === 'nointerior') await p.route('**/interior.json', (r) => r.abort());
     const t0 = Date.now();
     await p.goto(url + 'test4.html');
-    await p.waitForFunction(() => document.getElementById('playBtn').textContent === 'JOUER', null, { timeout: 120000 });
+    await p.waitForFunction(() => (b => b.dataset.ready === '1' || b.textContent === 'JOUER')(document.getElementById('playBtn')), null, { timeout: 120000 });
     console.log(name, 'ready after', Date.now() - t0, 'ms, imported interior:', await p.evaluate(() => __ck && __ck.imported));
     await p.click('#playBtn'); await p.waitForTimeout(300);
     if (await p.evaluate(() => __S.cam) !== 'cockpit') await p.click('#camBtn');

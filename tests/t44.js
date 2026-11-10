@@ -7,7 +7,7 @@ const serve = require('./serve-csp.js');
   const p = await (await b.newContext({ ...devices['Pixel 7 landscape'], deviceScaleFactor: 1 })).newPage(); const errs = [];
   p.on('pageerror', e => errs.push(e.message));
   await p.goto(url + 'test4.html');
-  await p.waitForFunction(() => document.getElementById('playBtn').textContent === 'JOUER', null, { timeout: 150000 });
+  await p.waitForFunction(() => (b => b.dataset.ready === '1' || b.textContent === 'JOUER')(document.getElementById('playBtn')), null, { timeout: 150000 });
   for (const kind of ['rear-end (our nose into its back)', 'side swipe from the left', 'side swipe from the right', 'car behind runs into us', 'corner clip while changing lane']) {
     await p.click('#playBtn').catch(() => {}); await p.waitForTimeout(300);
     const r = await p.evaluate((kind) => {

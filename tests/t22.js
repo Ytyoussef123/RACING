@@ -7,7 +7,7 @@ const serve = require('./serve.js');
   const ctx = await b.newContext({ viewport: { width: 640, height: 360 } }); const p = await ctx.newPage();
   p.on('pageerror', e => console.log('pageerror', e.message));
   await p.goto(url + 'test4.html');
-  await p.waitForFunction(() => document.getElementById('playBtn').textContent === 'JOUER', null, { timeout: 120000 });
+  await p.waitForFunction(() => (b => b.dataset.ready === '1' || b.textContent === 'JOUER')(document.getElementById('playBtn')), null, { timeout: 120000 });
   await p.click('#playBtn'); await p.waitForTimeout(300);
   const res = await p.evaluate(() => {
     const S = __S, I = __input, out = [];

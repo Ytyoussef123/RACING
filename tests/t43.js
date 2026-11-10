@@ -8,7 +8,7 @@ const serve = require('./serve-csp.js');
     const p = await (await b.newContext({ ...devices['Pixel 7 landscape'], deviceScaleFactor: 1 })).newPage(); const errs = [];
     p.on('pageerror', e => errs.push(e.message));
     await p.goto(url + page);
-    await p.waitForFunction(() => document.getElementById('playBtn').textContent === 'JOUER', null, { timeout: 150000 });
+    await p.waitForFunction(() => (b => b.dataset.ready === '1' || b.textContent === 'JOUER')(document.getElementById('playBtn')), null, { timeout: 150000 });
     await p.click('#playBtn'); await p.waitForTimeout(400);
     const r = await p.evaluate(() => {
       const S = __S, I = __input;

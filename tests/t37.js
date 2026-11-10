@@ -7,7 +7,7 @@ const serve = require('./serve-csp.js');
   const p = await (await b.newContext({ viewport: { width: 900, height: 420 } })).newPage(); const errs = [];
   p.on('pageerror', e => errs.push(e.message));
   await p.goto(url + 'test4.html');
-  await p.waitForFunction(() => document.getElementById('playBtn').textContent === 'JOUER', null, { timeout: 150000 });
+  await p.waitForFunction(() => (b => b.dataset.ready === '1' || b.textContent === 'JOUER')(document.getElementById('playBtn')), null, { timeout: 150000 });
   await p.click('#playBtn'); await p.waitForTimeout(300);
   const r = await p.evaluate(() => {
     const S = __S, I = __input, out = [];

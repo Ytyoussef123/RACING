@@ -9,7 +9,7 @@ const serve = require('./serve-csp.js');
     p.on('pageerror', e => errs.push(e.message));
     await p.addInitScript(() => { try { localStorage.setItem('corniche-hq', '0'); } catch (e) {} });
     await p.goto(url + 'test4.html');
-    await p.waitForFunction(() => document.getElementById('playBtn').textContent === 'JOUER', null, { timeout: 150000 });
+    await p.waitForFunction(() => (b => b.dataset.ready === '1' || b.textContent === 'JOUER')(document.getElementById('playBtn')), null, { timeout: 150000 });
     await p.click('#playBtn'); await p.waitForTimeout(400);
     if (await p.evaluate(() => __S.cam) !== 'cockpit') await p.click('#camBtn');
     await p.evaluate(() => { __S.dist = 2300; __S.speed = 0; __S.placeN = 99; });

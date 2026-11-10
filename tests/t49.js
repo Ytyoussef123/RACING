@@ -10,7 +10,7 @@ const serve = require('./serve-csp.js');
   p.on('pageerror', (e) => errs.push('pageerror ' + e.message)); p.on('console', (m) => { if (m.type() === 'error' && !/fonts.googleapis/.test(m.text())) errs.push(m.text().slice(0, 160)); });
   await p.addInitScript(() => { try { localStorage.removeItem('corniche-race1'); localStorage.removeItem('corniche-car'); } catch (e) {} });
   await p.goto(url + 'test4.html');
-  await p.waitForFunction(() => document.getElementById('playBtn').textContent === 'JOUER' && __CARS.every((c) => c.ready), null, { timeout: 150000 });
+  await p.waitForFunction(() => (b => b.dataset.ready === '1' || b.textContent === 'JOUER')(document.getElementById('playBtn')) && __CARS.every((c) => c.ready), null, { timeout: 150000 });
   const out = {};
   try {
   // COURSE: countdown, race readings shown, the other driver on the grid beside us

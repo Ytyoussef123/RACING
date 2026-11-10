@@ -13,14 +13,17 @@ const serve = require('./serve-csp.js');
     ['narrow', { viewport: { width: 420, height: 760 } }],
     ['phoneUp', { ...devices['Pixel 7'], deviceScaleFactor: 1 }],
   ];
-  const card = (p) => p.evaluate(() => ({ name: document.getElementById('carName').textContent, btn: document.getElementById('playBtn').textContent, dis: document.getElementById('playBtn').disabled }));
+  // the card and the two games: LIBRE ready, COURSE ready, both buttons the same size
+  const card = (p) => p.evaluate(() => { const b = document.getElementById('playBtn'), r = document.getElementById('raceBtn');
+    return { name: document.getElementById('carName').textContent, btn: b.textContent, ready: b.dataset.ready === '1', dis: b.disabled, race: !r.disabled,
+      same: b.offsetWidth === r.offsetWidth && b.offsetHeight === r.offsetHeight, mode: document.querySelector('.g-mode').textContent }; });
   for (const [name, ctx] of confs) {
     if (process.argv[2] && process.argv[2] !== name) continue;
     const p = await (await b.newContext(ctx)).newPage(); const errs = [];
     p.on('pageerror', e => errs.push('pageerror ' + e.message)); p.on('console', m => { if (m.type() === 'error' && !/fonts.googleapis/.test(m.text())) errs.push(m.text()); });
     await p.addInitScript(() => { try { localStorage.removeItem('corniche-car'); } catch (e) {} });
     await p.goto(url + 'test4.html');
-    await p.waitForFunction(() => document.getElementById('playBtn').textContent === 'JOUER', null, { timeout: 150000 });
+    await p.waitForFunction(() => (b => b.dataset.ready === '1' || b.textContent === 'JOUER')(document.getElementById('playBtn')), null, { timeout: 150000 });
     await p.waitForFunction(() => __CARS.every((c) => c.ready), null, { timeout: 150000 });
     await p.waitForTimeout(4000);
     await p.screenshot({ path: `park-${name}-a.png` });
@@ -56,7 +59,7 @@ const serve = require('./serve-csp.js');
     await p.screenshot({ path: `park-${name}-e.png` });
     const over = await p.evaluate(() => !document.getElementById('overScreen').hidden);
     const stored = await p.evaluate(() => localStorage.getItem('corniche-car'));
-    const ok = s1.name === 'GIULIA GTAm' && s1.btn === 'JOUER' && !s1.dis && s2.name === 'SKYLINE R34' && giulia.mode === 'play' && giulia.car === 1 && giulia.onRoad && !giulia.others.some(Boolean)
+    const ok = s1.name === 'GIULIA GTAm' && s1.btn === 'LIBREsans course · points' && s1.ready && !s1.dis && s1.race && s1.same && s2.name === 'SKYLINE R34' && giulia.mode === 'play' && giulia.car === 1 && giulia.onRoad && !giulia.others.some(Boolean)
       && giulia.braking && giulia.tails > 0 && back.mode === 'menu' && !back.hud && back.name === 'GIULIA GTAm' && r34.car === 2 && r34.onRoad && r34.giuliaGone && r34.wheelsTurn === 4 && over && stored === 'r34';
     console.log(name, ok ? 'PASS' : 'FAIL', JSON.stringify({ rot, s1, s2, giulia, back, r34, over, stored }), errs.length ? 'ERR ' + errs.join(' | ') : 'no errors');
     await p.context().close();

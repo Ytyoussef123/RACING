@@ -11,7 +11,7 @@ const serve = require('./serve-csp.js');
     p.on('console', m => { if (m.type() === 'error' && !m.text().includes('GPU stall') && !m.text().includes('stylesheet')) errs.push(m.text().slice(0, 160)); });
     await p.addInitScript(() => { try { localStorage.setItem('corniche-hq', '0'); } catch (e) {} });
     await p.goto(url + 'test4.html');
-    await p.waitForFunction(() => document.getElementById('playBtn').textContent === 'JOUER', null, { timeout: 150000 });
+    await p.waitForFunction(() => (b => b.dataset.ready === '1' || b.textContent === 'JOUER')(document.getElementById('playBtn')), null, { timeout: 150000 });
     await p.click('#playBtn'); await p.waitForTimeout(300);
     if (await p.evaluate(() => __S.cam) !== 'cockpit') await p.click('#camBtn');
     await p.evaluate(() => { __S.traffic.forEach(c => __scene.remove(c)); __S.traffic.length = 0; __S.speed = 120 / 3.6; __S.gear = 4; __S.x = 1.75; });

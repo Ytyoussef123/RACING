@@ -17,7 +17,7 @@ const serve = require('./serve-csp.js');
       }
     }, mode);
     await p.goto(url + 'test4.html');
-    await p.waitForFunction(() => document.getElementById('playBtn').textContent === 'JOUER', null, { timeout: 150000 });
+    await p.waitForFunction(() => (b => b.dataset.ready === '1' || b.textContent === 'JOUER')(document.getElementById('playBtn')), null, { timeout: 150000 });
     const gfx = await p.evaluate(() => { const g = document.getElementById('gfxMode'); return g.hidden ? 'level 2 (full)' : g.textContent; });
     await p.click('#playBtn'); await p.waitForTimeout(400);
     if (await p.evaluate(() => __S.cam) !== 'cockpit') await p.click('#camBtn');

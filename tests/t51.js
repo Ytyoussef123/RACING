@@ -6,7 +6,7 @@ const [skill = 'good', N = '4', car = '0'] = process.argv.slice(2);
 (async () => {
   const { srv, url } = await serve(__dirname); const b = await chromium.launch({ args: ['--use-gl=swiftshader', '--enable-unsafe-swiftshader'] });
   const p = await (await b.newContext({ ...devices['Pixel 7 landscape'], deviceScaleFactor: 1 })).newPage();
-  await p.goto(url + 'test4.html'); await p.waitForFunction(() => document.getElementById('playBtn').textContent === 'JOUER' && __CARS.every((c) => c.ready), null, { timeout: 150000 });
+  await p.goto(url + 'test4.html'); await p.waitForFunction(() => (b => b.dataset.ready === '1' || b.textContent === 'JOUER')(document.getElementById('playBtn')) && __CARS.every((c) => c.ready), null, { timeout: 150000 });
   await p.evaluate((i) => __G.set(+i, true), car);
   const res = [];
   for (let r = 0; r < +N; r++) {

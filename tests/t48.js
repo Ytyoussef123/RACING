@@ -7,7 +7,7 @@ const serve = require('./serve-csp.js');
   const b = await chromium.launch({ args: ['--use-gl=swiftshader', '--enable-unsafe-swiftshader'] });
   const p = await (await b.newContext({ ...devices['Pixel 7 landscape'], deviceScaleFactor: 1 })).newPage();
   await p.goto(url + 'test4.html');
-  await p.waitForFunction(() => document.getElementById('playBtn').textContent === 'JOUER', null, { timeout: 150000 });
+  await p.waitForFunction(() => (b => b.dataset.ready === '1' || b.textContent === 'JOUER')(document.getElementById('playBtn')), null, { timeout: 150000 });
   await p.click('#playBtn'); await p.waitForTimeout(400);
   const r = await p.evaluate(() => __CARS.map((car, i) => {
     if (car.soon) return { id: car.id, soon: true };

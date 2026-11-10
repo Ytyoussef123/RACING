@@ -209,7 +209,7 @@ body {
 .g-dots button { width: 10px; height: 10px; padding: 0; border: 0; border-radius: 5px; background: rgba(255,255,255,0.38); cursor: pointer; transition: width 0.2s, background 0.2s; }
 .g-dots button.on { width: 28px; background: var(--sun); }
 .g-hint { font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); text-align: center; }
-.g-go { display: flex; flex-direction: column; align-items: flex-end; }
+.g-go { display: flex; flex-direction: column; align-items: stretch; }
 #playBtn.soon { background: #3a4350; color: #c3cad3; box-shadow: 0 6px 0 #232a33; cursor: default; }
 #stage.short .g-card { min-width: 200px; }
 #stage.short .g-tag { margin-bottom: 5px; }
@@ -219,7 +219,7 @@ body {
 #stage.tall .g-bottom { flex-direction: column; align-items: stretch; gap: 10px; }
 #stage.tall .g-card { width: 100%; min-width: 0; }
 #stage.tall .g-mid { padding: 0; }
-#stage.tall .g-go { align-items: stretch; }
+#stage.tall .g-mode { text-align: center; }
 #stage.tall .g-arrow { top: 38%; }
 .btn-row { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; align-items: center; }
 /* in the car park the turn-the-screen button sits at the top, out of the card's way */
@@ -249,9 +249,11 @@ body {
 .ln-text { margin-top: 7px; font-size: 12px; font-weight: 500; text-shadow: 0 1px 3px rgba(0,0,0,0.8); }
 .btn.race { background: var(--sea); color: #06323a; box-shadow: 0 6px 0 #0f6b78; }
 .btn.race:active { box-shadow: 0 2px 0 #0f6b78; }
-.btn.race small { display: block; margin-top: 1px; font: 600 11px var(--font-body); font-style: normal; letter-spacing: 0.04em; opacity: 0.85; }
+.btn small { display: block; margin-top: 1px; font: 600 11px var(--font-body); font-style: normal; letter-spacing: 0.04em; opacity: 0.85; }
 .btn:disabled { opacity: 0.55; cursor: default; }
+/* the two games in the car park, the race above the free game, both the same size */
 .g-go { gap: 12px; }
+.g-mode { text-align: right; margin-bottom: -5px; text-shadow: 0 1px 3px rgba(0,0,0,0.7); }
 .crash-title.win { color: var(--sun); } .crash-title.second { color: var(--ink); }
 #stage.short #raceScreen .stats { grid-template-columns: repeat(4, 1fr); }
 #stage.short .g-go .btn { padding: 7px 34px; font-size: 22px; }
@@ -338,8 +340,9 @@ body {
       <div class="g-hint" id="carHint">Glisse pour voir les voitures</div>
     </div>
     <div class="g-go">
+      <div class="kicker g-mode">Mode de jeu</div>
       <button class="btn race" id="raceBtn" type="button" disabled>COURSE<small>contre l'IA · 3,6 km</small></button>
-      <button class="btn" id="playBtn" type="button">JOUER</button>
+      <button class="btn" id="playBtn" type="button" disabled>CHARGEMENT<small>0 %</small></button>
     </div>
   </div>
 </div>
@@ -349,11 +352,12 @@ body {
     <h2 class="logo">CORNICHE<br><span>RUSH</span></h2>
     <p>La route longe l'océan, le trafic est dense. Roule vite, double au plus près, et ne touche personne.</p>
     <dl class="rules">
+      <dt>Course</dt><dd>Un contre un face à un pilote de l'IA, de Casa Port à la mosquée Hassan II (3,6 km), dans le trafic. Pendant le compte à rebours, accélère : l'aiguille dans le vert au départ, c'est un départ parfait ; dans le rouge, les roues patinent.</dd>
+      <dt>Libre</dt><dd>Le jeu sans course : roule aussi loin que tu peux dans le trafic et marque un maximum de points, jusqu'au premier accident.</dd>
       <dt>Risque</dt><dd>Plus tu vas vite, plus tes points sont multipliés : x2 à 100 km/h, x3 à 150, x4 à 200.</dd>
       <dt>Frôlement</dt><dd>Double une voiture de très près à plus de 90 km/h : bonus et nitro. À plus de 130 km/h, le temps ralentit.</dd>
       <dt>Accident</dt><dd>Rentrer dans l'arrière d'une voiture termine la partie. Un choc de côté, ou une voiture qui te touche par derrière, te secoue et te ralentit, mais tu continues.</dd>
-      <dt>Course</dt><dd>Un contre un face à un pilote de l'IA, de Casa Port à la mosquée Hassan II (3,6 km), dans le trafic. Pendant le compte à rebours, accélère : l'aiguille dans le vert au départ, c'est un départ parfait ; dans le rouge, les roues patinent.</dd>
-      <dt>Commandes</dt><dd id="ctrlText">↑ accélérer · ↓ freiner · ← → tourner · Maj nitro · C changer de vue · F plein écran</dd>
+      <dt>Commandes</dt><dd id="ctrlText">↑ accélérer · ↓ freiner · ← → tourner · Maj nitro · C changer de vue · F plein écran · au parking : R course, Entrée libre</dd>
     </dl>
     <button class="btn" id="infoClose" type="button">RETOUR</button>
     <p class="credits">Voiture 3D : « Car Concept » d'Eric Chadwick (Darmstadt Graphics Group), d'après un modèle CC0 de Unity Fan. Licence <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener">CC BY 4.0</a>, modifiée : simplifiée, plaque et logos remplacés. Intérieur 3D : <a href="https://sketchfab.com/3d-models/car-interior-c5f830a811af4917972de8fa47949de9" target="_blank" rel="noopener">« Car interior »</a> de Gerhald, licence <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener">CC BY 4.0</a>, modifié : mis à l'échelle, matières, ombrage et instruments ajoutés. Pilote 3D : <a href="https://sketchfab.com/3d-models/race-driver-e4e97df9865d466c8359fbb23e757308" target="_blank" rel="noopener">« race driver »</a> de BELAZ, licence <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener">CC BY 4.0</a>, modifié : seuls la veste et les mains sont gardés, bras et doigts posés sur le volant, gants de course. Palmiers : <a href="https://sketchfab.com/3d-models/date-palm-11acf710e6c149daa8d6fb8cdc5d087f" target="_blank" rel="noopener">« Date Palm »</a> de evolveduk, licence <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener">CC BY 4.0</a>, modifié : textures réduites, image lointaine. Alfa Romeo Giulia GTAm 3D : <a href="https://sketchfab.com/3d-models/2021-alfa-romeo-giulia-gtam-0809eafd171c497d82fa5d8735873f32" target="_blank" rel="noopener">« 2021 Alfa Romeo Giulia GTAm »</a> de <a href="https://sketchfab.com/ddiaz-design" target="_blank" rel="noopener">Ddiaz Design</a>, licence <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" target="_blank" rel="noopener">CC BY-NC-SA 4.0</a>, modifié : mis à l'échelle, allégé, vitres et feux adaptés, textures réduites. Nissan Skyline R34 3D : <a href="https://sketchfab.com/3d-models/eddies-nissan-skyline-r34-nfs-underground-9a6bc4ed690546a1bf02832764f1c888" target="_blank" rel="noopener">« Eddie's Nissan Skyline R34 NFS Underground »</a> de <a href="https://sketchfab.com/ddiaz-design" target="_blank" rel="noopener">Ddiaz Design</a>, licence <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" target="_blank" rel="noopener">CC BY-NC-SA 4.0</a>, modifié : mis à l'échelle, allégé, vitres et feux adaptés, textures réduites. Ces deux modèles modifiés sont partagés sous la même licence ; jeu gratuit, sans usage commercial.</p>
@@ -2220,9 +2224,6 @@ body {
       if (cockpit && !car) renderer.compile(cockpit.scene, cockpit.cam);
     } catch (e) { console.error(e); } finally { for (const o of extra) if (o !== playerCar) scene.remove(o); }
   }
-  // A batch cannot leave out the cars a pass does not see, so the cars go into three sets by where they are:
-  // far ahead (drawn on the screen only: the sun's shadow does not reach there and the mirror never looks there),
-  // near ahead (screen and shadow), around and behind (screen, shadow and mirror)
   function buildTraffic(model) {
     const holder = new THREE.Group(); holder.add(model); holder.updateMatrixWorld(true);
     const at = (...pts) => pts.map(([x, y, z]) => new THREE.Matrix4().makeTranslation(x, y, z));
@@ -2293,7 +2294,7 @@ body {
     btn.disabled = true;
     const loader = new THREE.GLTFLoader(), got = { t: 0, h: 0, i: 0, d: 0, p: 0 }, TOTAL = 7.8e6;
     let done = false;
-    const show = () => { if (!done) btn.textContent = 'CHARGEMENT ' + Math.min(99, Math.round(((got.t + got.h + got.i + got.d + got.p) / TOTAL) * 100)) + ' %'; };
+    const show = () => { if (!done) btnLabel(btn, 'CHARGEMENT', Math.min(99, Math.round(((got.t + got.h + got.i + got.d + got.p) / TOTAL) * 100)) + ' %'); };
     const load = (url, k) => new Promise((res, rej) => loader.load(url, res, (e) => { got[k] = e.loaded; show(); }, rej));
     show();
     // the other cars of the car park load one after the other once the game is ready (they do not hold it back);
@@ -2332,7 +2333,7 @@ body {
 
   // ---------------- the car park: choosing the car ----------------
   // the game opens in a covered car park under Casa Port, one bay per car: a swipe (or the arrows, or ← →) slides
-  // along the row and JOUER drives off in the car shown. A car waits under a cover until its model is in (a car
+  // along the row, and COURSE or LIBRE drives off in the car shown. A car waits under a cover until its model is in (a car
   // marked soon, not delivered yet, stays under it).
   // perf scales the standard car (gear tops, pull, side grip, brakes). stats are measured with the game's own
   // physics on the straight (tests/t48.js): top speed without nitro, 0-100 km/h at full throttle, braking from 100 km/h
@@ -2541,8 +2542,10 @@ body {
     }
     return { scene: gs, cam, bays, get idx() { return idx; }, set, go, step, render, reveal, idle, dragStart, dragMove, dragEnd };
   })();
-  // the card, the dots, the arrows and the play button follow the car shown
+  // the card, the dots, the arrows and the two game buttons follow the car shown
   const dotsEl = $('carDots');
+  // a car park button in two lines: the game (or the state of the car shown), then a word more
+  function btnLabel(b, main, sub) { b.textContent = main; const s = document.createElement('small'); s.textContent = sub; b.appendChild(s); }
   function garageUI() {
     const i = G.idx, c = CARS[i], st = c.stats;
     $('carSlot').textContent = i + 1; $('carCount').textContent = CARS.length; $('carName').textContent = c.name; $('carTag').textContent = c.tag;
@@ -2555,9 +2558,13 @@ body {
     $('carPrev').disabled = i === 0; $('carNext').disabled = i === CARS.length - 1;
     if (modelsReady) {                                       // a car still loading: its progress; not delivered yet: BIENTÔT
       const b = $('playBtn'), wait = !c.soon && !c.ready;
-      b.textContent = c.soon ? 'BIENTÔT' : c.failed ? 'INDISPONIBLE' : wait ? 'CHARGEMENT ' + Math.round((c.pct || 0) * 100) + ' %' : 'JOUER';
+      if (c.soon) btnLabel(b, 'BIENTÔT', 'pas encore livrée');
+      else if (c.failed) btnLabel(b, 'INDISPONIBLE', 'chargement raté');
+      else if (wait) btnLabel(b, 'CHARGEMENT', Math.round((c.pct || 0) * 100) + ' %');
+      else btnLabel(b, 'LIBRE', 'sans course · points');
       b.disabled = !!c.soon || wait; b.classList.toggle('soon', !!c.soon || wait);
-      $('raceBtn').disabled = b.disabled;                      // (the race needs the car as much as JOUER)
+      b.dataset.ready = b.disabled ? '' : '1';                // (the tests wait for this: the car shown can drive off)
+      $('raceBtn').disabled = b.disabled;                      // (the race needs the car as much as LIBRE)
     }
   }
   CARS.forEach((c, i) => {
@@ -2856,8 +2863,8 @@ body {
       el.requestFullscreen({ navigationUI: 'hide' }).then(() => { if (screen.orientation && screen.orientation.lock) return screen.orientation.lock('landscape'); }).catch(() => {});
     } catch (e) {}
   };
-  // from the car park, JOUER drives off in the car shown (once everything has loaded, and only a delivered car)
-  // COURSE: the race, in the same car (from the car park, the car shown; after a race, again)
+  // the two games, from the car park in the car shown (once everything has loaded, and only a delivered car):
+  // LIBRE, the free game for points (again after a crash), and COURSE, the race (again after a race)
   const start = (race) => {
     if (!cockpit) return;
     if (S.mode === 'menu') { if (!modelsReady || !CARS[G.idx].ready) return; useCar(G.idx); }

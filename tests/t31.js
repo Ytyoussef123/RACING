@@ -9,7 +9,7 @@ const serve = require('./serve.js');
   p.on('console', m => { if ((m.type() === 'error' || m.type() === 'warning') && !m.text().includes('GPU stall')) errs.push('console ' + m.text().slice(0, 200)); });
   await p.addInitScript(() => { try { localStorage.setItem('corniche-hq', '0'); } catch (e) {} });
   await p.goto(url + 'test4.html');
-  await p.waitForFunction(() => document.getElementById('playBtn').textContent === 'JOUER', null, { timeout: 150000 });
+  await p.waitForFunction(() => (b => b.dataset.ready === '1' || b.textContent === 'JOUER')(document.getElementById('playBtn')), null, { timeout: 150000 });
   await p.click('#playBtn'); await p.waitForTimeout(300);
   if (await p.evaluate(() => __S.cam) !== 'cockpit') await p.click('#camBtn');
   const start = await p.evaluate(() => ({ cars: __S.traffic.length, speeds: __S.traffic.map((c) => Math.round(c.userData.speed * 3.6)).sort((a, b) => a - b) }));
