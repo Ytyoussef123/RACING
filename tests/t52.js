@@ -22,8 +22,8 @@ const serve = require('./serve-csp.js');
     // A
     let p = await page();
     await p.waitForFunction(() => __CARS.every((c) => c.ready), null, { timeout: 150000 }); await p.waitForTimeout(2500);
-    let prev = await n(); const built = {};
-    const step = async (k) => { const now = await n(); built[k] = now - prev; prev = now; };
+    let prev = await n(p); const built = {};
+    const step = async (k) => { const now = await n(p); built[k] = now - prev; prev = now; };
     out.ready = prev;
     await p.evaluate(() => __G.set(1, true)); await p.waitForTimeout(1500); await step('showGiulia');
     await p.evaluate(() => __G.set(2, true)); await p.waitForTimeout(1500); await step('showR34');
@@ -40,14 +40,14 @@ const serve = require('./serve-csp.js');
     p = await page();
     const B = { othersIn: await p.evaluate(() => __CARS.slice(1).map((c) => !!c.ready)) };
     await p.click('#playBtn'); await p.waitForTimeout(300);
-    B.mode = await p.evaluate(() => __S.mode); B.atStart = await n();
+    B.mode = await p.evaluate(() => __S.mode); B.atStart = await n(p);
     await p.waitForFunction(() => __CARS.every((c) => c.ready), null, { timeout: 150000 }); await p.waitForTimeout(1500);
-    B.whileDriving = (await n()) - B.atStart; B.stillDriving = await p.evaluate(() => __S.mode === 'play');
+    B.whileDriving = (await n(p)) - B.atStart; B.stillDriving = await p.evaluate(() => __S.mode === 'play');
     await toPark(p);
     B.allWarm = await p.evaluate(() => __CARS.every((c) => c.warm));
-    const atPark = await n();
+    const atPark = await n(p);
     for (const i of [1, 2]) { await p.evaluate((k) => __G.set(k, true), i); await p.waitForTimeout(1200); }
-    B.showingAfter = (await n()) - atPark;
+    B.showingAfter = (await n(p)) - atPark;
     out.B = B;
     await p.context().close();
   } catch (e) { console.log('FAIL at', e.message.split('\n')[0], JSON.stringify(out), errs.join(' | ')); await b.close(); srv.close(); return; }
