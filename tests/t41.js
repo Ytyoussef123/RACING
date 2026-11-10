@@ -9,7 +9,8 @@ const serve = require('./serve-csp.js');
     p.on('pageerror', e => errs.push(e.message));
     await p.addInitScript(() => { try { localStorage.setItem('corniche-hq', '0'); } catch (e) {} });
     await p.goto(url + 'test4.html');
-    await p.waitForFunction(() => (b => b.dataset.ready === '1' || b.textContent === 'JOUER')(document.getElementById('playBtn')), null, { timeout: 150000 });
+    await p.waitForFunction(() => (b => b.dataset.ready === '1' || b.textContent === 'JOUER')(document.getElementById('playBtn')) && (!window.__CARS || __CARS.every((c) => c.ready)), null, { timeout: 150000 });
+    await p.waitForTimeout(1500);                       // (the other cars set up meanwhile: the page answers at once)
     const st = () => p.evaluate(() => ({ fs: !!document.fullscreenElement, label: document.getElementById('fsMenuLabel').textContent, on: document.getElementById('fsBtn').classList.contains('on') }));
     await p.screenshot({ path: `fs-menu-${name}.png` });
     await p.click('#fsMenuBtn'); await p.waitForTimeout(600); const a = await st();
