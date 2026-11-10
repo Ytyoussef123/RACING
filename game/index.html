@@ -3165,7 +3165,7 @@ body {
   const dangerEl = $('danger');
   function updateDanger(dt, now) {
     const d = S.mode === 'play' ? S.danger : 0;
-    dangerEl.style.opacity = (d * 0.8 * (0.75 + 0.25 * Math.sin(now * 0.018))).toFixed(3);
+    hudPut('danger', (d * 0.8 * (0.75 + 0.25 * Math.sin(now * 0.018))).toFixed(3), (v) => (dangerEl.style.opacity = v));   // (only when it changes)
     S.beatT -= dt;
     if (d > 0.35 && S.beatT <= 0) { sfxBeat(d); buzz(18); S.beatT = 0.85 - d * 0.45; }
   }
