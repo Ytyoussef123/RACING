@@ -170,6 +170,14 @@ body {
 .credits { font-size: 11px; color: var(--muted); max-width: 46ch; line-height: 1.4; }
 .credits a { color: var(--sea); }
 .flash { position: fixed; inset: 0; z-index: 8; background: #fff; opacity: 0; pointer-events: none; transition: opacity 0.5s; }
+/* on touch screens the HUD's glass is not blurred (the blur behind each chip is redrawn every frame, a cost on a phone):
+   a little darker instead */
+#stage.coarse .chip { backdrop-filter: none; background: rgba(13, 27, 42, 0.74); }
+/* the frame rate, when asked for on the rules screen */
+.fps { position: fixed; left: 50%; top: calc(40px + var(--sat)); transform: translateX(-50%); z-index: 14; pointer-events: none;
+  font: 600 11px var(--font-body); color: #fff; background: rgba(0, 0, 0, 0.5); padding: 2px 8px; border-radius: 6px; white-space: nowrap; }
+.opt { display: flex; align-items: center; gap: 9px; font-size: 13px; color: var(--ink); cursor: pointer; }
+.opt input { width: 18px; height: 18px; margin: 0; accent-color: var(--sun); }
 @media (prefers-reduced-motion: reduce) { .toast, .flash { transition: none; } }
 @media (max-width: 560px) { #stage:not(.rot) .nitro { width: 110px; } #stage:not(.rot) .chip .value { font-size: 20px; } }
 
@@ -290,6 +298,7 @@ body {
 
 <div class="danger" id="danger"></div>
 <div class="toast" id="toast"></div>
+<div class="fps" id="fpsBox" hidden></div>
 <div class="flash" id="flash"></div>
 <div class="race-bar race-only" aria-hidden="true"><span class="rb-track"><i id="rbOpp"></i><i id="rbMe"></i></span><span class="rb-flag"></span></div>
 <div class="count" id="count" hidden></div>
@@ -359,6 +368,7 @@ body {
       <dt>Accident</dt><dd>Rentrer dans l'arrière d'une voiture termine la partie. Un choc de côté, ou une voiture qui te touche par derrière, te secoue et te ralentit, mais tu continues.</dd>
       <dt>Commandes</dt><dd id="ctrlText">↑ accélérer · ↓ freiner · ← → tourner · Maj nitro · C changer de vue · F plein écran · au parking : R course, Entrée libre</dd>
     </dl>
+    <label class="opt"><input type="checkbox" id="fpsOpt"> Afficher les images par seconde</label>
     <button class="btn" id="infoClose" type="button">RETOUR</button>
     <p class="credits">Voiture 3D : « Car Concept » d'Eric Chadwick (Darmstadt Graphics Group), d'après un modèle CC0 de Unity Fan. Licence <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener">CC BY 4.0</a>, modifiée : simplifiée, plaque et logos remplacés. Intérieur 3D : <a href="https://sketchfab.com/3d-models/car-interior-c5f830a811af4917972de8fa47949de9" target="_blank" rel="noopener">« Car interior »</a> de Gerhald, licence <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener">CC BY 4.0</a>, modifié : mis à l'échelle, matières, ombrage et instruments ajoutés. Pilote 3D : <a href="https://sketchfab.com/3d-models/race-driver-e4e97df9865d466c8359fbb23e757308" target="_blank" rel="noopener">« race driver »</a> de BELAZ, licence <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener">CC BY 4.0</a>, modifié : seuls la veste et les mains sont gardés, bras et doigts posés sur le volant, gants de course. Palmiers : <a href="https://sketchfab.com/3d-models/date-palm-11acf710e6c149daa8d6fb8cdc5d087f" target="_blank" rel="noopener">« Date Palm »</a> de evolveduk, licence <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener">CC BY 4.0</a>, modifié : textures réduites, image lointaine. Alfa Romeo Giulia GTAm 3D : <a href="https://sketchfab.com/3d-models/2021-alfa-romeo-giulia-gtam-0809eafd171c497d82fa5d8735873f32" target="_blank" rel="noopener">« 2021 Alfa Romeo Giulia GTAm »</a> de <a href="https://sketchfab.com/ddiaz-design" target="_blank" rel="noopener">Ddiaz Design</a>, licence <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" target="_blank" rel="noopener">CC BY-NC-SA 4.0</a>, modifié : mis à l'échelle, allégé, vitres et feux adaptés, textures réduites. Nissan Skyline R34 3D : <a href="https://sketchfab.com/3d-models/eddies-nissan-skyline-r34-nfs-underground-9a6bc4ed690546a1bf02832764f1c888" target="_blank" rel="noopener">« Eddie's Nissan Skyline R34 NFS Underground »</a> de <a href="https://sketchfab.com/ddiaz-design" target="_blank" rel="noopener">Ddiaz Design</a>, licence <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" target="_blank" rel="noopener">CC BY-NC-SA 4.0</a>, modifié : mis à l'échelle, allégé, vitres et feux adaptés, textures réduites. Ces deux modèles modifiés sont partagés sous la même licence ; jeu gratuit, sans usage commercial.</p>
   </div>
@@ -418,9 +428,11 @@ body {
 (() => {
   const $ = (id) => document.getElementById(id);
   const isTouch = matchMedia('(pointer: coarse)').matches || 'ontouchstart' in window;
+  const isPhone = isTouch && Math.min(screen.width, screen.height) <= 600;   // (a phone: its lighter textures)
   const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
   // VW x VH is the size the game is drawn at: the window, or the window turned a quarter on a phone held sideways
   const stage = $('stage');
+  stage.classList.toggle('coarse', isTouch);
   let VW = innerWidth, VH = innerHeight, rotOn = false, rotDir = 1, rotPicked = false;
   var joyFull = 90;                                          // thumb travel to full lock (px), set from the screen size
   function layoutStage() {
@@ -803,6 +815,78 @@ body {
     obj.position.z = z; obj.traverse((o) => { if (o.isMesh) { o.castShadow = o.userData.noShadow ? false : true; o.receiveShadow = true; } });
     worldG.add(obj); scenery.push(obj); return obj;
   };
+  // roadside things drawn in batches (a phone pays for each draw call, and one per part of every building, lamp post,
+  // boat and palm came to about 200 a picture): each keeps an anchor, an empty group that scrolls and bends as before;
+  // before each picture the anchors' places go into one instanced mesh per part (street lights, boats, palms) or into
+  // one merged mesh per material (buildings, each of its own size). Same meshes, materials and places: same picture
+  const anchor = (g, z) => { g.position.z = z; scenery.push(g); return g; };
+  const SB = { inst: [], merged: [], far: null, farList: [] };
+  // parts shared by several anchors: [geometry, material, the part's place in its anchor: a matrix, or a function of
+  // the anchor giving it (null: that anchor does not show the part now)]
+  function batchParts(anchors, parts) {
+    for (const [geo, mat, local] of parts) {
+      const im = new THREE.InstancedMesh(geo, mat, anchors.length); im.count = 0; im.visible = false; im.frustumCulled = false;
+      im.castShadow = im.receiveShadow = true; worldG.add(im); SB.inst.push({ im, anchors, local });
+    }
+  }
+  // the anchors' meshes merged per material; their vertices are placed on the CPU before each picture
+  function batchMerged(anchors) {
+    const byMat = new Map();
+    for (const g of anchors) for (const m of g.children) { if (!byMat.has(m.material)) byMat.set(m.material, []); byMat.get(m.material).push([g, m]); }
+    for (const [mat, list] of byMat) {
+      let nv = 0, ni = 0; for (const [, m] of list) { nv += m.geometry.attributes.position.count; ni += m.geometry.index.count; }
+      const uv = new Float32Array(nv * 2), idx = new (nv > 65535 ? Uint32Array : Uint16Array)(ni), ranges = [], pv = new THREE.Vector3(), nm = new THREE.Matrix3();
+      let v = 0, i = 0;
+      for (const [g, m] of list) {
+        m.updateMatrix(); nm.getNormalMatrix(m.matrix);
+        const ga = m.geometry.attributes, n = ga.position.count, p0 = new Float32Array(n * 3), n0 = new Float32Array(n * 3);
+        for (let k = 0; k < n; k++) {
+          pv.fromBufferAttribute(ga.position, k).applyMatrix4(m.matrix); p0[k * 3] = pv.x; p0[k * 3 + 1] = pv.y; p0[k * 3 + 2] = pv.z;
+          pv.fromBufferAttribute(ga.normal, k).applyMatrix3(nm).normalize(); n0[k * 3] = pv.x; n0[k * 3 + 1] = pv.y; n0[k * 3 + 2] = pv.z;
+        }
+        ranges.push({ a: g, p0, n0, at: v * 3 });
+        uv.set(ga.uv.array.subarray(0, n * 2), v * 2);
+        const gi = m.geometry.index.array; for (let k = 0; k < gi.length; k++) idx[i + k] = gi[k] + v;
+        v += n; i += gi.length;
+      }
+      const geo = new THREE.BufferGeometry();
+      geo.setAttribute('position', new THREE.BufferAttribute(new Float32Array(nv * 3), 3).setUsage(THREE.DynamicDrawUsage));
+      geo.setAttribute('normal', new THREE.BufferAttribute(new Float32Array(nv * 3), 3).setUsage(THREE.DynamicDrawUsage));
+      geo.setAttribute('uv', new THREE.BufferAttribute(uv, 2)); geo.setIndex(new THREE.BufferAttribute(idx, 1));
+      const mesh = new THREE.Mesh(geo, mat); mesh.castShadow = mesh.receiveShadow = true; mesh.frustumCulled = false; worldG.add(mesh);
+      SB.merged.push({ geo, ranges });
+    }
+    for (const g of anchors) g.clear();
+  }
+  // after the bend: the anchors' places into the batches (and the far palms turned to the camera, back to front)
+  const _sm = new THREE.Matrix4(), _sv = new THREE.Vector3(), _sp = new THREE.Vector3();
+  function syncScenery() {
+    for (const o of scenery) o.updateMatrix();
+    for (const B of SB.inst) {
+      let n = 0;
+      for (const a of B.anchors) { const L = typeof B.local === 'function' ? B.local(a) : B.local; if (L) B.im.setMatrixAt(n++, _sm.multiplyMatrices(a.matrix, L)); }
+      B.im.count = n; B.im.visible = n > 0; B.im.instanceMatrix.needsUpdate = true;
+    }
+    for (const M of SB.merged) {
+      const P = M.geo.attributes.position.array, N = M.geo.attributes.normal.array;
+      for (const r of M.ranges) {
+        const e = r.a.matrix.elements, p0 = r.p0, n0 = r.n0;
+        for (let k = 0, o = r.at; k < p0.length; k += 3, o += 3) {
+          const x = p0[k], y = p0[k + 1], z = p0[k + 2], nx = n0[k], ny = n0[k + 1], nz = n0[k + 2];
+          P[o] = e[0] * x + e[4] * y + e[8] * z + e[12]; P[o + 1] = e[1] * x + e[5] * y + e[9] * z + e[13]; P[o + 2] = e[2] * x + e[6] * y + e[10] * z + e[14];
+          N[o] = e[0] * nx + e[4] * ny + e[8] * nz; N[o + 1] = e[1] * nx + e[5] * ny + e[9] * nz; N[o + 2] = e[2] * nx + e[6] * ny + e[10] * nz;
+        }
+      }
+      M.geo.attributes.position.needsUpdate = true; M.geo.attributes.normal.needsUpdate = true;
+    }
+    if (SB.far) {                                               // (the palms' world places: the scenery's group is mirrored in x)
+      const L = SB.farList; L.length = 0; camera.updateMatrixWorld();
+      for (const g of palms) if (!g.userData.near) { _sp.set(-g.position.x, g.position.y, g.position.z).applyMatrix4(camera.matrixWorldInverse); L.push([_sp.z, g]); }
+      L.sort((a, b) => a[0] - b[0]);
+      L.forEach(([, g], k) => { const s = g.userData.size; SB.far.setMatrixAt(k, _sm.compose(_sp.set(-g.position.x, g.position.y, g.position.z), camera.quaternion, _sv.set(s, s, 1))); });
+      SB.far.count = L.length; SB.far.visible = L.length > 0; SB.far.instanceMatrix.needsUpdate = true;
+    }
+  }
 
   // lane dashes and rail posts: one instanced mesh each (a copy every 10 m / 6 m), slid back by less than
   // one spacing so they look endless, each copy placed on the bent road (two draw calls instead of three hundred)
@@ -845,6 +929,7 @@ body {
       if (on) { if (!u.bq) u.bq = new THREE.Quaternion(); u.bx = o.position.x; u.bz = o.position.z; u.bq.copy(o.quaternion); const b = bendPt(-o.position.x, o.position.z); o.position.x = -b.x; o.position.z = b.z; o.quaternion.premultiply(_bq.setFromAxisAngle(YUP, b.th)); }
       else { o.position.x = u.bx; o.position.z = u.bz; o.quaternion.copy(u.bq); }
     }
+    if (on) syncScenery();
     for (const c of S.traffic) bendMover(c, on);
     for (const c of RC.objs) bendMover(c, on);                  // the race: the other driver, the start line, the finish arch
   }
@@ -857,12 +942,12 @@ body {
   // street lights on the right
   const poleMat = std(0x59606a, { roughness: 0.35, metalness: 0.7 });
   const lampMat = std(0xfff4c2, { emissive: col(0x8a8050), roughness: 0.3 });
-  for (let z = -10; z > -LOOP; z -= 32) {
-    const g = new THREE.Group();
+  {                                                           // (one set of parts, every lamp post drawing it)
     const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.15, 8, 10), poleMat); pole.position.set(0, 4, 0);
     const arm = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, 2.4, 6), poleMat); arm.rotation.z = Math.PI / 2; arm.position.set(-1.1, 7.9, 0);
     const lamp = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.16, 0.36), lampMat); lamp.position.set(-2.25, 7.82, 0);
-    g.add(pole, arm, lamp); g.position.x = 8; loop(g, z);
+    const lights = []; for (let z = -10; z > -LOOP; z -= 32) { const a = anchor(new THREE.Group(), z); a.position.x = 8; lights.push(a); }
+    batchParts(lights, [pole, arm, lamp].map((m) => { m.updateMatrix(); return [m.geometry, m.material, m.matrix.clone()]; }));
   }
 
   // palms with textured fronds
@@ -935,20 +1020,27 @@ body {
     renderer.toneMapping = THREE.NoToneMapping; renderer.shadowMap.enabled = false;
     renderer.setRenderTarget(rt); renderer.setClearColor(0x000000, 0); renderer.clear(); renderer.render(sc, oc); renderer.setRenderTarget(null);
     renderer.toneMapping = tm; renderer.shadowMap.enabled = sh; renderer.setClearColor(cc, ca);
-    const farMat = new THREE.SpriteMaterial({ map: rt.texture, transparent: true, depthWrite: false, alphaTest: 0.03 });   // blended: no thinning far away
+    // each palm: near the road the model, one instanced mesh per part of it; further away its picture, in one batch of
+    // quads turned to the camera (as the sprites they replace: blended, so no thinning far away)
+    const parts = []; model.traverse((o) => { if (o.isMesh) parts.push(o); });
+    const inv = model.matrixWorld.clone().invert(), fo = new THREE.Object3D();
     for (const g of palms) {
       for (const c of [...g.children]) g.remove(c);
-      const k = g.userData.h / H, full = model.clone(); full.scale.setScalar(k); full.rotation.y = Math.random() * Math.PI * 2;
-      const far = new THREE.Sprite(farMat); far.center.set(0.5, 0); far.scale.set(2 * half * k, 2 * half * k, 1);
-      g.add(full, far); g.userData.full = full; g.userData.far = far;
+      const k = g.userData.h / H;
+      fo.position.copy(model.position); fo.quaternion.copy(model.quaternion); fo.scale.setScalar(k); fo.rotation.y = Math.random() * Math.PI * 2; fo.updateMatrix();
+      g.userData.parts = parts.map((o) => fo.matrix.clone().multiply(inv.clone().multiply(o.matrixWorld)));
+      g.userData.size = 2 * half * k;
     }
+    batchParts(palms, parts.map((o, i) => [o.geometry, o.material, (g) => (g.userData.near ? g.userData.parts[i] : null)]));
+    SB.far = new THREE.InstancedMesh(new THREE.PlaneGeometry(1, 1).translate(0, 0.5, 0), new THREE.MeshBasicMaterial({ map: rt.texture, transparent: true, depthWrite: false, alphaTest: 0.03 }), palms.length);
+    SB.far.count = 0; SB.far.visible = false; SB.far.frustumCulled = false; scene.add(SB.far);
     palmsReady = true;
   }
   let palmsReady = false;
   function palmLOD() {
     if (!palmsReady) return;
     const nearZ = hq ? -85 : -60;
-    for (const g of palms) { const near = g.position.z > nearZ; if (g.userData.full.visible !== near) { g.userData.full.visible = near; g.userData.far.visible = !near; } }
+    for (const g of palms) g.userData.near = g.position.z > nearZ;
   }
 
   // buildings: facade textures with real window glass (low roughness, reflective)
@@ -1009,6 +1101,7 @@ body {
     }
     uv.needsUpdate = true;
   }
+  const buildings = [];
   for (let z = -6; z > -LOOP; ) {
     const w = rand(9, 14), d = rand(10, 18), h = Math.round(rand(3, 11)) * TILE_H / 2 + 4;
     const g = new THREE.Group();
@@ -1020,9 +1113,10 @@ body {
     const cor = new THREE.Mesh(new THREE.BoxGeometry(w + 0.5, 0.45, d + 0.5), corniceMat); cor.position.y = h + 0.2;
     g.add(b, shop, cor);
     g.position.x = 12.4 + w / 2 + rand(0, 1.5);
-    loop(g, z - d / 2);
+    buildings.push(anchor(g, z - d / 2));
     z -= d + rand(0.5, 4);
   }
+  batchMerged(buildings);
   // overhead direction sign, once per loop
   {
     const signTex = canvasTex(1024, 256, (x, w, h) => {
@@ -1041,11 +1135,11 @@ body {
     g.scale.x = -1; loop(g, -240);
   }
   // boats on the sea
-  for (let i = 0; i < 6; i++) {
-    const g = new THREE.Group();
+  {
     const hull = new THREE.Mesh(new THREE.BoxGeometry(2.6, 0.9, 9), std(0xffffff, { roughness: 0.4 })); hull.position.y = 0.45;
     const cab = new THREE.Mesh(new THREE.BoxGeometry(2, 1.3, 3), std(0x2a4a6a, { roughness: 0.3 })); cab.position.set(0, 1.4, 1);
-    g.add(hull, cab); g.position.x = rand(-220, -60); loop(g, -rand(0, LOOP));
+    const boats = []; for (let i = 0; i < 6; i++) { const a = new THREE.Group(); a.position.x = rand(-220, -60); boats.push(anchor(a, -rand(0, LOOP))); }
+    batchParts(boats, [hull, cab].map((m) => { m.updateMatrix(); return [m.geometry, m.material, m.matrix.clone()]; }));
   }
 
   // ================= procedural cockpit (rendered in its own pass, car-local coordinates) =================
@@ -2234,14 +2328,15 @@ body {
       }
     } catch (e) { console.error(e); } finally { for (const o of extra) if (o !== playerCar) scene.remove(o); renderer.setRenderTarget(null); }
   }
-  // the cars of the car park, ready to be driven and to be shown: their shaders on the road and under the car park's
-  // own lights (else built the first time a car slides into view, a stall in mid-swipe). Only in the car park: a car
-  // that comes in during a game waits for the way back, a freeze in the middle of a game being worse
+  // the cars of the car park: their shaders under the car park's own lights as soon as they are in (else built the first
+  // time a car slides into view, a stall in mid-swipe), only while in the car park (a car that comes in during a game
+  // waits for the way back: a freeze in the middle of a game is worse); and on the road (warmCar) when a car is about
+  // to be driven or raced, at the start, where the screen changes anyway
   function warmCars() {
     if (S.mode !== 'menu') return;
-    for (const c of CARS) if (c.ready && c.root && !c.warm) { c.warm = true; warmShaders(c.root); }
     try { renderer.compile(G.scene, G.cam); } catch (e) { console.error(e); }
   }
+  function warmCar(c) { if (c && c.ready && c.root && !c.warm) { c.warm = true; warmShaders(c.root); } }
   function buildTraffic(model) {
     const holder = new THREE.Group(); holder.add(model); holder.updateMatrixWorld(true);
     const at = (...pts) => pts.map(([x, y, z]) => new THREE.Matrix4().makeTranslation(x, y, z));
@@ -2306,29 +2401,44 @@ body {
       p.im.instanceMatrix.needsUpdate = true; if (p.im.instanceColor) p.im.instanceColor.needsUpdate = true;
     });
   }
+  let setupWaitingCar = () => {};                            // (set by loadModels: a downloaded car, set up when calm)
   function loadModels() {
     const btn = $('playBtn');
     if (!THREE.GLTFLoader) { useCockpit(newCockpit(null)); return; }
     btn.disabled = true;
-    const loader = new THREE.GLTFLoader(), got = { t: 0, h: 0, i: 0, d: 0, p: 0 }, TOTAL = 7.8e6;
+    // on a phone the textures come from models/m/ (tools/phonetex.mjs): the same pictures, the big ones reduced (512 px,
+    // 1024 for paint and livery). On a phone's screen they look the same and take half the graphics memory
+    const manager = new THREE.LoadingManager();
+    if (isPhone) manager.setURLModifier((u) => u.replace(/(^|\/)models\/([^/]+\.webp)$/, '$1models/m/$2'));
+    const loader = new THREE.GLTFLoader(manager), got = { t: 0, h: 0, i: 0, d: 0, p: 0 }, TOTAL = 7.8e6;
     let done = false;
     const show = () => { if (!done) btnLabel(btn, 'CHARGEMENT', Math.min(99, Math.round(((got.t + got.h + got.i + got.d + got.p) / TOTAL) * 100)) + ' %'); };
     const load = (url, k) => new Promise((res, rej) => loader.load(url, res, (e) => { got[k] = e.loaded; show(); }, rej));
     show();
-    // the other cars of the car park load one after the other once the game is ready (they do not hold it back);
-    // each comes out from under its cover when it is in
+    // the other cars of the car park are downloaded one after the other once the game is ready (they do not hold it
+    // back), then set up only while the car park is at rest (no finger on it, no car sliding, no cover lifting):
+    // setting a car up takes a phone a moment, better spent when nothing moves. Each comes out from under its cover
+    const files = new THREE.FileLoader(manager);
     const loadCars = (i = 1) => {
       const c = CARS[i]; if (!c) return;
       if (!c.file || c.ready) return loadCars(i + 1);
-      loader.load(c.file, (g) => { try { setupCar(c, g); G.reveal(i); warmCars(); } catch (e) { console.error(e); } garageUI(); loadCars(i + 1); },
+      files.load(c.file, (text) => { c.raw = text; loadCars(i + 1); },
         (e) => { c.pct = e.total ? e.loaded / e.total : 0; if (G.idx === i) garageUI(); }, () => { c.failed = true; garageUI(); loadCars(i + 1); });
+    };
+    setupWaitingCar = () => {
+      const i = CARS.findIndex((c) => c.raw); if (i < 0) return;
+      const c = CARS[i], raw = c.raw; c.raw = null;
+      try {
+        loader.parse(raw, 'models/', (g) => { try { setupCar(c, g); G.reveal(i); warmCars(); } catch (e) { console.error(e); } garageUI(); },
+          () => { c.failed = true; garageUI(); });
+      } catch (e) { console.error(e); c.failed = true; garageUI(); }
     };
     // ready: the standard car comes out from under its cover in the car park, and the play button follows the car shown
     const finish = () => {
       if (done) return; done = true; if (!cockpit) useCockpit(newCockpit(null, null));
       if (!CARS[0].root) CARS[0].root = playerCar;             // (the simple car, if its model failed)
       warmShaders();                                           // (while the button still reads CHARGEMENT)
-      CARS[0].ready = modelsReady = true; G.reveal(0); garageUI(); applyCam(); warmCars();
+      CARS[0].ready = CARS[0].warm = modelsReady = true; G.reveal(0); garageUI(); applyCam(); warmCars();
       loadCars();
     };
     // car interior (one JSON file: geometry, baked shading, anchors for gauges and mirror) and the driver's arms
@@ -2681,7 +2791,7 @@ body {
     for (let k = 1; k < CARS.length && !c; k++) { const q = CARS[(S.car + k) % CARS.length]; if (q.ready && q.root && q.root !== playerCar) c = q; }
     const root = c ? c.root : makeCar(0x1f4e9e, 'car', true);
     if (!c) addBlob(root);
-    if (c && !c.warm) { c.warm = true; warmShaders(root); }    // (a car that came in during the last game: before the countdown)
+    warmCar(c);                                                // (its shaders on the road, before the countdown)
     const st = (c || CARS[0]).stats, vt = st.vmax / 3.6, A = vt * Math.log((vt + 27.78) / (vt - 27.78)) / (2 * st.t100);
     root.rotation.order = 'YXZ'; root.rotation.set(0, 0, 0); root.visible = true; scene.add(root);
     return { root, car: c, name: c ? c.name : 'IA', dist: 0, speed: 0, x: LANES[1], lane: 1, vt, A, brake: false, changeT: 0, hitT: 0, yaw: 0, done: 0 };
@@ -2796,13 +2906,14 @@ body {
     setMode('raceover');
   }
   // the race's own readings, once a frame: position, gap, distance left, both cars on the bar
-  function raceHud() {
+  function raceHud() {                                       // (only what changed, as the HUD)
     const o = RC.o, d = S.dist - o.dist, g = $('rGap');
-    $('rPos').textContent = d >= 0 ? '1er' : '2e';
-    g.textContent = (d >= 0 ? '+' : '−') + Math.abs(Math.round(d)) + ' m'; g.className = 'value ' + (d >= 0 ? 'ahead' : 'behind');
-    $('rLeft').textContent = (Math.max(0, RACE.len - S.dist) / 1000).toFixed(2).replace('.', ',');
-    $('rbMe').style.left = Math.min(100, S.dist / RACE.len * 100).toFixed(1) + '%';
-    $('rbOpp').style.left = Math.min(100, o.dist / RACE.len * 100).toFixed(1) + '%';
+    hudPut('rPos', d >= 0 ? '1er' : '2e', (v) => ($('rPos').textContent = v));
+    hudPut('rGap', (d >= 0 ? '+' : '−') + Math.abs(Math.round(d)) + ' m', (v) => (g.textContent = v));
+    hudPut('rGapC', d >= 0 ? 'ahead' : 'behind', (v) => (g.className = 'value ' + v));
+    hudPut('rLeft', (Math.max(0, RACE.len - S.dist) / 1000).toFixed(2).replace('.', ','), (v) => ($('rLeft').textContent = v));
+    hudPut('rbMe', Math.min(100, S.dist / RACE.len * 100).toFixed(1) + '%', (v) => ($('rbMe').style.left = v));
+    hudPut('rbOpp', Math.min(100, o.dist / RACE.len * 100).toFixed(1) + '%', (v) => ($('rbOpp').style.left = v));
   }
 
   // ---------------- UI ----------------
@@ -2886,7 +2997,7 @@ body {
   // LIBRE, the free game for points (again after a crash), and COURSE, the race (again after a race)
   const start = (race) => {
     if (!cockpit) return;
-    if (S.mode === 'menu') { if (!modelsReady || !CARS[G.idx].ready) return; useCar(G.idx); }
+    if (S.mode === 'menu') { if (!modelsReady || !CARS[G.idx].ready) return; useCar(G.idx); warmCar(CARS[G.idx]); }
     tryLandscape(); ensureAudio(); newGame(race === true);
   };
   const startRace = () => start(true);
@@ -3126,15 +3237,53 @@ body {
   addEventListener('pointerup', askTilt);
   $('flipBtn').addEventListener('click', () => { rotDir = -rotDir; rotPicked = true; resize(); });
 
-  // keep the frame rate smooth: lower the resolution a little when the device struggles
-  let ftAvg = 16, ftT = 0, lowered = 0;
-  function adaptResolution(dtMs) {
-    ftAvg += (dtMs - ftAvg) * 0.05; ftT += dtMs; lowered = Math.max(0, lowered - dtMs);
-    if (ftT < 2500) return;
-    ftT = 0;
-    if (ftAvg > 30 && prNow > (hq ? 1 : 0.75)) { prNow = Math.max(hq ? 1 : 0.75, prNow - 0.25); lowered = 15000; resizeAll(); }
-    else if (ftAvg < 13 && prNow < PR_MAX && lowered <= 0) { prNow = Math.min(PR_MAX, prNow + 0.25); resizeAll(); }
+  // the rhythm of the pictures, and the resolution. The display's refresh is measured (the median gap between the
+  // browser's frames: 60, 90, 120 Hz...). The game draws on every refresh, or on one in 2, 3 or 4 when too many
+  // pictures come late: an even rhythm looks smoother than an uneven one at a higher average (a 90 or 120 Hz phone
+  // that cannot keep up jumps between one and two refreshes a picture, the stutter of a "heavy" game). After a calm
+  // while it tries the faster rhythm again, waiting longer each time that fails. Only at the slowest rhythm (about 30
+  // a second) does the resolution go down, and back up when calm. The car park: about 60 a second, 30 at rest
+  const PACE = { vs: 1000 / 60, n: 1, gaps: [], prevRaf: 0, lastDraw: 0, t: 0, frames: 0, late: 0, calm: 0, probe: false, wait: 8000, lowered: 0 };
+  function paceGate(now) {                                   // (true: draw on this refresh)
+    const P = PACE;
+    if (P.prevRaf) {
+      const g = now - P.prevRaf;
+      if (g > 3 && g < 60) { P.gaps.push(g); if (P.gaps.length > 120) P.gaps.shift(); if (P.gaps.length % 20 === 0) { const s = P.gaps.slice().sort((a, b) => a - b); P.vs = s[s.length >> 1]; } }
+    }
+    P.prevRaf = now;
+    const n = S.mode === 'menu' ? Math.max(P.n, Math.round((G.idle() ? 33 : 16.7) / P.vs)) : P.n;   // (car park: about 60, at rest 30)
+    return !P.lastDraw || now - P.lastDraw >= (n - 0.4) * P.vs;
   }
+  function paceDrawn(now) {
+    const P = PACE, gap = P.lastDraw ? now - P.lastDraw : 0; P.lastDraw = now;
+    if (fpsOn && gap) fpsTick(gap);
+    if (!gap || S.mode === 'menu' || S.mode === 'paused') return;
+    P.frames++; if (gap > (P.n + 0.5) * P.vs) P.late++; P.t += gap; P.lowered = Math.max(0, P.lowered - gap);
+    if (P.t < 1500) return;
+    const rate = P.late / P.frames, slowest = Math.max(1, Math.min(4, Math.floor(34 / P.vs))), floor = hq ? 1 : 0.75;
+    if (rate > 0.12) {
+      if (P.n < slowest) { P.n++; if (P.probe) P.wait = Math.min(64000, P.wait * 2); }
+      else if (prNow > floor) { prNow = Math.max(floor, prNow - 0.25); P.lowered = 15000; resizeAll(); }
+      P.probe = false; P.calm = 0;
+    } else if (rate < 0.03) {
+      if (P.probe) { P.probe = false; P.wait = 8000; }
+      if (prNow < PR_MAX && P.lowered <= 0) { prNow = Math.min(PR_MAX, prNow + 0.25); P.lowered = 8000; resizeAll(); }
+      else if (P.n > 1) { P.calm += P.t; if (P.calm >= P.wait) { P.n--; P.calm = 0; P.probe = true; } }
+    }
+    P.t = P.frames = P.late = 0;
+  }
+  // the frame rate on screen, for whoever wants to see it (rules screen: « Afficher les images par seconde »)
+  const fpsEl = $('fpsBox'); let fpsOn = false, fpsN = 0, fpsT = 0, fpsWorst = 0;
+  try { fpsOn = localStorage.getItem('corniche-fps') === '1'; } catch (e) {}
+  function fpsTick(gap) {
+    fpsN++; fpsT += gap; fpsWorst = Math.max(fpsWorst, gap);
+    if (fpsT < 1000) return;
+    fpsEl.textContent = Math.round(fpsN * 1000 / fpsT) + ' i/s · écran ' + Math.round(1000 / PACE.vs) + ' Hz' + (PACE.n > 1 ? ' (1 sur ' + PACE.n + ')' : '') + ' · pire ' + Math.round(fpsWorst) + ' ms · résolution ' + prNow.toFixed(2).replace('.', ',');
+    fpsN = fpsT = fpsWorst = 0;
+  }
+  const fpsShow = () => { fpsEl.hidden = !fpsOn; $('fpsOpt').checked = fpsOn; };
+  $('fpsOpt').addEventListener('change', (e) => { fpsOn = e.target.checked; fpsN = fpsT = fpsWorst = 0; fpsEl.textContent = '…'; fpsShow(); try { localStorage.setItem('corniche-fps', fpsOn ? '1' : '0'); } catch (err) {} });
+  fpsShow();
 
   const sunLocal = new THREE.Vector3(), qInv = new THREE.Quaternion();
   function renderAll(now) {
@@ -3345,16 +3494,23 @@ body {
     S.danger += (danger - S.danger) * (1 - Math.exp(-10 * dt));
     if (S.traffic.length < trafficTarget()) spawnCar(S.speed > 15 ? 230 : 120, 330);
 
-    // HUD
-    $('score').textContent = Math.floor(S.score).toLocaleString('fr-FR');
-    $('dist').textContent = (S.dist / 1000).toFixed(2).replace('.', ',');
-    const s = Math.floor(S.time); $('time').textContent = Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0');
-    $('kmh').textContent = Math.round(S.speed * 3.6);
-    const mEl = $('mult'); if (mEl.textContent !== 'x' + S.mult) { mEl.textContent = 'x' + S.mult; mEl.className = 'value mult m' + S.mult; }
-    $('gear').textContent = S.speed < 0.5 && S.thr < 0.1 ? 'N' : S.gear;
-    $('rpmFill').style.width = (S.rpm / 7500 * 100).toFixed(0) + '%';
-    $('kmh').style.color = S.nitroOn ? 'var(--nitro)' : '';
-    $('nitroFill').style.width = (S.nitro * 100).toFixed(0) + '%';
+    hudDirty = true;                                         // (the HUD is written by frame(), once a frame)
+  }
+  // the HUD, once a frame after the game's steps (it was written at every step, twice a frame at 30 frames a second),
+  // and only what changed: on a phone each change of the page costs a little, and the score changes all the time
+  let hudDirty = false;
+  const HE = { score: $('score'), dist: $('dist'), time: $('time'), kmh: $('kmh'), mult: $('mult'), gear: $('gear'), rpm: $('rpmFill'), nitro: $('nitroFill') }, hudLast = {};
+  const hudPut = (k, v, set) => { if (hudLast[k] !== v) { hudLast[k] = v; set(v); } };
+  function hud() {
+    hudPut('score', Math.floor(S.score), (v) => (HE.score.textContent = v.toLocaleString('fr-FR')));
+    hudPut('dist', (S.dist / 1000).toFixed(2).replace('.', ','), (v) => (HE.dist.textContent = v));
+    const s = Math.floor(S.time); hudPut('time', s, () => (HE.time.textContent = Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0')));
+    hudPut('kmh', Math.round(S.speed * 3.6), (v) => (HE.kmh.textContent = v));
+    hudPut('mult', S.mult, (v) => { HE.mult.textContent = 'x' + v; HE.mult.className = 'value mult m' + v; });
+    hudPut('gear', S.speed < 0.5 && S.thr < 0.1 ? 'N' : S.gear, (v) => (HE.gear.textContent = v));
+    hudPut('rpm', (S.rpm / 7500 * 100).toFixed(0) + '%', (v) => (HE.rpm.style.width = v));
+    hudPut('nos', S.nitroOn, (v) => (HE.kmh.style.color = v ? 'var(--nitro)' : ''));
+    hudPut('nitro', (S.nitro * 100).toFixed(0) + '%', (v) => (HE.nitro.style.width = v));
   }
 
   // suspension (roll, pitch, heave) and the driver's head lagging behind the car
@@ -3373,18 +3529,18 @@ body {
   }
   const steerQ = new THREE.Quaternion(), ZAXIS = new THREE.Vector3(0, 0, 1), flipBtn = $('flipBtn');
   function frame(now) {
-    // the car park at rest is drawn every other display frame (30 a second): half the work for the same picture.
-    // The skipped frame's time counts in the next one, and the resolution adapter still sees display frames
-    if (S.mode === 'menu' && G.idle() && (frame.skip = !frame.skip)) { frame.prev = now; requestAnimationFrame(frame); return; }
+    // an even rhythm (paceGate, above): on a refresh not drawn nothing is done; its time counts in the next picture
+    if (!paceGate(now)) { requestAnimationFrame(frame); return; }
     const rawDt = Math.min(0.25, Math.max(0, (now - last) / 1000)); last = now;
     const dt = Math.min(0.05, rawDt);
     if (S.slowCd > 0) S.slowCd -= dt;
     let ts = 1;
     if (S.slowmo > 0 && S.mode === 'play') { S.slowmo -= dt; ts = 0.33; }
-    canvas.style.filter = ts < 1 ? 'saturate(0.55) contrast(1.15)' : '';
+    if (frame.grey !== ts < 1) { frame.grey = ts < 1; canvas.style.filter = ts < 1 ? 'saturate(0.55) contrast(1.15)' : ''; }
     if (S.kick > 0) S.kick = Math.max(0, S.kick - dt * 4);
     if (S.mode === 'countdown') raceCountdown(dt);
     if (S.mode === 'play') { let rem = rawDt * ts; while (rem > 1e-6 && S.mode === 'play') { const h = Math.min(rem, 1 / 60); update(h); bodyStep(h); rem -= h; } }
+    if (hudDirty) { hudDirty = false; hud(); }
     if (S.mode === 'crash') {
       S.speed *= Math.pow(0.02, dt); S.crashT -= dt; S.aLat *= Math.pow(0.05, dt); S.acc *= Math.pow(0.05, dt); bodyStep(dt);
       const dz = S.speed * dt;
@@ -3425,8 +3581,10 @@ body {
     const portrait = camera.aspect < 1;
     if (S.mode === 'menu') {
       menuT += dt;
-      // the car park: its camera slides along the row of cars (the road is not drawn meanwhile)
+      // the car park: its camera slides along the row of cars (the road is not drawn meanwhile); a car downloaded
+      // meanwhile is set up while it is at rest
       G.step(dt);
+      if (G.idle()) setupWaitingCar();
     } else if (S.cam === 'cockpit') {
       const fov = (portrait ? 66 : 52) + Math.min(6, Math.pow(S.speed / 65, 1.5) * 5) + (S.nitroOn ? 4 : 0) + S.kick * 1.5;
       camera.fov += (fov - camera.fov) * (1 - Math.exp(-4 * dt));
@@ -3465,7 +3623,7 @@ body {
     updateStreaks(dt * ts);
     updateDanger(dt, now);
     palmLOD();
-    adaptResolution(Math.min(100, now - (frame.prev || now))); frame.prev = now;
+    paceDrawn(now);
     const fh = !(rotOn && S.mode !== 'play' && S.mode !== 'countdown' && S.mode !== 'finish'); if (flipBtn.hidden !== fh) flipBtn.hidden = fh;
     const onRoad = S.mode !== 'menu';                        // nothing to bend in the car park
     if (onRoad) bendForRender(true);
