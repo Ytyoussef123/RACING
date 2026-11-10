@@ -2311,7 +2311,7 @@ body {
   // mirror's picture (with the race's line and arch), the cockpit; with a car, that car's materials on the road
   // (warmCars, below, calls it for each car of the car park)
   function warmShaders(car) {
-    const extra = car ? [car] : [raceProps.start, raceProps.finish];
+    const extra = car ? [car] : [raceProps.start, raceProps.finish], had = extra.map((o) => o.parent === scene);
     try {
       for (const o of extra) scene.add(o);
       renderer.compile(scene, camera);
@@ -2326,7 +2326,7 @@ body {
         renderer.shadowMap.needsUpdate = true; renderer.setRenderTarget(mirror.rt); renderer.render(scene, camera); renderer.setRenderTarget(null);
         if (p) { p.im.count = 0; p.im.visible = false; }
       }
-    } catch (e) { console.error(e); } finally { for (const o of extra) if (o !== playerCar) scene.remove(o); renderer.setRenderTarget(null); }
+    } catch (e) { console.error(e); } finally { extra.forEach((o, k) => { if (!had[k]) scene.remove(o); }); renderer.setRenderTarget(null); }   // (only what it put there)
   }
   // the cars of the car park: their shaders under the car park's own lights as soon as they are in (else built the first
   // time a car slides into view, a stall in mid-swipe), only while in the car park (a car that comes in during a game
@@ -2336,7 +2336,10 @@ body {
     if (S.mode !== 'menu') return;
     try { renderer.compile(G.scene, G.cam); } catch (e) { console.error(e); }
   }
-  function warmCar(c) { if (c && c.ready && c.root && !c.warm) { c.warm = true; warmShaders(c.root); } }
+  // (on the road: at the next picture, not inside the button's press, which would then answer late)
+  const warmQ = [];
+  function warmCar(c) { if (c && c.ready && c.root && !c.warm && !warmQ.includes(c)) warmQ.push(c); }
+  function warmQueued() { const any = warmQ.length > 0; for (const c of warmQ.splice(0)) { c.warm = true; warmShaders(c.root); } return any; }
   function buildTraffic(model) {
     const holder = new THREE.Group(); holder.add(model); holder.updateMatrixWorld(true);
     const at = (...pts) => pts.map(([x, y, z]) => new THREE.Matrix4().makeTranslation(x, y, z));
@@ -3531,6 +3534,7 @@ body {
   function frame(now) {
     // an even rhythm (paceGate, above): on a refresh not drawn nothing is done; its time counts in the next picture
     if (!paceGate(now)) { requestAnimationFrame(frame); return; }
+    const warmed = warmQueued();                               // (a car's shaders on the road, at the start of a game or race)
     const rawDt = Math.min(0.25, Math.max(0, (now - last) / 1000)); last = now;
     const dt = Math.min(0.05, rawDt);
     if (S.slowCd > 0) S.slowCd -= dt;
@@ -3628,6 +3632,7 @@ body {
     const onRoad = S.mode !== 'menu';                        // nothing to bend in the car park
     if (onRoad) bendForRender(true);
     try { renderAll(now); } finally { if (onRoad) bendForRender(false); }
+    if (warmed) last = performance.now();                    // (the time taken preparing is not driven in the next picture)
     requestAnimationFrame(frame);
   }
   requestAnimationFrame(frame);

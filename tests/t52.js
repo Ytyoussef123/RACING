@@ -1,6 +1,6 @@
 // shaders built at the wrong moment (V28-V29): compiling one the first time it is drawn can freeze a phone for a moment.
 // Allowed: while loading, when a car arrives in the car park (its car park shaders), at the start of a game or race
-// (the car's road shaders, the screen changes there). Not allowed: while showing the cars, while driving, while racing.
+// (the car's road shaders, in the first picture after the press: the screen changes there). Not allowed: while showing the cars, while driving, while racing.
 // A: every car in: car park, start, drive, chase view, back, again, back, a race. B: a game started before the other
 // cars are in: nothing built (nor any car set up) while driving; back in the car park they are set up, then showing
 // them builds nothing. Phone landscape.
@@ -30,14 +30,14 @@ const serve = require('./serve-csp.js');
     await p.evaluate(() => __G.set(1, true)); await p.waitForTimeout(1500); await step('showGiulia');
     await p.evaluate(() => __G.set(2, true)); await p.waitForTimeout(1500); await step('showR34');
     await p.evaluate(() => __G.set(1, true)); await p.waitForTimeout(800);
-    await p.click('#playBtn'); await p.waitForTimeout(300); await step('start1');
+    await p.click('#playBtn'); await p.waitForFunction(() => __S.mode === 'play' && __S.time > 0.05, null, { timeout: 120000 }); await step('start1');
     await p.waitForTimeout(1500); await step('drive1');
     await p.click('#camBtn'); await p.waitForTimeout(1000); await step('chase');
     await p.click('#camBtn'); await toPark(p); await step('park1');
-    await p.click('#playBtn'); await p.waitForTimeout(300); await step('start2');
+    await p.click('#playBtn'); await p.waitForFunction(() => __S.mode === 'play' && __S.time > 0.05, null, { timeout: 120000 }); await step('start2');
     await p.waitForTimeout(1500); await step('drive2');
     await toPark(p); await step('park2');
-    await p.click('#raceBtn'); await p.waitForTimeout(600); await step('raceStart');
+    await p.click('#raceBtn'); await p.waitForFunction(() => __S.mode === 'countdown' && __RC.count < 3.85, null, { timeout: 120000 }); await step('raceStart');
     await p.evaluate(() => { __RC.count = 0.001; }); await p.waitForTimeout(1500); await step('racing');
     out.A = built;
     await p.context().close();
