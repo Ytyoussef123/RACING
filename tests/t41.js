@@ -13,13 +13,13 @@ const serve = require('./serve-csp.js');
     await p.waitForTimeout(1500);                       // (the other cars set up meanwhile: the page answers at once)
     const st = () => p.evaluate(() => ({ fs: !!document.fullscreenElement, label: document.getElementById('fsMenuLabel').textContent, on: document.getElementById('fsBtn').classList.contains('on') }));
     await p.screenshot({ path: `fs-menu-${name}.png` });
-    await p.click('#fsMenuBtn'); await p.waitForTimeout(600); const a = await st();
-    await p.click('#fsMenuBtn'); await p.waitForTimeout(600); const c = await st();
+    await p.click('#fsMenuBtn'); await p.waitForTimeout(1500); const a = await st();
+    await p.click('#fsMenuBtn'); await p.waitForTimeout(1500); const c = await st();
     await p.click('#playBtn'); await p.waitForTimeout(500);
     const bar = await p.evaluate(() => { const r = document.getElementById('fsBtn').getBoundingClientRect(), q = document.getElementById('pauseBtn').getBoundingClientRect(); return { fs: [Math.round(r.left), Math.round(r.top), Math.round(r.width), Math.round(r.height)], pause: [Math.round(q.left), Math.round(q.top)] }; });
-    await p.click('#fsBtn'); await p.waitForTimeout(600); const d = await st();
+    await p.click('#fsBtn'); await p.waitForTimeout(1500); const d = await st();
     await p.screenshot({ path: `fs-play-${name}.png` });
-    await p.click('#fsBtn'); await p.waitForTimeout(600); const e2 = await st();
+    await p.click('#fsBtn'); await p.waitForTimeout(1500); const e2 = await st();
     console.log(name, 'menu enter', JSON.stringify(a), '| exit', JSON.stringify(c), '| bar', JSON.stringify(bar), '| play enter', JSON.stringify(d), '| exit', JSON.stringify(e2), errs.length ? 'ERR ' + errs.join(' | ') : 'no errors');
     await p.context().close();
   }
