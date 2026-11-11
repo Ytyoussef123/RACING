@@ -11,8 +11,11 @@ const serve = require('./serve-csp.js');
     p.on('console', m => { if (m.type() === 'error' && !m.text().includes('GPU stall') && !m.text().includes('stylesheet')) errs.push(m.text().slice(0, 160)); });
     await p.addInitScript(() => { try { localStorage.setItem('corniche-hq', '0'); } catch (e) {} });
     await p.goto(url + 'test4.html');
-    await p.waitForFunction(() => (b => b.dataset.ready === '1' || b.textContent === 'JOUER')(document.getElementById('playBtn')), null, { timeout: 150000 });
-    await p.click('#playBtn'); await p.waitForTimeout(300);
+    await p.waitForFunction(() => (b => b.dataset.ready === '1' || b.textContent === 'JOUER')(document.getElementById('playBtn')) && (!window.__CARS || __CARS.every((c) => c.ready || c.failed)), null, { timeout: 150000 });
+    await p.waitForTimeout(1500);
+    // (V30: the car park opens with all its cars; on the 1610 px screen the software renderer draws it in about 1.4 s a
+    // picture, and a click takes several pictures: more time for it)
+    await p.click('#playBtn', { timeout: 120000 }); await p.waitForTimeout(300);
     if (await p.evaluate(() => __S.cam) !== 'cockpit') await p.click('#camBtn');
     await p.evaluate(() => { __S.traffic.forEach(c => __scene.remove(c)); __S.traffic.length = 0; __S.speed = 120 / 3.6; __S.gear = 4; __S.x = 1.75; });
     const g = await p.evaluate(() => { const z = document.getElementById('touchL'), r = z.getBoundingClientRect(); return { r: [r.left, r.top, r.right, r.bottom], w: z.offsetWidth, h: z.offsetHeight, R: __joyFull / 1.3, cls: document.getElementById('stage').className }; });

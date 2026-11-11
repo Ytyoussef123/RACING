@@ -425,7 +425,8 @@ body {
   </div>
 </div>
 <button class="icon-btn flip" id="flipBtn" type="button" hidden>⟲ Retourner l'écran</button>
-<!-- loading: the game's own screen until it is ready (nothing is drawn behind it meanwhile); it fades out on the car park -->
+<!-- loading: the game's own screen until it is ready (nothing is drawn behind it while loading, then the car park's first
+     pictures, until they come at an even pace); it fades out on the car park -->
 <div class="loading" id="loading" role="progressbar" aria-label="Chargement" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
   <div class="ld-in">
     <h1 class="logo">CORNICHE<br><span>RUSH</span></h1>
@@ -2440,13 +2441,21 @@ body {
   let setupWaitingCar = () => {};                            // (set by loadModels: a downloaded car, set up when calm)
   // the loading screen: its bar follows the download, a tip changes every few seconds; when the game is ready it fades
   // out on the car park, where the first car comes out from under its cover
-  const LD = { el: $('loading'), fill: $('ldFill'), pct: $('ldPct'), tip: $('ldTip'), i: 0, timer: 0 };
+  const LD = { el: $('loading'), fill: $('ldFill'), pct: $('ldPct'), tip: $('ldTip'), i: 0, timer: 0, up: true, settle: null };
   const LD_TIPS = ['Frôle les voitures à plus de 90 km/h : bonus et nitro.', 'Plus tu vas vite, plus tes points sont multipliés : jusqu\'à x4 à 200 km/h.',
     'Course : accélère pendant le compte à rebours, l\'aiguille dans le vert pour un départ parfait.', '« Vue » : passe du cockpit à la vue arrière, et retour.',
     'Au parking, glisse le doigt pour voir les autres voitures.'];
   LD.timer = setInterval(() => { LD.i = (LD.i + 1) % LD_TIPS.length; LD.tip.textContent = LD_TIPS[LD.i]; }, 3500);
   function loadingAt(p) { LD.fill.style.width = p + '%'; LD.pct.textContent = 'Chargement… ' + p + ' %'; LD.el.setAttribute('aria-valuenow', p); }
-  function loadingDone() { clearInterval(LD.timer); loadingAt(100); LD.pct.textContent = 'Prêt'; LD.el.classList.add('out'); setTimeout(() => { LD.el.hidden = true; }, 600); }
+  // ready: the screen stays up while the car park's first pictures are drawn behind it (they send the cars' textures and
+  // shadows to the graphics card: a phone takes a moment over them), and fades once the pictures come at an even pace
+  // (0.15 s without a late one; 1.5 s at most). Until then the car park stands still and its buttons wait
+  function loadingSettle(now) {                              // (frame(): on every refresh while it waits)
+    const s = LD.settle, g = s.prev ? now - s.prev : 1e9; s.prev = now;
+    s.calm = g < 50 ? s.calm + g : 0;
+    if (s.calm >= 150 || now - s.t0 > 1500) { LD.settle = null; loadingDone(); }
+  }
+  function loadingDone() { LD.up = false; clearInterval(LD.timer); loadingAt(100); LD.pct.textContent = 'Prêt'; LD.el.classList.add('out'); setTimeout(() => { LD.el.hidden = true; }, 600); garageUI(); }
   function loadModels() {
     const btn = $('playBtn');
     if (!THREE.GLTFLoader) { useCockpit(newCockpit(null)); clearInterval(LD.timer); LD.pct.textContent = 'Le chargement a échoué : recharge la page'; return; }
@@ -2485,7 +2494,7 @@ body {
       if (!CARS[0].root) CARS[0].root = playerCar;             // (the simple car, if its model failed)
       warmShaders();                                           // (while the button still reads CHARGEMENT)
       CARS[0].ready = CARS[0].warm = modelsReady = true; G.reveal(0); garageUI(); applyCam(); warmCars();
-      loadingDone();
+      loadingAt(100); LD.settle = { t0: performance.now(), prev: 0, calm: 0 };   // (the screen fades once the car park runs smoothly behind it)
     };
     // the game is ready once the other cars are in too, or 8 s after the rest at most (those still on the way come later)
     const finishWhenCarsIn = (t0 = performance.now()) => {
@@ -2742,7 +2751,7 @@ body {
       else if (c.failed) btnLabel(b, 'INDISPONIBLE', 'chargement raté');
       else if (wait) btnLabel(b, 'CHARGEMENT', Math.round((c.pct || 0) * 100) + ' %');
       else btnLabel(b, 'LIBRE', 'sans course · points');
-      b.disabled = !!c.soon || wait; b.classList.toggle('soon', !!c.soon || wait);
+      b.disabled = !!c.soon || wait || LD.up; b.classList.toggle('soon', !!c.soon || wait);   // (and while the loading screen is up)
       b.dataset.ready = b.disabled ? '' : '1';                // (the tests wait for this: the car shown can drive off)
       $('raceBtn').disabled = b.disabled;                      // (the race needs the car as much as LIBRE)
     }
@@ -3050,7 +3059,7 @@ body {
   // LIBRE, the free game for points (again after a crash), and COURSE, the race (again after a race)
   const start = (race) => {
     if (!cockpit) return;
-    if (S.mode === 'menu') { if (!modelsReady || !CARS[G.idx].ready) return; useCar(G.idx); warmCar(CARS[G.idx]); }
+    if (S.mode === 'menu') { if (!modelsReady || LD.up || !CARS[G.idx].ready) return; useCar(G.idx); warmCar(CARS[G.idx]); }
     tryLandscape(); ensureAudio(); newGame(race === true);
   };
   const startRace = () => start(true);
@@ -3600,7 +3609,8 @@ body {
   const steerQ = new THREE.Quaternion(), ZAXIS = new THREE.Vector3(0, 0, 1), flipBtn = $('flipBtn');
   function frame(now) {
     // an even rhythm (paceGate, above): on a refresh not drawn nothing is done; its time counts in the next picture
-    // (loading: nothing is drawn behind the loading screen)
+    // (loading: nothing is drawn behind the loading screen; once all is in, the car park's first pictures, until it fades)
+    if (LD.settle) loadingSettle(now);
     if (!paceGate(now) || !modelsReady) { PACE.prevSkip = true; requestAnimationFrame(frame); return; }
     const warmed = warmQueued();                               // (a car's shaders on the road, at the start of a game or race)
     const rawDt = Math.min(0.25, Math.max(0, (now - last) / 1000)); last = now;
@@ -3655,7 +3665,7 @@ body {
       menuT += dt;
       // the car park: its camera slides along the row of cars (the road is not drawn meanwhile); a car downloaded
       // meanwhile is set up while it is at rest
-      G.step(dt);
+      G.step(LD.settle ? 0 : dt);                              // (still behind the loading screen: the covers lift once it fades)
       if (G.idle()) setupWaitingCar();
     } else if (S.cam === 'cockpit') {
       const fov = (portrait ? 66 : 52) + Math.min(6, Math.pow(S.speed / 65, 1.5) * 5) + (S.nitroOn ? 4 : 0) + S.kick * 1.5;
