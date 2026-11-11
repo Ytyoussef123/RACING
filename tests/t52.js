@@ -10,8 +10,10 @@ const serve = require('./serve-csp.js');
   const { srv, url } = await serve(__dirname);
   const b = await chromium.launch({ args: ['--use-gl=swiftshader', '--enable-unsafe-swiftshader'] });
   const errs = [], out = {};
-  const page = async () => {
+  const page = async (slowCars) => {
     const p = await (await b.newContext({ ...devices['Pixel 7 landscape'], deviceScaleFactor: 1 })).newPage();
+    // (B: the other cars on a slow network, so that they come in after the loading screen, during the game)
+    if (slowCars) await p.route(/car-(giulia|r34)\.json$/, async (r) => { await new Promise((ok) => setTimeout(ok, 14000)); r.continue(); });
     p.on('pageerror', (e) => errs.push('pageerror ' + e.message)); p.on('console', (m) => { if (m.type() === 'error' && !/fonts.googleapis/.test(m.text())) errs.push(m.text().slice(0, 160)); });
     await p.addInitScript(() => { try { localStorage.clear(); } catch (e) {} });
     await p.goto(url + 'test4.html');
@@ -42,7 +44,7 @@ const serve = require('./serve-csp.js');
     out.A = built;
     await p.context().close();
     // B
-    p = await page();
+    p = await page(true);
     const B = { othersIn: await p.evaluate(() => __CARS.slice(1).map((c) => !!c.ready)) };
     await p.click('#playBtn'); await p.waitForTimeout(300);
     B.mode = await p.evaluate(() => __S.mode); B.atStart = await n(p);

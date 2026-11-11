@@ -178,6 +178,19 @@ body {
   font: 600 11px var(--font-body); color: #fff; background: rgba(0, 0, 0, 0.5); padding: 2px 8px; border-radius: 6px; white-space: nowrap; }
 .opt { display: flex; align-items: center; gap: 9px; font-size: 13px; color: var(--ink); cursor: pointer; }
 .opt input { width: 18px; height: 18px; margin: 0; accent-color: var(--sun); }
+/* loading screen: logo, bar, a tip; above everything until the game is ready, then it fades on the car park */
+.loading { position: fixed; inset: 0; z-index: 30; display: grid; place-items: center; overflow: hidden;
+  padding: 20px max(16px, var(--sar)) 20px max(16px, var(--sal)); background: radial-gradient(ellipse at 50% 38%, #173452 0%, var(--navy) 64%);
+  transition: opacity 0.5s ease; }
+.loading.out { opacity: 0; pointer-events: none; }
+.ld-in { width: min(440px, 100%); display: flex; flex-direction: column; align-items: center; gap: 12px; text-align: center; }
+.ld-sub { font-size: 12px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--muted); margin-top: -4px; }
+.ld-bar { width: 100%; height: 8px; border-radius: 4px; background: rgba(255, 255, 255, 0.12); overflow: hidden; margin-top: 12px; }
+.ld-bar i { display: block; height: 100%; width: 0; border-radius: 4px; background: linear-gradient(90deg, var(--sea), var(--sun)); transition: width 0.3s ease-out; }
+.ld-pct { font-family: var(--font-display); font-weight: 800; font-size: 18px; letter-spacing: 0.04em; font-variant-numeric: tabular-nums; }
+.ld-tip { margin: 4px 0 0; font-size: 13px; color: var(--muted); max-width: 38ch; line-height: 1.45; min-height: 2.9em; }
+#stage.short .loading .logo { font-size: 50px; }
+@media (prefers-reduced-motion: reduce) { .loading, .ld-bar i { transition: none; } }
 @media (prefers-reduced-motion: reduce) { .toast, .flash { transition: none; } }
 @media (max-width: 560px) { #stage:not(.rot) .nitro { width: 110px; } #stage:not(.rot) .chip .value { font-size: 20px; } }
 
@@ -364,7 +377,7 @@ body {
       <dt>Course</dt><dd>Un contre un face à un pilote de l'IA, de Casa Port à la mosquée Hassan II (3,6 km), dans le trafic. Pendant le compte à rebours, accélère : l'aiguille dans le vert au départ, c'est un départ parfait ; dans le rouge, les roues patinent.</dd>
       <dt>Libre</dt><dd>Le jeu sans course : roule aussi loin que tu peux dans le trafic et marque un maximum de points, jusqu'au premier accident.</dd>
       <dt>Risque</dt><dd>Plus tu vas vite, plus tes points sont multipliés : x2 à 100 km/h, x3 à 150, x4 à 200.</dd>
-      <dt>Frôlement</dt><dd>Double une voiture de très près à plus de 90 km/h : bonus et nitro. À plus de 130 km/h, le temps ralentit.</dd>
+      <dt>Frôlement</dt><dd>Double une voiture de très près à plus de 90 km/h : bonus et nitro.<span id="slowRule"> À plus de 130 km/h, le temps ralentit.</span></dd>
       <dt>Accident</dt><dd>Rentrer dans l'arrière d'une voiture termine la partie. Un choc de côté, ou une voiture qui te touche par derrière, te secoue et te ralentit, mais tu continues.</dd>
       <dt>Commandes</dt><dd id="ctrlText">↑ accélérer · ↓ freiner · ← → tourner · Maj nitro · C changer de vue · F plein écran · au parking : R course, Entrée libre</dd>
     </dl>
@@ -412,6 +425,16 @@ body {
   </div>
 </div>
 <button class="icon-btn flip" id="flipBtn" type="button" hidden>⟲ Retourner l'écran</button>
+<!-- loading: the game's own screen until it is ready (nothing is drawn behind it meanwhile); it fades out on the car park -->
+<div class="loading" id="loading" role="progressbar" aria-label="Chargement" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+  <div class="ld-in">
+    <h1 class="logo">CORNICHE<br><span>RUSH</span></h1>
+    <div class="ld-sub">Casa Port · Aïn Diab</div>
+    <div class="ld-bar"><i id="ldFill"></i></div>
+    <div class="ld-pct" id="ldPct">Chargement… 0 %</div>
+    <p class="ld-tip" id="ldTip">Frôle les voitures à plus de 90 km/h : bonus et nitro.</p>
+  </div>
+</div>
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
@@ -494,17 +517,27 @@ body {
     g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(0.001, t + dur);
     o.connect(g); g.connect(ac.destination); o.start(t); o.stop(t + dur + 0.05);
   }
+  // the noise of each sound effect is made once and kept (not again at every car passed: at full speed in traffic that
+  // was a new buffer of 20 000 samples a second or so, filled on the game's thread)
+  const noiseBufs = new Map();
+  function noiseBuf(dur, fade) {
+    const k = (fade ? 'f' : 's') + dur; let b = noiseBufs.get(k);
+    if (!b) {
+      b = ac.createBuffer(1, Math.max(1, (ac.sampleRate * dur) | 0), ac.sampleRate); const d = b.getChannelData(0);
+      for (let i = 0; i < d.length; i++) d[i] = (Math.random() * 2 - 1) * (fade ? 1 - i / d.length : Math.sin(Math.PI * i / d.length));
+      noiseBufs.set(k, b);
+    }
+    return b;
+  }
   function noise(dur, vol = 0.3) {
     if (!ac || !soundOn) return;
-    const b = ac.createBuffer(1, ac.sampleRate * dur, ac.sampleRate), d = b.getChannelData(0);
-    for (let i = 0; i < d.length; i++) d[i] = (Math.random() * 2 - 1) * (1 - i / d.length);
+    const b = noiseBuf(dur, true);
     const src = ac.createBufferSource(), g = ac.createGain(); g.gain.value = vol;
     src.buffer = b; src.connect(g); g.connect(ac.destination); src.start();
   }
   function burst(dur, vol, freq, q, pan = 0, type = 'bandpass', sweep = 0) {
     if (!ac || !soundOn) return;
-    const t = ac.currentTime, b = ac.createBuffer(1, (ac.sampleRate * dur) | 0, ac.sampleRate), d = b.getChannelData(0);
-    for (let i = 0; i < d.length; i++) d[i] = (Math.random() * 2 - 1) * Math.sin(Math.PI * i / d.length);
+    const t = ac.currentTime, b = noiseBuf(dur, false);
     const src = ac.createBufferSource(), f = ac.createBiquadFilter(), g = ac.createGain();
     f.type = type; f.frequency.setValueAtTime(freq, t); if (sweep) f.frequency.exponentialRampToValueAtTime(Math.max(60, freq + sweep), t + dur);
     f.Q.value = q; g.gain.value = vol; src.buffer = b; src.connect(f); f.connect(g);
@@ -2405,28 +2438,38 @@ body {
     });
   }
   let setupWaitingCar = () => {};                            // (set by loadModels: a downloaded car, set up when calm)
+  // the loading screen: its bar follows the download, a tip changes every few seconds; when the game is ready it fades
+  // out on the car park, where the first car comes out from under its cover
+  const LD = { el: $('loading'), fill: $('ldFill'), pct: $('ldPct'), tip: $('ldTip'), i: 0, timer: 0 };
+  const LD_TIPS = ['Frôle les voitures à plus de 90 km/h : bonus et nitro.', 'Plus tu vas vite, plus tes points sont multipliés : jusqu\'à x4 à 200 km/h.',
+    'Course : accélère pendant le compte à rebours, l\'aiguille dans le vert pour un départ parfait.', '« Vue » : passe du cockpit à la vue arrière, et retour.',
+    'Au parking, glisse le doigt pour voir les autres voitures.'];
+  LD.timer = setInterval(() => { LD.i = (LD.i + 1) % LD_TIPS.length; LD.tip.textContent = LD_TIPS[LD.i]; }, 3500);
+  function loadingAt(p) { LD.fill.style.width = p + '%'; LD.pct.textContent = 'Chargement… ' + p + ' %'; LD.el.setAttribute('aria-valuenow', p); }
+  function loadingDone() { clearInterval(LD.timer); loadingAt(100); LD.pct.textContent = 'Prêt'; LD.el.classList.add('out'); setTimeout(() => { LD.el.hidden = true; }, 600); }
   function loadModels() {
     const btn = $('playBtn');
-    if (!THREE.GLTFLoader) { useCockpit(newCockpit(null)); return; }
+    if (!THREE.GLTFLoader) { useCockpit(newCockpit(null)); clearInterval(LD.timer); LD.pct.textContent = 'Le chargement a échoué : recharge la page'; return; }
     btn.disabled = true;
     // on a phone the textures come from models/m/ (tools/phonetex.mjs): the same pictures, the big ones reduced (512 px,
     // 1024 for paint and livery). On a phone's screen they look the same and take half the graphics memory
     const manager = new THREE.LoadingManager();
     if (isPhone) manager.setURLModifier((u) => u.replace(/(^|\/)models\/([^/]+\.webp)$/, '$1models/m/$2'));
-    const loader = new THREE.GLTFLoader(manager), got = { t: 0, h: 0, i: 0, d: 0, p: 0 }, TOTAL = 7.8e6;
+    const loader = new THREE.GLTFLoader(manager), got = { t: 0, h: 0, i: 0, d: 0, p: 0, c1: 0, c2: 0 }, TOTAL = 13e6;
     let done = false;
-    const show = () => { if (!done) btnLabel(btn, 'CHARGEMENT', Math.min(99, Math.round(((got.t + got.h + got.i + got.d + got.p) / TOTAL) * 100)) + ' %'); };
+    const show = () => { if (done) return; const p = Math.min(99, Math.round((Object.values(got).reduce((a, b) => a + b, 0) / TOTAL) * 100)); btnLabel(btn, 'CHARGEMENT', p + ' %'); loadingAt(p); };
     const load = (url, k) => new Promise((res, rej) => loader.load(url, res, (e) => { got[k] = e.loaded; show(); }, rej));
     show();
-    // the other cars of the car park are downloaded one after the other once the game is ready (they do not hold it
-    // back), then set up only while the car park is at rest (no finger on it, no car sliding, no cover lifting):
-    // setting a car up takes a phone a moment, better spent when nothing moves. Each comes out from under its cover
+    // the other cars of the car park are downloaded one after the other from the start, and set up behind the loading
+    // screen: the car park then opens complete and calm. One that comes later (a slow network: the loading screen waits
+    // for them 8 s at most) is set up only while the car park is at rest (no finger on it, no car sliding, no cover
+    // lifting): setting a car up takes a phone a moment, better spent when nothing moves. Each comes out of its cover
     const files = new THREE.FileLoader(manager);
     const loadCars = (i = 1) => {
       const c = CARS[i]; if (!c) return;
       if (!c.file || c.ready) return loadCars(i + 1);
-      files.load(c.file, (text) => { c.raw = text; loadCars(i + 1); },
-        (e) => { c.pct = e.total ? e.loaded / e.total : 0; if (G.idx === i) garageUI(); }, () => { c.failed = true; garageUI(); loadCars(i + 1); });
+      files.load(c.file, (text) => { c.raw = text; if (!done) setupWaitingCar(); loadCars(i + 1); },
+        (e) => { c.pct = e.total ? e.loaded / e.total : 0; got['c' + i] = e.loaded; show(); if (G.idx === i) garageUI(); }, () => { c.failed = true; garageUI(); loadCars(i + 1); });
     };
     setupWaitingCar = () => {
       const i = CARS.findIndex((c) => c.raw); if (i < 0) return;
@@ -2442,8 +2485,14 @@ body {
       if (!CARS[0].root) CARS[0].root = playerCar;             // (the simple car, if its model failed)
       warmShaders();                                           // (while the button still reads CHARGEMENT)
       CARS[0].ready = CARS[0].warm = modelsReady = true; G.reveal(0); garageUI(); applyCam(); warmCars();
-      loadCars();
+      loadingDone();
     };
+    // the game is ready once the other cars are in too, or 8 s after the rest at most (those still on the way come later)
+    const finishWhenCarsIn = (t0 = performance.now()) => {
+      if (done) return;
+      if (CARS.every((c) => !c.file || c.ready || c.failed) || performance.now() - t0 > 8000) finish(); else setTimeout(() => finishWhenCarsIn(t0), 200);
+    };
+    loadCars();
     // car interior (one JSON file: geometry, baked shading, anchors for gauges and mirror) and the driver's arms
     const fl = new THREE.FileLoader(); fl.setResponseType('json');
     const driverP = new Promise((res) => loader.load('models/driver.json', (g) => res(g.scene), (e) => { got.d = e.loaded; show(); }, () => res(null)));
@@ -2458,7 +2507,7 @@ body {
       if (t.status === 'fulfilled') { const m = t.value.scene; fixMaterials(m, trafficGlass); m.rotation.y = Math.PI; m.position.set(0, 0.16, 0.24); MODELS.traffic = m; try { buildTraffic(m); } catch (e) { console.error(e); } }
       if (h.status === 'fulfilled') { try { setupHero(h.value); } catch (e) { console.error(e); } }
       G.reveal(0);                                             // (after a slow load, swaps the stand-in car for the real one)
-      if (done) warmCars(); else finish();                     // (and prepares the real one's shaders)
+      if (done) warmCars(); else finishWhenCarsIn();           // (and prepares the real one's shaders)
     });
   }
 
@@ -2941,6 +2990,7 @@ body {
   function refreshBest() { $('bestMenu').textContent = 'Record : ' + best.toLocaleString('fr-FR') + (raceBest ? ' · course ' + fmtRace(raceBest) : ''); $('bestOver').textContent = 'Record : ' + best.toLocaleString('fr-FR'); }
   refreshBest();
   if (isTouch) $('ctrlText').textContent = 'Pose le pouce en bas à gauche et glisse à gauche ou à droite pour tourner. GAZ et FREIN à droite, NOS pour la nitro.';
+  if (isTouch) $('slowRule').hidden = true;                  // (no slow motion on a touch screen)
 
   let vibOn = true;
   try { vibOn = localStorage.getItem('corniche-vib') !== '0'; } catch (e) {}
@@ -3113,8 +3163,14 @@ body {
   const setKnob = (dx, dy, anim) => { knob.style.transition = anim ? 'transform 0.12s ease-out' : 'none'; knob.style.transform = `translate(${dx.toFixed(1)}px, ${dy.toFixed(1)}px)`; };
   zone.addEventListener('pointerdown', (e) => {
     e.preventDefault();
-    // a new touch always takes the stick over, so a lost touch can never leave it stuck
-    if (joyId !== null && joyId !== e.pointerId) { try { zone.releasePointerCapture(joyId); } catch (_) {} }
+    // another touch while the thumb is on the stick (a finger or the edge of the hand holding the phone) does not take
+    // it over: the stick kept ignoring the thumb after that, and the car went straight on. Only once that thumb is gone
+    // (the browser no longer holds it for the stick, so a lost touch still cannot leave it stuck) does a new touch take it
+    if (joyId !== null && joyId !== e.pointerId) {
+      let held = false; try { held = zone.hasPointerCapture(joyId); } catch (_) {}
+      if (held) return;
+      try { zone.releasePointerCapture(joyId); } catch (_) {}
+    }
     joyId = e.pointerId; try { zone.setPointerCapture(e.pointerId); } catch (_) {}
     [joyCx, joyCy] = toLocal(e);
     joy.style.left = (joyCx - joy.offsetWidth / 2) + 'px'; joy.style.top = (joyCy - joy.offsetHeight / 2) + 'px'; joy.style.bottom = 'auto';
@@ -3135,6 +3191,8 @@ body {
   zone.addEventListener('pointerup', joyUp); zone.addEventListener('pointercancel', joyUp); zone.addEventListener('lostpointercapture', joyUp);
   const joyReset = () => { if (joyId !== null) joyUp({ pointerId: joyId }); };
   addEventListener('blur', joyReset); document.addEventListener('visibilitychange', joyReset);
+  // a long press (a thumb held still on the stick or a pedal) must not open the browser's menu, which ends the touch
+  stage.addEventListener('contextmenu', (e) => e.preventDefault());
 
   // ---------------- loop ----------------
   // wind streaks that rush past at high speed
@@ -3244,34 +3302,41 @@ body {
   // browser's frames: 60, 90, 120 Hz...). The game draws on every refresh, or on one in 2, 3 or 4 when too many
   // pictures come late: an even rhythm looks smoother than an uneven one at a higher average (a 90 or 120 Hz phone
   // that cannot keep up jumps between one and two refreshes a picture, the stutter of a "heavy" game). After a calm
-  // while it tries the faster rhythm again, waiting longer each time that fails. Only at the slowest rhythm (about 30
-  // a second) does the resolution go down, and back up when calm. The car park: about 60 a second, 30 at rest
-  const PACE = { vs: 1000 / 60, n: 1, gaps: [], prevRaf: 0, lastDraw: 0, t: 0, frames: 0, late: 0, calm: 0, probe: false, wait: 8000, lowered: 0 };
+  // while (15 s) it tries the faster rhythm again, judged in 0.6 s so that a failed try is a short stutter, and waits
+  // twice longer after each failure (2 min at most). Only at the slowest rhythm (about 30 a second) does the resolution
+  // go down, and it goes back up only after a long calm (30 s, then longer each time: a resolution change is a jolt).
+  // The car park: about 60 a second, 30 at rest
+  const PACE = { vs: 1000 / 60, n: 1, gaps: [], prevRaf: 0, lastDraw: 0, t: 0, frames: 0, late: 0, calm: 0, probe: false, wait: 15000, lowered: 0, resWait: 30000 };
+  // (on a touch screen: at most about 60 a second in a game, even on a 120 Hz screen: a phone that draws more heats up,
+  // then slows itself down in the middle of a game; and the car park at rest about 20 a second: its slow sway needs no
+  // more, and the phone stays cool for the game)
+  const paceMin = () => (isTouch ? Math.max(1, Math.floor(16.7 / PACE.vs)) : 1);
   function paceGate(now) {                                   // (true: draw on this refresh)
     const P = PACE;
-    if (P.prevRaf) {
-      const g = now - P.prevRaf;
+    if (P.prevRaf && P.prevSkip) {                           // (the refresh: measured only after a refresh with nothing drawn,
+      const g = now - P.prevRaf;                             // as while loading or in the car park at rest; after a picture the
       if (g > 3 && g < 60) { P.gaps.push(g); if (P.gaps.length > 120) P.gaps.shift(); if (P.gaps.length % 20 === 0) { const s = P.gaps.slice().sort((a, b) => a - b); P.vs = s[s.length >> 1]; } }
-    }
-    P.prevRaf = now;
-    const n = S.mode === 'menu' ? Math.max(P.n, Math.round((G.idle() ? 33 : 16.7) / P.vs)) : P.n;   // (car park: about 60, at rest 30)
+    }                                                        // gap is the picture's own time, not the screen's)
+    P.prevRaf = now; P.prevSkip = false;
+    const n = S.mode === 'menu' ? Math.max(P.n, Math.round((G.idle() ? (isTouch ? 50 : 33) : 16.7) / P.vs)) : Math.max(P.n, paceMin());   // (car park: about 60, at rest 30, 20 on a phone)
     return !P.lastDraw || now - P.lastDraw >= (n - 0.4) * P.vs;
   }
   function paceDrawn(now) {
     const P = PACE, gap = P.lastDraw ? now - P.lastDraw : 0; P.lastDraw = now;
     if (fpsOn && gap) fpsTick(gap);
     if (!gap || S.mode === 'menu' || S.mode === 'paused') return;
+    if (P.n < paceMin()) P.n = paceMin();
     P.frames++; if (gap > (P.n + 0.5) * P.vs) P.late++; P.t += gap; P.lowered = Math.max(0, P.lowered - gap);
-    if (P.t < 1500) return;
+    if (P.t < (P.probe ? 600 : 1500)) return;
     const rate = P.late / P.frames, slowest = Math.max(1, Math.min(4, Math.floor(34 / P.vs))), floor = hq ? 1 : 0.75;
     if (rate > 0.12) {
-      if (P.n < slowest) { P.n++; if (P.probe) P.wait = Math.min(64000, P.wait * 2); }
-      else if (prNow > floor) { prNow = Math.max(floor, prNow - 0.25); P.lowered = 15000; resizeAll(); }
+      if (P.n < slowest) { P.n++; if (P.probe) P.wait = Math.min(120000, P.wait * 2); }
+      else if (prNow > floor) { prNow = Math.max(floor, prNow - 0.25); P.lowered = P.resWait; P.resWait = Math.min(120000, P.resWait * 2); resizeAll(); }
       P.probe = false; P.calm = 0;
     } else if (rate < 0.03) {
-      if (P.probe) { P.probe = false; P.wait = 8000; }
-      if (prNow < PR_MAX && P.lowered <= 0) { prNow = Math.min(PR_MAX, prNow + 0.25); P.lowered = 8000; resizeAll(); }
-      else if (P.n > 1) { P.calm += P.t; if (P.calm >= P.wait) { P.n--; P.calm = 0; P.probe = true; } }
+      if (P.probe) { P.probe = false; P.wait = 15000; }
+      if (prNow < PR_MAX && P.lowered <= 0) { prNow = Math.min(PR_MAX, prNow + 0.25); resizeAll(); }
+      else if (P.n > paceMin()) { P.calm += P.t; if (P.calm >= P.wait) { P.n--; P.calm = 0; P.probe = true; } }
     }
     P.t = P.frames = P.late = 0;
   }
@@ -3466,7 +3531,9 @@ body {
         u.passed = true;
         if (ox < 3 && S.speed > 15) sfxWhoosh(Math.sign(c.position.x - S.x) * 0.85, Math.min(1, (S.speed - u.speed + 8) / 28) * (1 - ox / 3.3));
         if (ox < 1.4 && S.speed > 25) buzz(ox < 0.55 ? 60 : 25);
-        if (ox < 0.55 && S.speed > 130 / 3.6 && S.slowCd <= 0) { S.slowmo = 0.5; S.slowCd = 4; S.shake = Math.max(S.shake, 0.25); }
+        // the slow motion on a very close pass: not on a touch screen, where the car then barely answered the stick for
+        // half a second at full speed (the bonus, the nitro, the sound and the vibration stay)
+        if (ox < 0.55 && S.speed > 130 / 3.6 && S.slowCd <= 0 && !isTouch) { S.slowmo = 0.5; S.slowCd = 4; S.shake = Math.max(S.shake, 0.25); }
         if (ox < 0.9 && S.speed > 90 / 3.6) {
           S.combo++; S.comboT = 2.5; S.near++;
           const bonus = 150 * S.combo; S.score += bonus;
@@ -3533,7 +3600,8 @@ body {
   const steerQ = new THREE.Quaternion(), ZAXIS = new THREE.Vector3(0, 0, 1), flipBtn = $('flipBtn');
   function frame(now) {
     // an even rhythm (paceGate, above): on a refresh not drawn nothing is done; its time counts in the next picture
-    if (!paceGate(now)) { requestAnimationFrame(frame); return; }
+    // (loading: nothing is drawn behind the loading screen)
+    if (!paceGate(now) || !modelsReady) { PACE.prevSkip = true; requestAnimationFrame(frame); return; }
     const warmed = warmQueued();                               // (a car's shaders on the road, at the start of a game or race)
     const rawDt = Math.min(0.25, Math.max(0, (now - last) / 1000)); last = now;
     const dt = Math.min(0.05, rawDt);
