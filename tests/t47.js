@@ -1,4 +1,4 @@
-// car park (V27): the three cars. Load, wait for the two other cars to come out from under their covers, swipe to
+// car park (V27): the three cars. Load, wait for the two other cars to be in (V31: no cover lifting off), swipe to
 // the Giulia, ← → keys, drive the Giulia (it is the car on the road, its brake lights work), pause -> car park,
 // drive the R34, then the game over screen. Phone landscape, desktop, narrow window, phone held upright.
 // Screenshots: park-<screen>-a (car park), -b (Giulia shown), -c (Giulia driving, chase view), -d (R34 driving), -e (game over)

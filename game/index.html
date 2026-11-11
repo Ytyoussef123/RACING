@@ -686,6 +686,7 @@ body {
   sun.shadow.bias = -0.0005; sun.shadow.normalBias = 0.04;
   scene.add(sun, sun.target);
   var PR_MAX = 1, prNow = 1;
+  var redraw = true;                                         // (a change to show at the next refresh, whatever the rhythm: paceGate)
   function applyQuality() {
     PR_MAX = Math.min(window.devicePixelRatio || 1, hq ? (isTouch ? 1.75 : 2) : (isTouch ? 1.0 : 1.25)); prNow = PR_MAX;
     renderer.setPixelRatio(prNow); if (typeof resizeAll === 'function') resizeAll();
@@ -2447,13 +2448,17 @@ body {
     'Au parking, glisse le doigt pour voir les autres voitures.'];
   LD.timer = setInterval(() => { LD.i = (LD.i + 1) % LD_TIPS.length; LD.tip.textContent = LD_TIPS[LD.i]; }, 3500);
   function loadingAt(p) { LD.fill.style.width = p + '%'; LD.pct.textContent = 'Chargement… ' + p + ' %'; LD.el.setAttribute('aria-valuenow', p); }
-  // ready: the screen stays up while the car park's first pictures are drawn behind it (they send the cars' textures and
-  // shadows to the graphics card: a phone takes a moment over them), and fades once the pictures come at an even pace
-  // (0.15 s without a late one; 1.5 s at most). Until then the car park stands still and its buttons wait
-  function loadingSettle(now) {                              // (frame(): on every refresh while it waits)
-    const s = LD.settle, g = s.prev ? now - s.prev : 1e9; s.prev = now;
-    s.calm = g < 50 ? s.calm + g : 0;
-    if (s.calm >= 150 || now - s.t0 > 1500) { LD.settle = null; loadingDone(); }
+  // ready: the screen stays up while the car park's first pictures are drawn behind it. The first draws every car (the
+  // prime in G.render: all their textures go to the graphics card), the next ones wait for the graphics card to be
+  // through with it all. It fades once the pictures come at an even pace: three in a row under 60 ms (a phone with time
+  // to spare), or three in a row within a quarter of each other (a slower phone, done with its backlog); 6 s at most
+  // (V30 waited 1.5 s at most: on the user's phone the car park then opened while its graphics card was still busy).
+  // Until then the car park stands still, already in its finished picture, and its buttons wait
+  function loadingSettle(now) {                              // (frame(): at each picture drawn while it waits)
+    const s = LD.settle; if (s.prev) s.gaps.push(now - s.prev); s.prev = now;
+    const g = s.gaps.slice(-3), m = (g[0] + g[1] + g[2]) / 3;
+    const even = g.length === 3 && (g.every((x) => x < 60) || (s.gaps.length > 3 && m < 1000 && g.every((x) => Math.abs(x - m) < 0.25 * m)));
+    if (even || now - s.t0 > 6000) { LD.settle = null; loadingDone(); }
   }
   function loadingDone() { LD.up = false; clearInterval(LD.timer); loadingAt(100); LD.pct.textContent = 'Prêt'; LD.el.classList.add('out'); setTimeout(() => { LD.el.hidden = true; }, 600); garageUI(); }
   function loadModels() {
@@ -2493,8 +2498,9 @@ body {
       if (done) return; done = true; if (!cockpit) useCockpit(newCockpit(null, null));
       if (!CARS[0].root) CARS[0].root = playerCar;             // (the simple car, if its model failed)
       warmShaders();                                           // (while the button still reads CHARGEMENT)
-      CARS[0].ready = CARS[0].warm = modelsReady = true; G.reveal(0); garageUI(); applyCam(); warmCars();
-      loadingAt(100); LD.settle = { t0: performance.now(), prev: 0, calm: 0 };   // (the screen fades once the car park runs smoothly behind it)
+      CARS[0].ready = CARS[0].warm = modelsReady = true; G.reveal(0); garageUI(); applyCam(); warmCars(); G.snap();
+      loadingAt(100); LD.pct.textContent = 'Préparation du parking…';
+      LD.settle = { t0: performance.now(), prev: 0, gaps: [] };   // (the screen fades once the car park runs smoothly behind it)
     };
     // the game is ready once the other cars are in too, or 8 s after the rest at most (those still on the way come later)
     const finishWhenCarsIn = (t0 = performance.now()) => {
@@ -2608,7 +2614,7 @@ body {
     const plainMat = new THREE.MeshStandardMaterial({ map: plain, roughness: 0.9, envMapIntensity: 0.35 });
     for (const s of [-1, 1]) { const e = new THREE.Mesh(new THREE.PlaneGeometry(24, WH), plainMat); e.position.set(s * (WL / 2 + 12), WH / 2, -4.2); e.receiveShadow = true; gs.add(e); }
     // the signs are painted again once the game's fonts are in (they may arrive after this runs)
-    try { Promise.all([`italic 800 40px ${FD}`, `600 20px ${FB}`].map((f) => document.fonts.load(f))).then(() => { drawWall(wallC.getContext('2d'), 2560, 256); wallTex.needsUpdate = true; }, () => {}); } catch (e) {}
+    try { Promise.all([`italic 800 40px ${FD}`, `600 20px ${FB}`].map((f) => document.fonts.load(f))).then(() => { drawWall(wallC.getContext('2d'), 2560, 256); wallTex.needsUpdate = true; redraw = true; }, () => {}); } catch (e) {}
     // pillars on the bay lines, striped at bumper height; a dark ceiling with a pair of light tubes over each bay
     const pilMat = new THREE.MeshStandardMaterial({ map: concrete('#8b8d90', 4000), roughness: 0.85 });
     const haz = canvasTex(128, 128, (x, w, h) => {
@@ -2649,26 +2655,27 @@ body {
     const bays = CARS.map((c, i) => {
       const holder = new THREE.Group(); holder.position.set(bayX(i), 0, BAY_Z); holder.rotation.y = Math.PI; holder.userData = { w: 2.0, l: 4.5 };
       addBlob(holder); const cover = coveredCar(); holder.add(cover); gs.add(holder);
-      return { holder, cover, show: null, shown: null, unveil: null };
+      return { holder, cover, show: null, shown: null };
     });
-    let shadowDirty = true;
+    let shadowDirty = true, primeDue = false;
     // a parked copy of a car model (shares its meshes and materials): no cabin lamp, wheels at rest
     function showcase(model) { const m = model.clone(true), lamps = []; m.traverse((o) => { if (o.isLight) lamps.push(o); }); lamps.forEach((l) => l.parent.remove(l)); return m; }
-    // a car once its model is in (the standard car: the simple car if its model failed): its cover lifts off and fades
+    // a car once its model is in (the standard car: the simple car if its model failed) takes its cover's place at once
+    // (V31: the cover no longer lifts off and fades, which on the user's phone looked like a shadow peeling off the car).
+    // Its next picture draws the whole car park once (prime, in render below)
     function reveal(i) {
       const b = bays[i], c = CARS[i], src = c.model || (i === 0 ? 'box' : null);
       if (!src || b.shown === src) return;
       if (b.show) b.holder.remove(b.show);
-      b.show = c.model ? showcase(c.model) : makeCar(0xe8562a, 'car', true); b.shown = src; b.holder.add(b.show); shadowDirty = true;
-      if (b.cover && !b.unveil) {
-        const mat = coverMat.clone(); mat.transparent = true;
-        b.cover.traverse((o) => { if (!o.isMesh) return; o.castShadow = false; if (o.material === coverMat) o.material = mat; else o.visible = false; });
-        b.unveil = { t: 0, mat };
-      }
+      b.show = c.model ? showcase(c.model) : makeCar(0xe8562a, 'car', true); b.shown = src; b.holder.add(b.show);
+      if (b.cover) { b.holder.remove(b.cover); b.cover = null; }
+      shadowDirty = primeDue = redraw = true;
     }
 
     // camera: a three-quarter front view of the car in the middle, far enough back to fit the screen's shape, slowly
-    // swaying. A drag moves the row with the finger; on release it settles on the nearest bay (a flick goes one further)
+    // swaying on a computer (a touch screen keeps it still: at rest its car park is one fixed picture, with nothing to
+    // draw again, and the phone stays cool). A drag moves the row with the finger; on release it settles on the nearest
+    // bay (a flick goes one further)
     let idx = carPick, cx = bayX(carPick), t = 0, dist = 7, th = 0.34, drag = null;
     const aim = new THREE.Vector3();
     function set(i, snap) { idx = Math.max(0, Math.min(n - 1, i)); if (snap) cx = bayX(idx); garageUI(); }
@@ -2683,27 +2690,26 @@ body {
     }
     function step(dt) {
       t += dt;
-      for (const b of bays) if (b.unveil) {
-        const u = b.unveil; u.t += dt; const k = Math.min(1, u.t / 0.9);
-        b.cover.position.y = 2.6 * k * k; b.cover.scale.setScalar(1 + 0.05 * k); u.mat.opacity = 1 - Math.pow(k, 0.7);
-        if (k >= 1) { b.holder.remove(b.cover); b.cover = null; b.unveil = null; }
-      }
       for (let k = 0; k < n; k++) { const s = spots[k]; s.intensity += ((k === idx ? 2.6 : 0.45) - s.intensity) * (1 - Math.exp(-6 * dt)); }
-      if (t - band.at > 0.5) { band.at = t; measure(); }
+      if (t - band.at > 0.5 || idle()) { band.at = t; measure(); }   // (and at each of the rare pictures at rest)
       const asp = VW / VH, port = asp < 1, fov = port ? 50 : 38, side = stage.classList.contains('tall') ? 0 : 0.12;
       th = Math.tan(fov * Math.PI / 360);
       const hFrac = Math.max(0.26, Math.min(0.42, (band.bot - band.top) / VH * 0.95)), ndcY = 1 - (band.top + band.bot) / VH;
       dist = Math.max(1.9 / (2 * th * hFrac), 3.6 / ((port ? 1.6 : 1.0) * th * asp));  // the car's height fits the band, its width half the screen
       if (!drag) cx += (bayX(idx) - cx) * (1 - Math.exp(-7 * dt));
-      const az = (22 + (reduceMotion ? 0 : 4 * Math.sin(t * 0.33))) * Math.PI / 180, el = Math.min(0.23, Math.asin(Math.min(1, 2.3 / dist)));
+      const az = (22 + (reduceMotion || isTouch ? 0 : 4 * Math.sin(t * 0.33))) * Math.PI / 180, el = Math.min(0.23, Math.asin(Math.min(1, 2.3 / dist)));
       aim.set(cx, 0.62, BAY_Z);
       cam.fov = fov; cam.aspect = asp; cam.updateProjectionMatrix();
       cam.position.set(aim.x + dist * Math.sin(az) * Math.cos(el), aim.y + dist * Math.sin(el), aim.z + dist * Math.cos(az) * Math.cos(el));
       const sx = dist * th * asp * side;                                                // look a little left of the car: it shows right of centre
       cam.lookAt(aim.x - Math.cos(az) * sx, aim.y - dist * th * ndcY, aim.z + Math.sin(az) * sx);
     }
-    // at rest: no finger on it, the row settled on a car, its spot fully up, no cover lifting (only the slow sway moves)
-    const idle = () => !drag && Math.abs(bayX(idx) - cx) < 0.003 && Math.abs(spots[idx].intensity - 2.6) < 0.02 && !bays.some((b) => b.unveil);
+    // at rest: no finger on it, the row settled on a car, its spot fully up (only the slow sway moves, on a computer);
+    // moving: the camera itself slides (a finger on the row, or the row still on its way to a bay)
+    const idle = () => !drag && Math.abs(bayX(idx) - cx) < 0.003 && Math.abs(spots[idx].intensity - 2.6) < 0.02;
+    const moving = () => !!drag || Math.abs(bayX(idx) - cx) > 0.02;
+    // straight to that rest, behind the loading screen: the car park it uncovers is the finished picture
+    function snap() { cx = bayX(idx); for (let k = 0; k < n; k++) spots[k].intensity = k === idx ? 2.6 : 0.45; }
     function dragStart(px) { const now = performance.now(); drag = { px, x0: cx, last: px, lastT: now, v: 0 }; }
     function dragMove(px) {
       if (!drag) return;
@@ -2722,14 +2728,21 @@ body {
       i = Math.max(0, Math.min(n - 1, i));
       if (i !== idx) set(i);
     }
-    function render() {
-      const ex = renderer.toneMappingExposure;
+    // scale: the resolution while the camera slides, lowered on a phone that cannot keep up (paceGarage, below); else 1.
+    // After a car has come in, the next picture draws every mesh of the car park, seen or not (prime): all the cars'
+    // textures go to the graphics card then (behind the loading screen, or at rest), rather than each car's the first
+    // time it slides into view (on the user's phone: a picture of 0.7 s in the middle of a swipe)
+    function render(scale = 1) {
+      const pr = prNow * scale;
+      if (Math.abs(renderer.getPixelRatio() - pr) > 1e-3) renderer.setPixelRatio(pr);
+      const ex = renderer.toneMappingExposure, off = [];
       renderer.toneMappingExposure = 0.85;
+      if (primeDue) { primeDue = false; shadowDirty = true; gs.traverse((o) => { if (o.isMesh && o.frustumCulled) { o.frustumCulled = false; off.push(o); } }); }
       renderer.shadowMap.needsUpdate = shadowDirty; shadowDirty = false;
-      renderer.setRenderTarget(null); renderer.render(gs, cam);
-      renderer.toneMappingExposure = ex;
+      try { renderer.setRenderTarget(null); renderer.render(gs, cam); }
+      finally { renderer.toneMappingExposure = ex; off.forEach((o) => { o.frustumCulled = true; }); }
     }
-    return { scene: gs, cam, bays, get idx() { return idx; }, set, go, step, render, reveal, idle, dragStart, dragMove, dragEnd };
+    return { scene: gs, cam, bays, get idx() { return idx; }, set, go, step, render, reveal, idle, moving, snap, dragStart, dragMove, dragEnd };
   })();
   // the card, the dots, the arrows and the two game buttons follow the car shown
   const dotsEl = $('carDots');
@@ -2983,7 +2996,7 @@ body {
   const hudEl = document.querySelector('.hud');
   // modes: menu (car park), play, paused, crash, over; the race adds countdown, finish (rolling past the line), raceover
   function setMode(m) {
-    S.mode = m;
+    S.mode = m; redraw = true;
     $('menu').hidden = m !== 'menu'; $('pauseScreen').hidden = m !== 'paused'; $('overScreen').hidden = m !== 'over'; $('raceScreen').hidden = m !== 'raceover'; $('infoScreen').hidden = true;
     hudEl.hidden = m === 'menu'; stage.classList.toggle('garage', m === 'menu');
     $('launch').hidden = m !== 'countdown';
@@ -3286,6 +3299,7 @@ body {
   }
   buildMirror();
   function resizeAll() {
+    redraw = true;                                           // (a resized canvas is blank until drawn again)
     renderer.setPixelRatio(prNow);
     renderer.setSize(VW, VH, false);
     camera.aspect = VW / VH; camera.updateProjectionMatrix();
@@ -3314,11 +3328,13 @@ body {
   // while (15 s) it tries the faster rhythm again, judged in 0.6 s so that a failed try is a short stutter, and waits
   // twice longer after each failure (2 min at most). Only at the slowest rhythm (about 30 a second) does the resolution
   // go down, and it goes back up only after a long calm (30 s, then longer each time: a resolution change is a jolt).
-  // The car park: about 60 a second, 30 at rest
-  const PACE = { vs: 1000 / 60, n: 1, gaps: [], prevRaf: 0, lastDraw: 0, t: 0, frames: 0, late: 0, calm: 0, probe: false, wait: 15000, lowered: 0, resWait: 30000 };
+  // The car park: about 60 a second while its row moves (less on a phone that cannot keep up: paceGarage, below); at
+  // rest 30 a second on a computer, and on a touch screen one fixed picture, drawn again once a second at most
+  const PACE = { vs: 1000 / 60, n: 1, gaps: [], prevRaf: 0, lastDraw: 0, t: 0, frames: 0, late: 0, calm: 0, probe: false, wait: 15000, lowered: 0, resWait: 30000,
+    gi: 16.7, gs: 1, gMoving: false, gt: 0, gf: 0, gl: 0, gcalm: 0, gwait: 5000, gprobe: false };
   // (on a touch screen: at most about 60 a second in a game, even on a 120 Hz screen: a phone that draws more heats up,
-  // then slows itself down in the middle of a game; and the car park at rest about 20 a second: its slow sway needs no
-  // more, and the phone stays cool for the game)
+  // then slows itself down in the middle of a game. Its car park at rest does not sway: the same picture needs no
+  // drawing again (V30 drew it 20 times a second: the user's phone, at about 4 a second, was busy all the time))
   const paceMin = () => (isTouch ? Math.max(1, Math.floor(16.7 / PACE.vs)) : 1);
   function paceGate(now) {                                   // (true: draw on this refresh)
     const P = PACE;
@@ -3327,13 +3343,51 @@ body {
       if (g > 3 && g < 60) { P.gaps.push(g); if (P.gaps.length > 120) P.gaps.shift(); if (P.gaps.length % 20 === 0) { const s = P.gaps.slice().sort((a, b) => a - b); P.vs = s[s.length >> 1]; } }
     }                                                        // gap is the picture's own time, not the screen's)
     P.prevRaf = now; P.prevSkip = false;
-    const n = S.mode === 'menu' ? Math.max(P.n, Math.round((G.idle() ? (isTouch ? 50 : 33) : 16.7) / P.vs)) : Math.max(P.n, paceMin());   // (car park: about 60, at rest 30, 20 on a phone)
+    if (redraw) { redraw = false; return true; }             // (something to show now: a resize, another screen, a car in)
+    let n;
+    if (S.mode === 'menu') {                                 // (the car park: still once settled, its loading screen gone)
+      const still = G.idle() && !LD.settle;
+      if (still && P.gMoving) return true;                   // (the row has just stopped: its sharp picture at once)
+      // (moving, not still: the row slides, or only its lights change after a stop: the learnt rhythm, at full resolution)
+      n = Math.max(1, Math.round((still ? (isTouch ? 1000 : 33) : P.gi) / P.vs));
+    } else n = Math.max(P.n, paceMin());
     return !P.lastDraw || now - P.lastDraw >= (n - 0.4) * P.vs;
+  }
+  // the car park while its row moves (a swipe, the row settling), on a phone that cannot keep up: first an even 30
+  // pictures a second, then a lower resolution while it moves (0.8, then 0.6: the picture at rest stays sharp), then 20
+  // a second; far behind, straight to 30 a second at 0.6. Back up a step after 5 s of moving without a late picture
+  // (after a failed try, twice longer each time: 40 s at most). Learnt over the session's swipes (the car park's load
+  // does not change). gi: the time of a picture while it moves
+  function paceGarage(gap) {
+    const P = PACE, moving = G.moving() && !LD.settle;
+    if (gap && moving && P.gMoving) {                        // (between two pictures of the sliding row)
+      const n = Math.max(1, Math.round(P.gi / P.vs));
+      P.gf++; if (gap > (n + 0.5) * P.vs) P.gl++; P.gt += gap;
+      if (P.gt >= 600) {
+        const rate = P.gl / P.gf, mean = P.gt / P.gf;
+        if (rate > 0.25) {
+          if (mean > 2 * Math.max(33.3, P.gi) && P.gs > 0.61) { P.gi = Math.max(P.gi, 33.3); P.gs = 0.6; }   // (far behind)
+          else if (P.gi < 33) P.gi = 33.3; else if (P.gs > 0.61) P.gs = Math.max(0.6, P.gs - 0.2); else if (P.gi < 49) P.gi = 50;
+          if (P.gprobe) P.gwait = Math.min(40000, P.gwait * 2);
+          P.gcalm = 0; P.gprobe = false;
+        } else if (rate < 0.05) {
+          if (P.gprobe) { P.gprobe = false; P.gwait = 5000; }
+          P.gcalm += P.gt;
+          if (P.gcalm >= P.gwait && (P.gi > 17 || P.gs < 0.99)) {
+            P.gcalm = 0; P.gprobe = true;
+            if (P.gi > 34) P.gi = 33.3; else if (P.gs < 0.99) P.gs = Math.min(1, P.gs + 0.2); else P.gi = 16.7;
+          }
+        }
+        P.gt = P.gf = P.gl = 0;
+      }
+    }
+    P.gMoving = moving;
   }
   function paceDrawn(now) {
     const P = PACE, gap = P.lastDraw ? now - P.lastDraw : 0; P.lastDraw = now;
     if (fpsOn && gap) fpsTick(gap);
-    if (!gap || S.mode === 'menu' || S.mode === 'paused') return;
+    if (S.mode === 'menu') { paceGarage(gap); return; }
+    if (!gap || S.mode === 'paused') return;
     if (P.n < paceMin()) P.n = paceMin();
     P.frames++; if (gap > (P.n + 0.5) * P.vs) P.late++; P.t += gap; P.lowered = Math.max(0, P.lowered - gap);
     if (P.t < (P.probe ? 600 : 1500)) return;
@@ -3355,7 +3409,11 @@ body {
   function fpsTick(gap) {
     fpsN++; fpsT += gap; fpsWorst = Math.max(fpsWorst, gap);
     if (fpsT < 1000) return;
-    fpsEl.textContent = Math.round(fpsN * 1000 / fpsT) + ' i/s · écran ' + Math.round(1000 / PACE.vs) + ' Hz' + (PACE.n > 1 ? ' (1 sur ' + PACE.n + ')' : '') + ' · pire ' + Math.round(fpsWorst) + ' ms · résolution ' + prNow.toFixed(2).replace('.', ',');
+    const P = PACE, gar = S.mode === 'menu', n = gar ? Math.max(1, Math.round(P.gi / P.vs)) : P.n, fr = (x) => x.toFixed(2).replace('.', ',');
+    fpsEl.textContent = gar && isTouch && G.idle()           // (a phone's car park at rest: one fixed picture, nothing to count)
+      ? 'parking au repos : image fixe · écran ' + Math.round(1000 / P.vs) + ' Hz · résolution ' + fr(prNow)
+      : Math.round(fpsN * 1000 / fpsT) + ' i/s · écran ' + Math.round(1000 / P.vs) + ' Hz' + (n > 1 ? ' (1 sur ' + n + ')' : '') + ' · pire ' + Math.round(fpsWorst) + ' ms · résolution ' + fr(prNow)
+        + (gar && P.gs < 0.99 ? ' (' + fr(prNow * P.gs) + ' quand la rangée bouge)' : '');
     fpsN = fpsT = fpsWorst = 0;
   }
   const fpsShow = () => { fpsEl.hidden = !fpsOn; $('fpsOpt').checked = fpsOn; };
@@ -3364,7 +3422,8 @@ body {
 
   const sunLocal = new THREE.Vector3(), qInv = new THREE.Quaternion();
   function renderAll(now) {
-    if (S.mode === 'menu') { G.render(); return; }          // the car park has its own scene
+    if (S.mode === 'menu') { G.render(G.moving() && !LD.settle ? PACE.gs : 1); return; }   // the car park has its own scene
+    if (Math.abs(renderer.getPixelRatio() - prNow) > 1e-3) renderer.setPixelRatio(prNow);   // (after a car park picture drawn smaller)
     syncTraffic();                                           // traffic cars, where the bend has just put them, into their batches
     const n = (renderAll.n = (renderAll.n || 0) + 1);
     const inside = S.cam === 'cockpit' && S.mode !== 'menu';
@@ -3610,8 +3669,12 @@ body {
   function frame(now) {
     // an even rhythm (paceGate, above): on a refresh not drawn nothing is done; its time counts in the next picture
     // (loading: nothing is drawn behind the loading screen; once all is in, the car park's first pictures, until it fades)
+    if (!paceGate(now) || !modelsReady) {
+      PACE.prevSkip = true;
+      if (isTouch && modelsReady && S.mode === 'menu' && G.idle()) last = now;   // (a fixed car park: its next move starts from now)
+      requestAnimationFrame(frame); return;
+    }
     if (LD.settle) loadingSettle(now);
-    if (!paceGate(now) || !modelsReady) { PACE.prevSkip = true; requestAnimationFrame(frame); return; }
     const warmed = warmQueued();                               // (a car's shaders on the road, at the start of a game or race)
     const rawDt = Math.min(0.25, Math.max(0, (now - last) / 1000)); last = now;
     const dt = Math.min(0.05, rawDt);
@@ -3665,7 +3728,7 @@ body {
       menuT += dt;
       // the car park: its camera slides along the row of cars (the road is not drawn meanwhile); a car downloaded
       // meanwhile is set up while it is at rest
-      G.step(LD.settle ? 0 : dt);                              // (still behind the loading screen: the covers lift once it fades)
+      G.step(rawDt);                                           // (real time: a light change takes 0.8 s even on a slow phone)
       if (G.idle()) setupWaitingCar();
     } else if (S.cam === 'cockpit') {
       const fov = (portrait ? 66 : 52) + Math.min(6, Math.pow(S.speed / 65, 1.5) * 5) + (S.nitroOn ? 4 : 0) + S.kick * 1.5;
