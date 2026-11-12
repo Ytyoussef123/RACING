@@ -2218,6 +2218,7 @@ body {
   plateTex.wrapS = plateTex.wrapT = THREE.ClampToEdgeWrapping; plateTex.flipY = false;
   const heroGlass = new THREE.MeshStandardMaterial({ color: col(0xa9bccb), roughness: 0.02, metalness: 0.1, transparent: true, opacity: 0.14, depthWrite: false });
   const trafficGlass = new THREE.MeshStandardMaterial({ color: col(0x0a1016), roughness: 0.03, metalness: 0.6, transparent: true, opacity: 0.93 });
+  trafficGlass.name = 'Glass';                               // (found by that name for the far model's glass: buildTraffic)
   function fixMaterials(root, glass) {
     root.traverse((o) => {
       if (!o.isMesh) return;
@@ -2256,6 +2257,46 @@ body {
   }
   const brakeOnCache = new Map();
   const brakeOn = (m) => { if (!brakeOnCache.has(m)) { const c = m.clone(); c.emissive = col(0xff1a1a); c.emissiveIntensity = 4; brakeOnCache.set(m, c); } return brakeOnCache.get(m); };
+  // (V32, touch screens) a car's shadow on the road needs only its outline: the meshes that cast, merged and snapped to a
+  // 10 cm grid, make one mesh of a few thousand triangles that casts the same shadow at the sun's shadow resolution
+  // (6 to 9 cm a point). The car's own meshes then stay out of the sun's shadow pass, which drew the whole car a second
+  // time (125 000 triangles for the standard car). The car park keeps the real meshes for its finer shadows (showcase)
+  const hullMat = new THREE.MeshBasicMaterial({ colorWrite: false, depthWrite: false, side: THREE.DoubleSide });
+  // (the hull's geometry: the casting meshes under model, in root's frame; null if there is nothing to make it from.
+  // mark: these meshes stop casting themselves)
+  function hullGeometry(root, model, mark) {
+    const CELL = 0.1, ids = new Map(), seen = new Set(), pos = [], idx = [], t = [0, 0, 0];
+    root.updateMatrixWorld(true);
+    const inv = new THREE.Matrix4().copy(root.matrixWorld).invert(), m = new THREE.Matrix4(), v = new THREE.Vector3();
+    const at = (x, y, z) => {
+      const kx = Math.round(x / CELL), ky = Math.round(y / CELL), kz = Math.round(z / CELL), k = (kx + 512) + (ky + 512) * 1024 + (kz + 512) * 1048576;
+      let i = ids.get(k); if (i === undefined) { i = pos.length / 3; ids.set(k, i); pos.push(kx * CELL, ky * CELL, kz * CELL); }
+      return i;
+    };
+    model.traverse((o) => {
+      if (!o.isMesh || !o.castShadow) return;
+      const p = o.geometry.attributes.position, ix = o.geometry.index, n = ix ? ix.count : p.count, A = p.isInterleavedBufferAttribute ? p.data.array : p.array;
+      // (packed positions are whole numbers the graphics card scales down: the same here)
+      const sc = !p.normalized ? 1 : A instanceof Int16Array ? 1 / 32767 : A instanceof Int8Array ? 1 / 127 : A instanceof Uint16Array ? 1 / 65535 : A instanceof Uint8Array ? 1 / 255 : 1;
+      m.multiplyMatrices(inv, o.matrixWorld);
+      for (let j = 0; j + 2 < n; j += 3) {
+        for (let k = 0; k < 3; k++) { const i = ix ? ix.getX(j + k) : j + k; v.set(p.getX(i) * sc, p.getY(i) * sc, p.getZ(i) * sc).applyMatrix4(m); t[k] = at(v.x, v.y, v.z); }
+        if (t[0] === t[1] || t[1] === t[2] || t[0] === t[2]) continue;
+        const lo = Math.min(t[0], t[1], t[2]), hi = Math.max(t[0], t[1], t[2]), key = lo + (t[0] + t[1] + t[2] - lo - hi) * 65536 + hi * 4294967296;
+        if (seen.has(key)) continue;
+        seen.add(key); idx.push(t[0], t[1], t[2]);
+      }
+      if (mark) { o.castShadow = false; o.userData.cast = true; }   // (it casts again in the car park's copy: showcase)
+    });
+    if (idx.length < 9 || pos.length / 3 > 65535) { if (mark) model.traverse((o) => { if (o.isMesh && o.userData.cast) o.castShadow = true; }); return null; }
+    const geo = new THREE.BufferGeometry(); geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); geo.setIndex(idx);
+    return geo;
+  }
+  function shadowHull(root, model) {
+    if (!isTouch) return;
+    const geo = hullGeometry(root, model, true); if (!geo) return;
+    const hull = new THREE.Mesh(geo, hullMat); hull.castShadow = true; hull.name = 'ShadowHull'; root.add(hull); root.userData.hullTris = geo.index.count / 3;
+  }
   function setupHero(gltf) {
     const model = gltf.scene;
     fixMaterials(model, heroGlass);
@@ -2268,6 +2309,7 @@ body {
     root.userData = { w: 1.95, l: 4.36, h: 1.3, tails, braking: false, bl: new THREE.Object3D(), br: new THREE.Object3D() };
     addBlob(root).position.z = 0.1;
     root.rotation.order = 'YXZ';
+    try { shadowHull(root, model); } catch (e) { console.error(e); }
     hero.root = root; hero.model = model;
     Object.assign(CARS[0], { root, model, wheels: hero.wheels, steer: hero.steer, wheelR: 0.36, warm: false });
     if (S.car === 0) { scene.remove(playerCar); playerCar = root; scene.add(root); }   // (after a slow load, another car may be on the road)
@@ -2289,6 +2331,7 @@ body {
     const root = new THREE.Group(); root.add(model);
     root.userData = { w: 1.95, l: 4.4, h: 1.3, tails, braking: false, bl: new THREE.Object3D(), br: new THREE.Object3D() };
     addBlob(root); root.rotation.order = 'YXZ';
+    try { shadowHull(root, model); } catch (e) { console.error(e); }
     Object.assign(c, { root, model, wheels, ready: true });
   }
   // contact shadow: the dark patch right under a car's body that makes it sit on the road (the sun's shadow falls aside)
@@ -2375,18 +2418,39 @@ body {
   const warmQ = [];
   function warmCar(c) { if (c && c.ready && c.root && !c.warm && !warmQ.includes(c)) warmQ.push(c); }
   function warmQueued() { const any = warmQ.length > 0; for (const c of warmQ.splice(0)) { c.warm = true; warmShaders(c.root); } return any; }
-  function buildTraffic(model) {
-    const holder = new THREE.Group(); holder.add(model); holder.updateMatrixWorld(true);
+  // far (V32, phones): the same car in a few hundred triangles (models/car-traffic-far.json, tools/lodpack.mjs), drawn
+  // in place of the full one (ten thousand triangles) where a car is no wider than about twenty pixels on the screen,
+  // and behind the player, where only the mirror sees it. Most of the traffic is that far: every one of those
+  // triangles, far smaller than a pixel, still cost the phone its work. Its parts take the full model's materials
+  function buildTraffic(model, far) {
+    const holder = new THREE.Group(); holder.add(model); if (far) holder.add(far); holder.updateMatrixWorld(true);
     const at = (...pts) => pts.map(([x, y, z]) => new THREE.Matrix4().makeTranslation(x, y, z));
     // parts: [geometry, material, kind, where on the car (one place per copy), options]
-    const car = [];
+    const car = [], mats = new Map();                         // (mats: by material name, what the full model's part uses)
     model.traverse((o) => {
       if (!o.isMesh) return;
       const n = o.material.name || '', local = [o.matrixWorld.clone()];
-      if (/^Paint [12]/.test(n)) { const m = o.material.clone(); m.color = new THREE.Color(1, 1, 1); car.push([o.geometry, m, 'paint', local, { slot: /^Paint 2/.test(n) ? 2 : 1 }]); }
-      else if (n === 'Brakelight') { car.push([o.geometry, o.material, 'tailOff', local], [o.geometry, brakeOn(o.material), 'tailOn', local]); }
-      else car.push([o.geometry, o.material, 'body', local]);
+      if (/^Paint [12]/.test(n)) { const m = o.material.clone(); m.color = new THREE.Color(1, 1, 1); mats.set(n, [m]); car.push([o.geometry, m, 'paint', local, { slot: /^Paint 2/.test(n) ? 2 : 1 }]); }
+      else if (n === 'Brakelight') { const on = brakeOn(o.material); mats.set(n, [o.material, on]); car.push([o.geometry, o.material, 'tailOff', local], [o.geometry, on, 'tailOn', local]); }
+      else { mats.set(n, [o.material]); car.push([o.geometry, o.material, 'body', local]); }
     });
+    let carFar = null;
+    if (far) {
+      carFar = [];
+      far.traverse((o) => {
+        if (!o.isMesh) return;
+        const n = o.material.name || '', local = [o.matrixWorld.clone()], m = mats.get(n) || [o.material];
+        if (/^Paint [12]/.test(n)) carFar.push([o.geometry, m[0], 'paint', local, { slot: /^Paint 2/.test(n) ? 2 : 1 }]);
+        else if (n === 'Brakelight') carFar.push([o.geometry, m[0], 'tailOff', local], [o.geometry, m[1] || m[0], 'tailOn', local]);
+        else carFar.push([o.geometry, m[0], 'body', local]);
+      });
+      // one batch casts the shadow of every car (the far model's outline, as for the player's car: shadowHull): the
+      // cars' own parts then stay out of the sun's shadow pass (ten thousand triangles a car near the player)
+      far.traverse((o) => { if (o.isMesh) o.castShadow = true; });
+      const hg = hullGeometry(holder, far, false);
+      if (hg) { TI.caster = new THREE.InstancedMesh(hg, hullMat, 26); TI.caster.count = 0; TI.caster.visible = false; TI.caster.frustumCulled = false; TI.caster.castShadow = true; scene.add(TI.caster); }
+      holder.remove(far);
+    }
     holder.remove(model);
     // (own copies of the materials ordinary meshes also use: shared, three.js would swap shader variants every frame)
     const shared = [[blobGeo, blobMat.clone(), 'blob', null, { cast: false }], [new THREE.BoxGeometry(0.14, 0.1, 0.06), blinkMat.clone(), 'blink', null, { cast: false }]];
@@ -2406,28 +2470,37 @@ body {
     ];
     // a batch cannot leave out the cars one pass does not see, so the cars go into three sets by where they are: far
     // ahead (screen only: the sun's shadow does not reach there, the mirror never looks there), near ahead (screen and
-    // shadow), around and behind (screen, shadow and mirror)
-    TI.tpl = [[car, 26], [truck, 8]].map(([parts, max]) => ['far', 'near', 'around'].map((zone) => parts.map(([geo, mat, kind, local, o = {}]) => {
+    // shadow), around and behind (screen, shadow and mirror). With the far model: far ahead starts nearer (TI.farZ),
+    // the cars behind the player form a fourth set, in the far model as well, and the cars' shadows come from the hull
+    // batch (TI.caster) instead of their own parts
+    const lod = !!carFar;
+    carFar = lod ? carFar.concat(car.filter(([, , kind]) => kind === 'blob' || kind === 'blink' || kind === 'sign')) : car;   // (the taxi's sign casts no shadow with the hull: too small to tell)
+    const zones = lod ? ['far', 'near', 'around', 'behind'] : ['far', 'near', 'around'];
+    TI.tpl = [[car, 26, carFar], [truck, 8, truck]].map(([parts, max, farParts]) => zones.map((zone) => (zone === 'far' || zone === 'behind' ? farParts : parts).map(([geo, mat, kind, local, o = {}]) => {   // (parts === car: the model's cars, not the trucks)
       const cap = max * (kind === 'blink' ? 2 : local ? local.length : 1);
       const im = new THREE.InstancedMesh(geo, mat, cap); im.count = 0; im.visible = false; im.frustumCulled = false;
-      im.castShadow = zone !== 'far' && o.cast !== false; im.receiveShadow = o.cast !== false;
+      im.castShadow = (lod || zone !== 'far') && o.cast !== false && !(TI.caster && parts === car); im.receiveShadow = o.cast !== false;
       if (kind === 'paint') im.instanceColor = new THREE.InstancedBufferAttribute(new Float32Array(cap * 3), 3);
       scene.add(im); return Object.assign({ im, kind, local, cap, n: 0 }, o);
     })));
-    TI.ready = true;
+    TI.lod = lod; TI.ready = true;
   }
-  const eachBatch = (fn) => { for (const t of TI.tpl || []) for (const set of t) for (const p of set) fn(p, set === t[2]); };
+  const eachBatch = (fn) => { for (const t of TI.tpl || []) for (const set of t) for (const p of set) fn(p, set === t[2] || set === t[3]); };
   // while the mirror's picture is drawn: the cars ahead are left out (on: hide them, off: back as they were)
   function trafficAheadHidden(on) { eachBatch((p, around) => { if (!around) p.im.visible = !on && p.im.count > 0; }); }
   const _ti = new THREE.Matrix4(), _tb = new THREE.Matrix4();
   function syncTraffic() {
     if (!TI.ready) return;
     const put = (p, m, u) => { if (p.n >= p.cap) return; p.im.setMatrixAt(p.n, m); if (p.kind === 'paint') p.im.setColorAt(p.n, p.slot === 2 ? u.inst.c2 : u.inst.c1); p.n++; };
+    // (the far model from where a car is about 22 pixels wide in the cockpit view: 32 m ahead on a phone in SD, 56 m in HD)
+    const farZ = TI.lod ? (TI.farZ || -0.0886 * VH * PR_MAX) : -80;
+    let nc = 0;
     for (const c of S.traffic) {
       const u = c.userData; if (!u.inst || !c.visible) continue;
       c.updateMatrixWorld();
       const z = c.position.z;
-      for (const p of TI.tpl[u.inst.tpl][z < -80 ? 0 : z < -3 ? 1 : 2]) {
+      if (TI.caster && u.inst.tpl === 0 && z > -80 && nc < 26) TI.caster.setMatrixAt(nc++, c.matrixWorld);   // (as far as the sun's shadow reaches)
+      for (const p of TI.tpl[u.inst.tpl][z < farZ ? 0 : z < -3 ? 1 : TI.lod && z > 8 ? 3 : 2]) {
         if (p.kind === 'tailOff' && u.braking || p.kind === 'tailOn' && !u.braking || p.kind === 'sign' && !u.inst.taxi) continue;
         if (p.kind === 'blob') put(p, _ti.multiplyMatrices(c.matrixWorld, _tb.makeScale(u.w * 1.18, 1, u.l * 1.08).setPosition(0, 0.045, 0)), u);
         else if (p.kind === 'blink') { for (const b of [u.bl, u.br]) if (b.visible) put(p, _ti.multiplyMatrices(c.matrixWorld, b.matrix), u); }
@@ -2438,6 +2511,7 @@ body {
       p.im.count = p.n; p.im.visible = p.n > 0; p.n = 0;           // (an empty batch would still cost a draw call)
       p.im.instanceMatrix.needsUpdate = true; if (p.im.instanceColor) p.im.instanceColor.needsUpdate = true;
     });
+    if (TI.caster) { TI.caster.count = nc; TI.caster.visible = nc > 0; TI.caster.instanceMatrix.needsUpdate = true; }
   }
   let setupWaitingCar = () => {};                            // (set by loadModels: a downloaded car, set up when calm)
   // the loading screen: its bar follows the download, a tip changes every few seconds; when the game is ready it fades
@@ -2458,7 +2532,13 @@ body {
     const s = LD.settle; if (s.prev) s.gaps.push(now - s.prev); s.prev = now;
     const g = s.gaps.slice(-3), m = (g[0] + g[1] + g[2]) / 3;
     const even = g.length === 3 && (g.every((x) => x < 60) || (s.gaps.length > 3 && m < 1000 && g.every((x) => Math.abs(x - m) < 0.25 * m)));
-    if (even || now - s.t0 > 6000) { LD.settle = null; loadingDone(); }
+    if (even || now - s.t0 > 6000) {
+      LD.settle = null;
+      // a phone that takes more than 45 ms over the car park's picture slides its row with stored pictures of the
+      // cars (G.lite), taken now, still behind the loading screen
+      try { G.lite = !even || m > 45; } catch (e) { console.error(e); }
+      loadingDone();
+    }
   }
   function loadingDone() { LD.up = false; clearInterval(LD.timer); loadingAt(100); LD.pct.textContent = 'Prêt'; LD.el.classList.add('out'); setTimeout(() => { LD.el.hidden = true; }, 600); garageUI(); }
   function loadModels() {
@@ -2469,7 +2549,7 @@ body {
     // 1024 for paint and livery). On a phone's screen they look the same and take half the graphics memory
     const manager = new THREE.LoadingManager();
     if (isPhone) manager.setURLModifier((u) => u.replace(/(^|\/)models\/([^/]+\.webp)$/, '$1models/m/$2'));
-    const loader = new THREE.GLTFLoader(manager), got = { t: 0, h: 0, i: 0, d: 0, p: 0, c1: 0, c2: 0 }, TOTAL = 13e6;
+    const loader = new THREE.GLTFLoader(manager), got = { t: 0, tf: 0, h: 0, i: 0, d: 0, p: 0, c1: 0, c2: 0 }, TOTAL = 13e6;
     let done = false;
     const show = () => { if (done) return; const p = Math.min(99, Math.round((Object.values(got).reduce((a, b) => a + b, 0) / TOTAL) * 100)); btnLabel(btn, 'CHARGEMENT', p + ' %'); loadingAt(p); };
     const load = (url, k) => new Promise((res, rej) => loader.load(url, res, (e) => { got[k] = e.loaded; show(); }, rej));
@@ -2518,8 +2598,14 @@ body {
       }));
     setTimeout(finish, 45000);
     const palmP = load('models/palm.json', 'p').then((g) => { try { setupPalms(g); } catch (e) { console.error(e); } }, () => {});
-    Promise.allSettled([load('models/car-traffic.json', 't'), load('models/car-hero.json', 'h'), interior, palmP]).then(([t, h]) => {
-      if (t.status === 'fulfilled') { const m = t.value.scene; fixMaterials(m, trafficGlass); m.rotation.y = Math.PI; m.position.set(0, 0.16, 0.24); MODELS.traffic = m; try { buildTraffic(m); } catch (e) { console.error(e); } }
+    // (on a phone, the traffic car's far version too: tools/lodpack.mjs; if it does not come, the full car everywhere)
+    const farP = isPhone ? load('models/car-traffic-far.json', 'tf').then((g) => g.scene, () => null) : Promise.resolve(null);
+    Promise.allSettled([load('models/car-traffic.json', 't'), load('models/car-hero.json', 'h'), interior, palmP, farP]).then(([t, h, , , f]) => {
+      if (t.status === 'fulfilled') {
+        const m = t.value.scene, far = f.value; fixMaterials(m, trafficGlass);
+        for (const o of far ? [m, far] : [m]) { o.rotation.y = Math.PI; o.position.set(0, 0.16, 0.24); }
+        MODELS.traffic = m; try { buildTraffic(m, far); } catch (e) { console.error(e); }
+      }
       if (h.status === 'fulfilled') { try { setupHero(h.value); } catch (e) { console.error(e); } }
       G.reveal(0);                                             // (after a slow load, swaps the stand-in car for the real one)
       if (done) warmCars(); else finishWhenCarsIn();           // (and prepares the real one's shaders)
@@ -2659,7 +2745,7 @@ body {
     });
     let shadowDirty = true, primeDue = false;
     // a parked copy of a car model (shares its meshes and materials): no cabin lamp, wheels at rest
-    function showcase(model) { const m = model.clone(true), lamps = []; m.traverse((o) => { if (o.isLight) lamps.push(o); }); lamps.forEach((l) => l.parent.remove(l)); return m; }
+    function showcase(model) { const m = model.clone(true), lamps = []; m.traverse((o) => { if (o.isLight) lamps.push(o); if (o.isMesh && o.userData.cast) o.castShadow = true; }); lamps.forEach((l) => l.parent.remove(l)); return m; }   // (cast: see shadowHull)
     // a car once its model is in (the standard car: the simple car if its model failed) takes its cover's place at once
     // (V31: the cover no longer lifts off and fades, which on the user's phone looked like a shadow peeling off the car).
     // Its next picture draws the whole car park once (prime, in render below)
@@ -2669,14 +2755,14 @@ body {
       if (b.show) b.holder.remove(b.show);
       b.show = c.model ? showcase(c.model) : makeCar(0xe8562a, 'car', true); b.shown = src; b.holder.add(b.show);
       if (b.cover) { b.holder.remove(b.cover); b.cover = null; }
-      shadowDirty = primeDue = redraw = true;
+      b.box = null; shadowDirty = primeDue = redraw = true;
     }
 
     // camera: a three-quarter front view of the car in the middle, far enough back to fit the screen's shape, slowly
     // swaying on a computer (a touch screen keeps it still: at rest its car park is one fixed picture, with nothing to
     // draw again, and the phone stays cool). A drag moves the row with the finger; on release it settles on the nearest
     // bay (a flick goes one further)
-    let idx = carPick, cx = bayX(carPick), t = 0, dist = 7, th = 0.34, drag = null;
+    let idx = carPick, cx = bayX(carPick), t = 0, dist = 7, th = 0.34, drag = null, lite = false;
     const aim = new THREE.Vector3();
     function set(i, snap) { idx = Math.max(0, Math.min(n - 1, i)); if (snap) cx = bayX(idx); garageUI(); }
     function go(d) { const i = idx + d; if (i < 0 || i >= n) return false; set(i); return true; }
@@ -2688,17 +2774,24 @@ body {
       if (!top || !bot || !bot.offsetHeight) return;
       band.top = top.offsetTop + top.offsetHeight; band.bot = VH - bot.offsetHeight * (stage.classList.contains('tall') ? 1 : 0.7);
     }
+    // the lamp over each bay: up on the car shown, dimmed on the others (lite: by where the row is, so that the cars'
+    // stored pictures, taken under each bay's own lighting, match the floor as the row slides)
+    const spotAt = (k, x) => 0.45 + 2.15 * Math.max(0, 1 - Math.abs(x - bayX(k)) / BAY);
     function step(dt) {
       t += dt;
-      for (let k = 0; k < n; k++) { const s = spots[k]; s.intensity += ((k === idx ? 2.6 : 0.45) - s.intensity) * (1 - Math.exp(-6 * dt)); }
+      if (!drag) cx += (bayX(idx) - cx) * (1 - Math.exp(-7 * dt));
+      for (let k = 0; k < n; k++) { const s = spots[k]; if (lite) s.intensity = spotAt(k, cx); else s.intensity += ((k === idx ? 2.6 : 0.45) - s.intensity) * (1 - Math.exp(-6 * dt)); }
       if (t - band.at > 0.5 || idle()) { band.at = t; measure(); }   // (and at each of the rare pictures at rest)
+      place(cx);
+    }
+    // the camera on the row at x (its resting places: bayX(i))
+    function place(x) {
       const asp = VW / VH, port = asp < 1, fov = port ? 50 : 38, side = stage.classList.contains('tall') ? 0 : 0.12;
       th = Math.tan(fov * Math.PI / 360);
       const hFrac = Math.max(0.26, Math.min(0.42, (band.bot - band.top) / VH * 0.95)), ndcY = 1 - (band.top + band.bot) / VH;
       dist = Math.max(1.9 / (2 * th * hFrac), 3.6 / ((port ? 1.6 : 1.0) * th * asp));  // the car's height fits the band, its width half the screen
-      if (!drag) cx += (bayX(idx) - cx) * (1 - Math.exp(-7 * dt));
       const az = (22 + (reduceMotion || isTouch ? 0 : 4 * Math.sin(t * 0.33))) * Math.PI / 180, el = Math.min(0.23, Math.asin(Math.min(1, 2.3 / dist)));
-      aim.set(cx, 0.62, BAY_Z);
+      aim.set(x, 0.62, BAY_Z);
       cam.fov = fov; cam.aspect = asp; cam.updateProjectionMatrix();
       cam.position.set(aim.x + dist * Math.sin(az) * Math.cos(el), aim.y + dist * Math.sin(el), aim.z + dist * Math.cos(az) * Math.cos(el));
       const sx = dist * th * asp * side;                                                // look a little left of the car: it shows right of centre
@@ -2709,7 +2802,7 @@ body {
     const idle = () => !drag && Math.abs(bayX(idx) - cx) < 0.003 && Math.abs(spots[idx].intensity - 2.6) < 0.02;
     const moving = () => !!drag || Math.abs(bayX(idx) - cx) > 0.02;
     // straight to that rest, behind the loading screen: the car park it uncovers is the finished picture
-    function snap() { cx = bayX(idx); for (let k = 0; k < n; k++) spots[k].intensity = k === idx ? 2.6 : 0.45; }
+    function snap() { cx = bayX(idx); for (let k = 0; k < n; k++) spots[k].intensity = spotAt(k, cx); }
     function dragStart(px) { const now = performance.now(); drag = { px, x0: cx, last: px, lastT: now, v: 0 }; }
     function dragMove(px) {
       if (!drag) return;
@@ -2738,11 +2831,124 @@ body {
       const ex = renderer.toneMappingExposure, off = [];
       renderer.toneMappingExposure = 0.85;
       if (primeDue) { primeDue = false; shadowDirty = true; gs.traverse((o) => { if (o.isMesh && o.frustumCulled) { o.frustumCulled = false; off.push(o); } }); }
+      const slide = lite && !shadowDirty && moving() && SPR.key === sprKey();
       renderer.shadowMap.needsUpdate = shadowDirty; shadowDirty = false;
-      try { renderer.setRenderTarget(null); renderer.render(gs, cam); }
-      finally { renderer.toneMappingExposure = ex; off.forEach((o) => { o.frustumCulled = true; }); }
+      try {
+        renderer.setRenderTarget(null);
+        if (slide) slidePicture(); else renderer.render(gs, cam);
+      } finally { renderer.toneMappingExposure = ex; off.forEach((o) => { o.frustumCulled = true; }); }
+      if (lite && !slide && !moving() && SPR.key !== sprKey()) takePictures();   // (at rest: the screen was turned or resized, a car came in)
     }
-    return { scene: gs, cam, bays, get idx() { return idx; }, set, go, step, render, reveal, idle, moving, snap, dragStart, dragMove, dragEnd };
+    // ---- the slide on a slow phone (lite, V32) ----
+    // A phone that takes long over the car park's picture (the cars: 276 000 triangles under five lamps; the user's
+    // phone, 0.2 s) cannot redraw it as the row slides: 5 pictures a second. So while the row moves, the cars are not
+    // drawn: only the car park itself (floor, walls, lamps, the cars' shadows: light work), and over it a stored picture
+    // of each car, taken once from each bay's resting camera (takePictures). Between two bays a car's picture from the
+    // bay left dissolves into its picture from the bay reached, both stretched to where the car really is on screen.
+    // At rest the real cars are drawn, as always: the picture at rest is the same as before
+    const SPR = { key: '', views: [], scene: new THREE.Scene(), cam: new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1), quads: [], n: 0 };
+    const sprKey = () => [VW, VH, prNow, Math.round(band.top), Math.round(band.bot), bays.map((b) => b.shown || '-').join('/')].join(' ');
+    const box8 = [], _pv = new THREE.Vector3();
+    // (where a car is on screen: the rectangle around its box, in the camera's -1..1 frame, a little wider)
+    function carRect(j) {
+      const b = bays[j]; if (!b.box) { b.box = new THREE.Box3().setFromObject(b.show); b.holder.worldToLocal(b.box.min); b.holder.worldToLocal(b.box.max); if (b.box.min.x > b.box.max.x) { const q = b.box.min.x; b.box.min.x = b.box.max.x; b.box.max.x = q; } if (b.box.min.z > b.box.max.z) { const q = b.box.min.z; b.box.min.z = b.box.max.z; b.box.max.z = q; } }
+      let x0 = 1e9, y0 = 1e9, x1 = -1e9, y1 = -1e9;
+      for (let k = 0; k < 8; k++) {
+        _pv.set(k & 1 ? b.box.max.x : b.box.min.x, k & 2 ? b.box.max.y : b.box.min.y, k & 4 ? b.box.max.z : b.box.min.z);
+        b.holder.localToWorld(_pv).project(cam);
+        x0 = Math.min(x0, _pv.x); x1 = Math.max(x1, _pv.x); y0 = Math.min(y0, _pv.y); y1 = Math.max(y1, _pv.y);
+      }
+      const px = 6 / VW, py = 6 / VH;                          // (3 pixels of margin)
+      return [x0 - px, y0 - py, x1 + px, y1 + py];
+    }
+    const blit = { scene: new THREE.Scene(), cam: new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1), mat: new THREE.MeshBasicMaterial({ depthTest: false, depthWrite: false, toneMapped: false, fog: false }) };
+    blit.scene.add(new THREE.Mesh(new THREE.PlaneGeometry(2, 2), blit.mat));
+    const maskMat = new THREE.MeshBasicMaterial({ color: 0xffffff, toneMapped: false, fog: false });
+    const rtOpts = { format: THREE.RGBFormat, minFilter: THREE.LinearFilter, magFilter: THREE.LinearFilter, generateMipmaps: false, stencilBuffer: false };
+    // each car alone, from each bay's resting camera: its picture (drawn at twice the size, then halved: smooth
+    // edges) and its outline (the same, in white on black: where the picture covers the car park behind)
+    function takePictures() {
+      const key = sprKey();
+      if (SPR.key === key) return;
+      for (const v of SPR.views) for (const c of v) if (c) { c.pic.dispose(); c.mask.dispose(); }
+      SPR.views = []; SPR.key = '';
+      const keep = { bg: gs.background, vis: gs.children.map((o) => o.visible), spots: spots.map((sp) => sp.intensity), ex: renderer.toneMappingExposure, pr: renderer.getPixelRatio(), clear: renderer.getClearColor(new THREE.Color()), alpha: renderer.getClearAlpha(), auto: renderer.shadowMap.needsUpdate };
+      const big = new THREE.WebGLRenderTarget(4, 4, rtOpts); big.texture.encoding = THREE.sRGBEncoding;
+      const hidden = [];
+      try {
+        renderer.toneMappingExposure = 0.85; renderer.shadowMap.needsUpdate = false; renderer.setClearColor(0x000000, 1); gs.background = null;
+        gs.children.forEach((o) => { if (!o.isLight) o.visible = false; });
+        for (const b of bays) { b.holder.visible = false; b.holder.children.forEach((o) => { if (o !== b.show && o.visible) { o.visible = false; hidden.push(o); } }); }
+        for (let i = 0; i < n; i++) {
+          for (let k = 0; k < n; k++) spots[k].intensity = spotAt(k, bayX(i));
+          cam.clearViewOffset(); place(bayX(i)); cam.updateMatrixWorld();
+          const view = [], rects = bays.map((b, j) => (b.show ? carRect(j) : null));   // (before the camera is given a sub-window)
+          for (let j = 0; j < n; j++) {
+            const b = bays[j]; if (!b.show) { view.push(null); continue; }
+            const r = rects[j];
+            // (whole pixels of the stage, at most 1024 wide)
+            const X = Math.floor((r[0] + 1) / 2 * VW), Y = Math.floor((1 - r[3]) / 2 * VH), W = Math.max(8, Math.ceil((r[2] + 1) / 2 * VW) - X), H = Math.max(8, Math.ceil((1 - r[1]) / 2 * VH) - Y);
+            const q = Math.min(prNow, 1024 / W), w = Math.max(4, Math.round(W * q)), h = Math.max(4, Math.round(H * q));
+            cam.setViewOffset(VW, VH, X, Y, W, H);
+            const shot = (override, skipGlass) => {
+              const out = new THREE.WebGLRenderTarget(w, h, Object.assign({ depthBuffer: false }, rtOpts)); out.texture.encoding = THREE.sRGBEncoding;
+              const glass = [];
+              if (skipGlass) b.show.traverse((o) => { if (o.isMesh && o.visible && o.material.transparent) { o.visible = false; glass.push(o); } });
+              gs.overrideMaterial = override;
+              big.setSize(w * 2, h * 2); renderer.setRenderTarget(big); renderer.clear(); renderer.render(gs, cam);
+              gs.overrideMaterial = null; glass.forEach((o) => { o.visible = true; });
+              blit.mat.map = big.texture;
+              renderer.setRenderTarget(out); renderer.render(blit.scene, blit.cam);
+              // (a graphics card that will not draw into such a target: the real cars all the time, rather than black ones)
+              const gl = renderer.getContext(); if (gl.checkFramebufferStatus(gl.FRAMEBUFFER) !== gl.FRAMEBUFFER_COMPLETE) { out.dispose(); throw new Error('picture target refused'); }
+              return out;
+            };
+            b.holder.visible = true;
+            const pic = shot(null, false), mask = shot(maskMat, true);
+            b.holder.visible = false;
+            view.push({ pic, mask, rect: [X / VW * 2 - 1, 1 - (Y + H) / VH * 2, (X + W) / VW * 2 - 1, 1 - Y / VH * 2] });
+          }
+          SPR.views.push(view);
+        }
+        SPR.key = key;
+      } catch (e) { console.error(e); lite = false; }
+      finally {
+        cam.clearViewOffset(); gs.overrideMaterial = null; gs.background = keep.bg; gs.children.forEach((o, k) => { o.visible = keep.vis[k]; }); hidden.forEach((o) => { o.visible = true; });
+        spots.forEach((sp, k) => { sp.intensity = keep.spots[k]; });
+        renderer.setRenderTarget(null); renderer.setClearColor(keep.clear, keep.alpha); renderer.toneMappingExposure = keep.ex; renderer.shadowMap.needsUpdate = keep.auto;
+        big.dispose(); place(cx); redraw = true;
+      }
+    }
+    // one picture of the slide: the car park without the cars, then their stored pictures over it
+    function slidePicture() {
+      const a = Math.max(0, Math.min(n - 2, Math.floor((cx - bayX(0)) / BAY))), f = Math.max(0, Math.min(1, (cx - bayX(a)) / BAY));
+      const sm = (e0, e1, x) => { const u = Math.max(0, Math.min(1, (x - e0) / (e1 - e0))); return u * u * (3 - 2 * u); };
+      const wTop = sm(0, 0.8, f), wBase = 1 - sm(0.6, 1, f);       // (the bay reached comes in over the bay left, which then goes)
+      for (const b of bays) if (b.show) b.show.visible = false;
+      try { renderer.render(gs, cam); } finally { for (const b of bays) if (b.show) b.show.visible = true; }
+      cam.updateMatrixWorld();
+      const order = bays.map((b, j) => j).filter((j) => bays[j].show).sort((p, q) => bays[q].holder.position.distanceToSquared(cam.position) - bays[p].holder.position.distanceToSquared(cam.position));
+      let k = 0;
+      const put = (c, r, w) => {
+        if (!c || w <= 0.003) return;
+        let m = SPR.quads[k];
+        if (!m) { m = new THREE.Mesh(new THREE.PlaneGeometry(2, 2), new THREE.MeshBasicMaterial({ transparent: true, depthTest: false, depthWrite: false, toneMapped: false, fog: false })); m.frustumCulled = false; SPR.quads.push(m); SPR.scene.add(m); }
+        if (m.material.map !== c.pic.texture) { m.material.map = c.pic.texture; m.material.alphaMap = c.mask.texture; m.material.needsUpdate = true; }
+        m.material.opacity = w; m.renderOrder = k; m.visible = true;
+        m.position.set((r[0] + r[2]) / 2, (r[1] + r[3]) / 2, 0); m.scale.set((r[2] - r[0]) / 2, (r[3] - r[1]) / 2, 1);
+        k++;
+      };
+      for (const j of order) {
+        const r = carRect(j), A = SPR.views[a] && SPR.views[a][j], B = SPR.views[a + 1] && SPR.views[a + 1][j];
+        if (A && B) { put(A, r, wBase); put(B, r, wTop); } else put(A || B, r, 1);
+      }
+      for (let q = k; q < SPR.quads.length; q++) SPR.quads[q].visible = false;
+      SPR.n = k;
+      renderer.autoClear = false;
+      try { renderer.render(SPR.scene, SPR.cam); } finally { renderer.autoClear = true; }
+    }
+    return { scene: gs, cam, bays, get idx() { return idx; }, set, go, step, render, reveal, idle, moving, snap, dragStart, dragMove, dragEnd,
+      get lite() { return lite; }, set lite(v) { lite = !!v && isTouch; if (lite) { snap(); takePictures(); } }, takePictures, get sprites() { return { key: SPR.key, views: SPR.views.map((v) => v.map((c) => c && [c.pic.width, c.pic.height])), drawn: SPR.n }; } };
   })();
   // the card, the dots, the arrows and the two game buttons follow the car shown
   const dotsEl = $('carDots');
@@ -2801,6 +3007,16 @@ body {
 
   function clearTraffic() { S.traffic.forEach((c) => scene.remove(c)); S.traffic = []; }
   function laneFree(lane, z, gap) { return !S.traffic.some((c) => Math.abs(c.userData.laneX - LANES[lane]) < 2 && Math.abs(c.position.z - z) < gap); }
+  // (V32) a car ahead does not start a change into the lane the player is in, or is moving into, when the player
+  // would be on it in less than 5 s (at 200 km/h: a car up to 190 m ahead). From that far its blinker cannot be seen
+  // on a phone, and the change ended across the player's nose with no way round. Changes begun earlier are finished
+  // (2.7 s) before the player arrives; changes between the other lanes go on as before
+  function cutsIn(c, u, lane) {
+    const closing = S.speed - u.speed, gap = -c.position.z - (u.l + playerL) / 2;
+    if (closing <= 0 || gap < 0 || gap > closing * 5 + 10) return false;
+    const x1 = S.x + S.lat * 0.8;                              // where the player is going (0.8 s on)
+    return LANES[lane] > Math.min(S.x, x1) - 2.6 && LANES[lane] < Math.max(S.x, x1) + 2.6;
+  }
   function spawnCar(zMin, zMax) {
     const lane = Math.floor(Math.random() * 4), z = -rand(zMin, zMax);
     if (!laneFree(lane, z, Math.max(18, 45 - 5 * trafficLevel()))) return;
@@ -3002,7 +3218,7 @@ body {
     $('launch').hidden = m !== 'countdown';
     const showTouch = isTouch && (m === 'play' || m === 'countdown');
     $('touchL').hidden = $('touchR').hidden = $('nosBtn').hidden = !showTouch;
-    if (m !== 'play') Object.keys(input).forEach((k) => (input[k] = false));
+    if (m !== 'play') Object.keys(input).forEach((k) => (input[k] = false)); else holdTouches();
     applyCam();
   }
   function applyCam() {
@@ -3160,7 +3376,11 @@ body {
   document.addEventListener('fullscreenchange', fsSync); document.addEventListener('webkitfullscreenchange', fsSync);
   $('fsBtn').addEventListener('click', toggleFullscreen); $('fsMenuBtn').addEventListener('click', toggleFullscreen);
   addEventListener('keyup', (e) => { const k = e.key.toLowerCase(); if (KEYMAP[k]) input[KEYMAP[k]] = false; if (k === ' ') input.brake = false; });
-  addEventListener('blur', () => { Object.keys(input).forEach((k) => (input[k] = false)); input.axis = 0; });
+  // a key held when the window loses focus would stay down (its keyup never comes): every input off, then what the
+  // fingers still hold on the screen back on (holdTouches, below). A touch outlives the focus: inside a page the game
+  // loses focus when a finger brushes the page around it, and the stick and the pedals then went dead under the
+  // fingers until they were lifted and put back (V32)
+  addEventListener('blur', () => { Object.keys(input).forEach((k) => (input[k] = false)); input.axis = 0; holdTouches(); });
   document.querySelectorAll('.tbtn').forEach((b) => {
     const k = b.dataset.k;
     const on = (e) => { e.preventDefault(); input[k] = true; b.classList.add('on'); try { b.setPointerCapture(e.pointerId); } catch (_) {} };
@@ -3171,7 +3391,13 @@ body {
   // floating joystick, like the sticks of mobile football and shooter games: touch anywhere in the lower left, the stick
   // appears under the thumb, and the car turns in proportion to the slide from the first millimetre, with no delay
   const zone = $('touchL'), joy = $('joy'), knob = $('joyKnob');
-  let joyId = null, joyCx = 0, joyCy = 0;
+  let joyId = null, joyCx = 0, joyCy = 0, joyAxis = 0;
+  // what the fingers hold right now, back into the inputs after these were all cleared (focus lost, back from the
+  // pause): a pedal still pressed, the stick still under the thumb
+  function holdTouches() {
+    document.querySelectorAll('.tbtn.on').forEach((b) => { input[b.dataset.k] = true; });
+    if (joyId !== null) { input.axisOn = true; input.axis = joyAxis; }
+  }
   // sensitivity: the same slide turns 90 % as much as a direct 1:1 stick for most of the travel,
   // then eases smoothly into full lock, which sits 1.3 stick radii out
   const JOY_SENS = 0.8, JOY_FULL = 1.3;
@@ -3196,23 +3422,24 @@ body {
     joyId = e.pointerId; try { zone.setPointerCapture(e.pointerId); } catch (_) {}
     [joyCx, joyCy] = toLocal(e);
     joy.style.left = (joyCx - joy.offsetWidth / 2) + 'px'; joy.style.top = (joyCy - joy.offsetHeight / 2) + 'px'; joy.style.bottom = 'auto';
-    setKnob(0, 0, false); input.axis = 0; input.axisOn = true; joy.classList.add('on');
+    setKnob(0, 0, false); joyAxis = input.axis = 0; input.axisOn = true; joy.classList.add('on');
   });
   zone.addEventListener('pointermove', (e) => {
     if (e.pointerId !== joyId) return;
     const [x, y] = toLocal(e), R = joyFull / JOY_FULL, Rmax = joyFull;
     let dx = x - joyCx, dy = y - joyCy; const d = Math.hypot(dx, dy);
     if (d > Rmax) { dx *= Rmax / d; dy *= Rmax / d; }
-    input.axis = Math.sign(x - joyCx) * joyCurve(Math.abs(x - joyCx) / R);
+    joyAxis = input.axis = Math.sign(x - joyCx) * joyCurve(Math.abs(x - joyCx) / R);
+    input.axisOn = true;                                     // (a stick that moves under the thumb always steers)
     setKnob(dx, dy, false); joy.setAttribute('aria-valuenow', Math.round(input.axis * 100));
   });
   const joyUp = (e) => {
-    if (e.pointerId !== joyId) return; joyId = null; input.axisOn = false; input.axis = 0; joy.classList.remove('on');
+    if (e.pointerId !== joyId) return; joyId = null; input.axisOn = false; joyAxis = input.axis = 0; joy.classList.remove('on');
     setKnob(0, 0, true); joy.style.left = joy.style.top = joy.style.bottom = ''; joy.setAttribute('aria-valuenow', '0');
   };
   zone.addEventListener('pointerup', joyUp); zone.addEventListener('pointercancel', joyUp); zone.addEventListener('lostpointercapture', joyUp);
   const joyReset = () => { if (joyId !== null) joyUp({ pointerId: joyId }); };
-  addEventListener('blur', joyReset); document.addEventListener('visibilitychange', joyReset);
+  document.addEventListener('visibilitychange', joyReset);   // (not when the focus alone is lost: see the blur handler above)
   // a long press (a thumb held still on the stick or a pedal) must not open the browser's menu, which ends the touch
   stage.addEventListener('contextmenu', (e) => e.preventDefault());
 
@@ -3455,6 +3682,7 @@ body {
 
   let last = performance.now(), menuT = 0;
   const playerW = 1.9, playerL = 4.4;
+  const BEND_PUSH_STICK = 0.8;                               // m/s: the most a bend pushes the car sideways when steered with the stick
 
   function update(dt) {
     // pedals move progressively, like real pedals
@@ -3505,8 +3733,13 @@ body {
     S.steer = target + (we + wa * dt) * wx; S.steerV = (S.steerV - ww * wa * dt) * wx;
     if (Math.abs(S.steer) > 1) { S.steer = Math.sign(S.steer); S.steerV = 0; }
     const grip = Math.min(1, S.speed / 6);
-    // a bend pushes the car toward its outside (more with speed): hold the stick into the bend to stay in lane
-    const latTarget = S.steer * Math.min(6.8, 3.2 + S.speed * 0.075) * PERF.lat * grip * (1 - S.brk * 0.25) - 0.3 * ROUTE.k(S.dist) * S.speed * S.speed;
+    // a bend pushes the car toward its outside (more with speed): hold the stick into the bend to stay in lane.
+    // With the stick the push stops growing at 0.8 m/s (what the tightest bend gives at about 100 km/h; V32): it was
+    // 3 m/s at 200 km/h and 4.6 at 250, out of the 6.8 the car can move sideways, so a dodge toward the inside of a
+    // bend barely moved the car ("I move the stick, the car does not turn, and it runs into the car in front").
+    // With the keyboard nothing changes
+    const pushRaw = 0.3 * ROUTE.k(S.dist) * S.speed * S.speed, push = S.analog ? Math.max(-BEND_PUSH_STICK, Math.min(BEND_PUSH_STICK, pushRaw)) : pushRaw;
+    const latTarget = S.steer * Math.min(6.8, 3.2 + S.speed * 0.075) * PERF.lat * grip * (1 - S.brk * 0.25) - push;
     const lat0 = S.lat;
     const kLat = !S.analog ? 11 : latTarget * S.lat < 0 || Math.abs(latTarget) < Math.abs(S.lat) ? 34 : 22;   // easing off grips faster than building up
     S.lat += (latTarget - S.lat) * (1 - Math.exp(-kLat * dt));
@@ -3565,7 +3798,7 @@ body {
       // lane change AI
       if (u.change === 0 && Math.random() < changeChance * dt && c.position.z < -25) {
         const dir = Math.random() < 0.5 ? -1 : 1, nl = u.lane + dir;
-        if (nl >= 0 && nl < 4 && laneFree(nl, c.position.z, 16)) { u.change = 1; u.blinkT = 0; u.fromX = LANES[u.lane]; u.toX = LANES[nl]; u.lane = nl; u.dir = dir; }
+        if (nl >= 0 && nl < 4 && laneFree(nl, c.position.z, 16) && !cutsIn(c, u, nl)) { u.change = 1; u.blinkT = 0; u.fromX = LANES[u.lane]; u.toX = LANES[nl]; u.lane = nl; u.dir = dir; }
       }
       if (u.change > 0) {
         u.blinkT += dt;
