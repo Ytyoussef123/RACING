@@ -178,6 +178,9 @@ body {
   font: 600 11px var(--font-body); color: #fff; background: rgba(0, 0, 0, 0.5); padding: 2px 8px; border-radius: 6px; white-space: nowrap; }
 .opt { display: flex; align-items: center; gap: 9px; font-size: 13px; color: var(--ink); cursor: pointer; }
 .opt input { width: 18px; height: 18px; margin: 0; accent-color: var(--sun); }
+/* the measurements of this phone (rules screen): text to screenshot */
+.meas { width: 100%; margin: 0; padding: 8px 10px; border-radius: 8px; background: rgba(0, 0, 0, 0.55); color: var(--ink); font: 11px/1.5 ui-monospace, Menlo, Consolas, monospace;
+  text-align: left; white-space: pre-wrap; overflow-wrap: anywhere; user-select: text; -webkit-user-select: text; }
 /* loading screen: logo, bar, a tip; above everything until the game is ready, then it fades on the car park */
 .loading { position: fixed; inset: 0; z-index: 30; display: grid; place-items: center; overflow: hidden;
   padding: 20px max(16px, var(--sar)) 20px max(16px, var(--sal)); background: radial-gradient(ellipse at 50% 38%, #173452 0%, var(--navy) 64%);
@@ -382,6 +385,8 @@ body {
       <dt>Commandes</dt><dd id="ctrlText">↑ accélérer · ↓ freiner · ← → tourner · Maj nitro · C changer de vue · F plein écran · au parking : R course, Entrée libre</dd>
     </dl>
     <label class="opt"><input type="checkbox" id="fpsOpt"> Afficher les images par seconde</label>
+    <button class="btn ghost" id="measBtn" type="button">Mesurer ce téléphone</button>
+    <pre class="meas" id="measOut" hidden></pre>
     <button class="btn" id="infoClose" type="button">RETOUR</button>
     <p class="credits">Voiture 3D : « Car Concept » d'Eric Chadwick (Darmstadt Graphics Group), d'après un modèle CC0 de Unity Fan. Licence <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener">CC BY 4.0</a>, modifiée : simplifiée, plaque et logos remplacés. Intérieur 3D : <a href="https://sketchfab.com/3d-models/car-interior-c5f830a811af4917972de8fa47949de9" target="_blank" rel="noopener">« Car interior »</a> de Gerhald, licence <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener">CC BY 4.0</a>, modifié : mis à l'échelle, matières, ombrage et instruments ajoutés. Pilote 3D : <a href="https://sketchfab.com/3d-models/race-driver-e4e97df9865d466c8359fbb23e757308" target="_blank" rel="noopener">« race driver »</a> de BELAZ, licence <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener">CC BY 4.0</a>, modifié : seuls la veste et les mains sont gardés, bras et doigts posés sur le volant, gants de course. Palmiers : <a href="https://sketchfab.com/3d-models/date-palm-11acf710e6c149daa8d6fb8cdc5d087f" target="_blank" rel="noopener">« Date Palm »</a> de evolveduk, licence <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener">CC BY 4.0</a>, modifié : textures réduites, image lointaine. Alfa Romeo Giulia GTAm 3D : <a href="https://sketchfab.com/3d-models/2021-alfa-romeo-giulia-gtam-0809eafd171c497d82fa5d8735873f32" target="_blank" rel="noopener">« 2021 Alfa Romeo Giulia GTAm »</a> de <a href="https://sketchfab.com/ddiaz-design" target="_blank" rel="noopener">Ddiaz Design</a>, licence <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" target="_blank" rel="noopener">CC BY-NC-SA 4.0</a>, modifié : mis à l'échelle, allégé, vitres et feux adaptés, textures réduites. Nissan Skyline R34 3D : <a href="https://sketchfab.com/3d-models/eddies-nissan-skyline-r34-nfs-underground-9a6bc4ed690546a1bf02832764f1c888" target="_blank" rel="noopener">« Eddie's Nissan Skyline R34 NFS Underground »</a> de <a href="https://sketchfab.com/ddiaz-design" target="_blank" rel="noopener">Ddiaz Design</a>, licence <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" target="_blank" rel="noopener">CC BY-NC-SA 4.0</a>, modifié : mis à l'échelle, allégé, vitres et feux adaptés, textures réduites. Ces deux modèles modifiés sont partagés sous la même licence ; jeu gratuit, sans usage commercial.</p>
   </div>
@@ -2448,7 +2453,8 @@ body {
       // cars' own parts then stay out of the sun's shadow pass (ten thousand triangles a car near the player)
       far.traverse((o) => { if (o.isMesh) o.castShadow = true; });
       const hg = hullGeometry(holder, far, false);
-      if (hg) { TI.caster = new THREE.InstancedMesh(hg, hullMat, 26); TI.caster.count = 0; TI.caster.visible = false; TI.caster.frustumCulled = false; TI.caster.castShadow = true; scene.add(TI.caster); }
+      if (hg) { TI.caster = new THREE.InstancedMesh(hg, hullMat.clone(), 26);   // (its own copy of the material: see the batches' materials below)
+        TI.caster.count = 0; TI.caster.visible = false; TI.caster.frustumCulled = false; TI.caster.castShadow = true; scene.add(TI.caster); }
       holder.remove(far);
     }
     holder.remove(model);
@@ -2842,16 +2848,23 @@ body {
     // ---- the slide on a slow phone (lite, V32) ----
     // A phone that takes long over the car park's picture (the cars: 276 000 triangles under five lamps; the user's
     // phone, 0.2 s) cannot redraw it as the row slides: 5 pictures a second. So while the row moves, the cars are not
-    // drawn: only the car park itself (floor, walls, lamps, the cars' shadows: light work), and over it a stored picture
-    // of each car, taken once from each bay's resting camera (takePictures). Between two bays a car's picture from the
-    // bay left dissolves into its picture from the bay reached, both stretched to where the car really is on screen.
-    // At rest the real cars are drawn, as always: the picture at rest is the same as before
-    const SPR = { key: '', views: [], scene: new THREE.Scene(), cam: new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1), quads: [], n: 0 };
-    const sprKey = () => [VW, VH, prNow, Math.round(band.top), Math.round(band.bot), bays.map((b) => b.shown || '-').join('/')].join(' ');
-    const box8 = [], _pv = new THREE.Vector3();
+    // drawn: only the car park itself (floor, walls, lamps, the cars' shadows: light work), and in each car's place a
+    // relief of it: a picture of the car taken once from a bay's resting camera, laid on a grid pushed back to the
+    // car's own depths (read from the same view), so that it keeps its perspective as the camera moves. Between two
+    // bays, a car's relief from the bay left dissolves into its relief from the bay reached. At rest the real cars
+    // are drawn, as always: the picture at rest is the same as before
+    const SPR = { key: '', views: [], scene: new THREE.Scene(), n: 0 };
+    // (what the pictures were taken for: the screen, the quality's resolution (not the one a game may have lowered:
+    // they would be taken again at every return from a game), the framing, the cars in)
+    const sprKey = () => [VW, VH, PR_MAX, Math.round(band.top), Math.round(band.bot), bays.map((b) => (b.shown ? 1 : 0)).join('')].join(' ');
+    const _pv = new THREE.Vector3();
     // (where a car is on screen: the rectangle around its box, in the camera's -1..1 frame, a little wider)
     function carRect(j) {
-      const b = bays[j]; if (!b.box) { b.box = new THREE.Box3().setFromObject(b.show); b.holder.worldToLocal(b.box.min); b.holder.worldToLocal(b.box.max); if (b.box.min.x > b.box.max.x) { const q = b.box.min.x; b.box.min.x = b.box.max.x; b.box.max.x = q; } if (b.box.min.z > b.box.max.z) { const q = b.box.min.z; b.box.min.z = b.box.max.z; b.box.max.z = q; } }
+      const b = bays[j];
+      if (!b.box) {                                            // (its box in the bay's own frame, worked out once)
+        b.box = new THREE.Box3().setFromObject(b.show); b.holder.worldToLocal(b.box.min); b.holder.worldToLocal(b.box.max);
+        for (const k of ['x', 'y', 'z']) if (b.box.min[k] > b.box.max[k]) { const q = b.box.min[k]; b.box.min[k] = b.box.max[k]; b.box.max[k] = q; }
+      }
       let x0 = 1e9, y0 = 1e9, x1 = -1e9, y1 = -1e9;
       for (let k = 0; k < 8; k++) {
         _pv.set(k & 1 ? b.box.max.x : b.box.min.x, k & 2 ? b.box.max.y : b.box.min.y, k & 4 ? b.box.max.z : b.box.min.z);
@@ -2863,20 +2876,24 @@ body {
     }
     const blit = { scene: new THREE.Scene(), cam: new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1), mat: new THREE.MeshBasicMaterial({ depthTest: false, depthWrite: false, toneMapped: false, fog: false }) };
     blit.scene.add(new THREE.Mesh(new THREE.PlaneGeometry(2, 2), blit.mat));
-    const maskMat = new THREE.MeshBasicMaterial({ color: 0xffffff, toneMapped: false, fog: false });
+    const maskMat = new THREE.MeshBasicMaterial({ color: 0xffffff, toneMapped: false, fog: false, side: THREE.DoubleSide });
+    const depthMat = new THREE.MeshDepthMaterial({ depthPacking: THREE.RGBADepthPacking, side: THREE.DoubleSide });
     const rtOpts = { format: THREE.RGBFormat, minFilter: THREE.LinearFilter, magFilter: THREE.LinearFilter, generateMipmaps: false, stencilBuffer: false };
+    const CELL = 3;                                            // (the relief's grid: one point every 3 pixels of the picture)
     // each car alone, from each bay's resting camera: its picture (drawn at twice the size, then halved: smooth
-    // edges) and its outline (the same, in white on black: where the picture covers the car park behind)
+    // edges), its outline (the same, in white on black: where the picture covers the car park behind) and its depths
     function takePictures() {
       const key = sprKey();
       if (SPR.key === key) return;
-      for (const v of SPR.views) for (const c of v) if (c) { c.pic.dispose(); c.mask.dispose(); }
+      for (const v of SPR.views) for (const c of v) if (c) { c.pic.dispose(); c.mask.dispose(); c.mesh.geometry.dispose(); c.mesh.material.dispose(); SPR.scene.remove(c.mesh); }
       SPR.views = []; SPR.key = '';
-      const keep = { bg: gs.background, vis: gs.children.map((o) => o.visible), spots: spots.map((sp) => sp.intensity), ex: renderer.toneMappingExposure, pr: renderer.getPixelRatio(), clear: renderer.getClearColor(new THREE.Color()), alpha: renderer.getClearAlpha(), auto: renderer.shadowMap.needsUpdate };
+      const keep = { bg: gs.background, vis: gs.children.map((o) => o.visible), spots: spots.map((sp) => sp.intensity), ex: renderer.toneMappingExposure, clear: renderer.getClearColor(new THREE.Color()), alpha: renderer.getClearAlpha(), sm: renderer.shadowMap.needsUpdate };
       const big = new THREE.WebGLRenderTarget(4, 4, rtOpts); big.texture.encoding = THREE.sRGBEncoding;
-      const hidden = [];
+      const deep = new THREE.WebGLRenderTarget(4, 4, { format: THREE.RGBAFormat, minFilter: THREE.NearestFilter, magFilter: THREE.NearestFilter, generateMipmaps: false, stencilBuffer: false });
+      const hidden = [], gl = renderer.getContext();
+      const whole = () => { if (gl.checkFramebufferStatus(gl.FRAMEBUFFER) !== gl.FRAMEBUFFER_COMPLETE) throw new Error('picture target refused'); };
       try {
-        renderer.toneMappingExposure = 0.85; renderer.shadowMap.needsUpdate = false; renderer.setClearColor(0x000000, 1); gs.background = null;
+        renderer.toneMappingExposure = 0.85; renderer.shadowMap.needsUpdate = false; gs.background = null;
         gs.children.forEach((o) => { if (!o.isLight) o.visible = false; });
         for (const b of bays) { b.holder.visible = false; b.holder.children.forEach((o) => { if (o !== b.show && o.visible) { o.visible = false; hidden.push(o); } }); }
         for (let i = 0; i < n; i++) {
@@ -2884,71 +2901,115 @@ body {
           cam.clearViewOffset(); place(bayX(i)); cam.updateMatrixWorld();
           const view = [], rects = bays.map((b, j) => (b.show ? carRect(j) : null));   // (before the camera is given a sub-window)
           for (let j = 0; j < n; j++) {
-            const b = bays[j]; if (!b.show) { view.push(null); continue; }
-            const r = rects[j];
-            // (whole pixels of the stage, at most 1024 wide)
-            const X = Math.floor((r[0] + 1) / 2 * VW), Y = Math.floor((1 - r[3]) / 2 * VH), W = Math.max(8, Math.ceil((r[2] + 1) / 2 * VW) - X), H = Math.max(8, Math.ceil((1 - r[1]) / 2 * VH) - Y);
-            const q = Math.min(prNow, 1024 / W), w = Math.max(4, Math.round(W * q)), h = Math.max(4, Math.round(H * q));
+            const b = bays[j], r = rects[j];
+            // (whole pixels of the stage; a car far off to the side, stretched over more than a screen and a half, is left out)
+            const X = r && Math.floor((r[0] + 1) / 2 * VW), Y = r && Math.floor((1 - r[3]) / 2 * VH), W = r && Math.max(8, Math.ceil((r[2] + 1) / 2 * VW) - X), H = r && Math.max(8, Math.ceil((1 - r[1]) / 2 * VH) - Y);
+            if (!r || W > 1.5 * VW || H > 1.5 * VH) { view.push(null); continue; }
+            const q = Math.min(PR_MAX, 1024 / W), w = Math.max(8, Math.round(W * q)), h = Math.max(8, Math.round(H * q));
             cam.setViewOffset(VW, VH, X, Y, W, H);
-            const shot = (override, skipGlass) => {
-              const out = new THREE.WebGLRenderTarget(w, h, Object.assign({ depthBuffer: false }, rtOpts)); out.texture.encoding = THREE.sRGBEncoding;
-              const glass = [];
-              if (skipGlass) b.show.traverse((o) => { if (o.isMesh && o.visible && o.material.transparent) { o.visible = false; glass.push(o); } });
-              gs.overrideMaterial = override;
-              big.setSize(w * 2, h * 2); renderer.setRenderTarget(big); renderer.clear(); renderer.render(gs, cam);
+            const glass = [];
+            b.show.traverse((o) => { if (o.isMesh && o.visible && o.material.transparent) glass.push(o); });
+            const draw = (target, override, noGlass, r, g, bl) => {
+              if (noGlass) glass.forEach((o) => { o.visible = false; });
+              gs.overrideMaterial = override; renderer.setClearColor(new THREE.Color(r, g, bl), 1);
+              renderer.setRenderTarget(target); renderer.clear(); renderer.render(gs, cam);
               gs.overrideMaterial = null; glass.forEach((o) => { o.visible = true; });
-              blit.mat.map = big.texture;
-              renderer.setRenderTarget(out); renderer.render(blit.scene, blit.cam);
-              // (a graphics card that will not draw into such a target: the real cars all the time, rather than black ones)
-              const gl = renderer.getContext(); if (gl.checkFramebufferStatus(gl.FRAMEBUFFER) !== gl.FRAMEBUFFER_COMPLETE) { out.dispose(); throw new Error('picture target refused'); }
+            };
+            const halved = (override, noGlass) => {
+              const out = new THREE.WebGLRenderTarget(w, h, Object.assign({ depthBuffer: false }, rtOpts)); out.texture.encoding = THREE.sRGBEncoding;
+              big.setSize(w * 2, h * 2); draw(big, override, noGlass, 0, 0, 0); whole();
+              blit.mat.map = big.texture; renderer.setRenderTarget(out); renderer.render(blit.scene, blit.cam); whole();
               return out;
             };
             b.holder.visible = true;
-            const pic = shot(null, false), mask = shot(maskMat, true);
+            const pic = halved(null, false), mask = halved(maskMat, true);
+            // the depths, one every CELL pixels, read back and turned into the relief's points
+            const dw = Math.max(2, Math.round(w / CELL)), dh = Math.max(2, Math.round(h / CELL)), px = new Uint8Array(dw * dh * 4);
+            deep.setSize(dw, dh); draw(deep, depthMat, true, 1, 1, 1); whole();
+            renderer.readRenderTargetPixels(deep, 0, 0, dw, dh, px);
             b.holder.visible = false;
-            view.push({ pic, mask, rect: [X / VW * 2 - 1, 1 - (Y + H) / VH * 2, (X + W) / VW * 2 - 1, 1 - Y / VH * 2] });
+            const N = dw * dh, d = new Float32Array(N), ok = new Uint8Array(N);
+            for (let k = 0; k < N; k++) { d[k] = (255 / 256) * (px[4 * k] / 255 / 16777216 + px[4 * k + 1] / 255 / 65536 + px[4 * k + 2] / 255 / 256 + px[4 * k + 3] / 255); ok[k] = d[k] < 0.9995 ? 1 : 0; }
+            // (the points just outside the car take a neighbour's depth, twice over: the relief reaches a little past
+            // the outline, which the outline picture then cuts cleanly)
+            for (let pass = 2; pass <= 3; pass++) for (let y = 0; y < dh; y++) for (let x = 0; x < dw; x++) {
+              const k = y * dw + x; if (ok[k]) continue;
+              let best = -1;
+              for (const [ax, ay] of [[-1, 0], [1, 0], [0, -1], [0, 1], [-1, -1], [1, -1], [-1, 1], [1, 1]]) { const xx = x + ax, yy = y + ay; if (xx < 0 || yy < 0 || xx >= dw || yy >= dh) continue; const m = yy * dw + xx; if (ok[m] && ok[m] < pass && (best < 0 || d[m] > d[best])) best = m; }
+              if (best >= 0) { d[k] = d[best]; ok[k] = pass; }
+            }
+            const pos = new Float32Array(N * 3), uv = new Float32Array(N * 2), index = [];
+            for (let y = 0; y < dh; y++) for (let x = 0; x < dw; x++) {
+              const k = y * dw + x, u = (x + 0.5) / dw, v = (y + 0.5) / dh;
+              _pv.set(u * 2 - 1, v * 2 - 1, (ok[k] ? d[k] : 0.99) * 2 - 1).unproject(cam);
+              pos[3 * k] = _pv.x; pos[3 * k + 1] = _pv.y; pos[3 * k + 2] = _pv.z; uv[2 * k] = u; uv[2 * k + 1] = v;
+            }
+            for (let y = 0; y + 1 < dh; y++) for (let x = 0; x + 1 < dw; x++) {
+              const a = y * dw + x, c = a + 1, e = a + dw, f = e + 1;
+              if (!(ok[a] && ok[c] && ok[e] && ok[f]) || !(ok[a] === 1 || ok[c] === 1 || ok[e] === 1 || ok[f] === 1)) continue;
+              index.push(a, c, e, c, f, e);
+            }
+            const geo = new THREE.BufferGeometry(); geo.setAttribute('position', new THREE.BufferAttribute(pos, 3)); geo.setAttribute('uv', new THREE.BufferAttribute(uv, 2)); geo.setIndex(index);
+            const mesh = new THREE.Mesh(geo, new THREE.MeshBasicMaterial({ map: pic.texture, alphaMap: mask.texture, transparent: true, toneMapped: false, fog: false, side: THREE.DoubleSide }));
+            mesh.frustumCulled = false; mesh.visible = false; SPR.scene.add(mesh);
+            view.push({ pic, mask, mesh });
           }
           SPR.views.push(view);
         }
+        renderer.setRenderTarget(null);                           // (their shader now, for the screen, not at the first slide)
+        SPR.views.forEach((v) => v.forEach((c) => { if (c) c.mesh.visible = true; })); renderer.compile(SPR.scene, cam);
+        SPR.views.forEach((v) => v.forEach((c) => { if (c) c.mesh.visible = false; }));
         SPR.key = key;
       } catch (e) { console.error(e); lite = false; }
       finally {
         cam.clearViewOffset(); gs.overrideMaterial = null; gs.background = keep.bg; gs.children.forEach((o, k) => { o.visible = keep.vis[k]; }); hidden.forEach((o) => { o.visible = true; });
         spots.forEach((sp, k) => { sp.intensity = keep.spots[k]; });
-        renderer.setRenderTarget(null); renderer.setClearColor(keep.clear, keep.alpha); renderer.toneMappingExposure = keep.ex; renderer.shadowMap.needsUpdate = keep.auto;
-        big.dispose(); place(cx); redraw = true;
+        renderer.setRenderTarget(null); renderer.setClearColor(keep.clear, keep.alpha); renderer.toneMappingExposure = keep.ex; renderer.shadowMap.needsUpdate = keep.sm;
+        big.dispose(); deep.dispose(); place(cx); redraw = true;
       }
     }
-    // one picture of the slide: the car park without the cars, then their stored pictures over it
+    // one picture of the slide: the car park without the cars, then their reliefs over it, the farthest car first
     function slidePicture() {
       const a = Math.max(0, Math.min(n - 2, Math.floor((cx - bayX(0)) / BAY))), f = Math.max(0, Math.min(1, (cx - bayX(a)) / BAY));
       const sm = (e0, e1, x) => { const u = Math.max(0, Math.min(1, (x - e0) / (e1 - e0))); return u * u * (3 - 2 * u); };
-      const wTop = sm(0, 0.8, f), wBase = 1 - sm(0.6, 1, f);       // (the bay reached comes in over the bay left, which then goes)
+      // (each relief is used near the bay it was taken from, where it is true; the two change over in the middle
+      // third of the way: the bay reached comes in over the bay left, which then goes)
+      const wTop = sm(0.3, 0.7, f), wBase = 1 - sm(0.55, 0.85, f);
       for (const b of bays) if (b.show) b.show.visible = false;
       try { renderer.render(gs, cam); } finally { for (const b of bays) if (b.show) b.show.visible = true; }
-      cam.updateMatrixWorld();
       const order = bays.map((b, j) => j).filter((j) => bays[j].show).sort((p, q) => bays[q].holder.position.distanceToSquared(cam.position) - bays[p].holder.position.distanceToSquared(cam.position));
       let k = 0;
-      const put = (c, r, w) => {
+      const put = (c, w) => {                                  // (each relief on a cleared depth: it hides only its own far parts)
         if (!c || w <= 0.003) return;
-        let m = SPR.quads[k];
-        if (!m) { m = new THREE.Mesh(new THREE.PlaneGeometry(2, 2), new THREE.MeshBasicMaterial({ transparent: true, depthTest: false, depthWrite: false, toneMapped: false, fog: false })); m.frustumCulled = false; SPR.quads.push(m); SPR.scene.add(m); }
-        if (m.material.map !== c.pic.texture) { m.material.map = c.pic.texture; m.material.alphaMap = c.mask.texture; m.material.needsUpdate = true; }
-        m.material.opacity = w; m.renderOrder = k; m.visible = true;
-        m.position.set((r[0] + r[2]) / 2, (r[1] + r[3]) / 2, 0); m.scale.set((r[2] - r[0]) / 2, (r[3] - r[1]) / 2, 1);
-        k++;
+        c.mesh.material.opacity = w; c.mesh.visible = true;
+        renderer.clearDepth(); renderer.render(SPR.scene, cam);
+        c.mesh.visible = false; k++;
       };
-      for (const j of order) {
-        const r = carRect(j), A = SPR.views[a] && SPR.views[a][j], B = SPR.views[a + 1] && SPR.views[a + 1][j];
-        if (A && B) { put(A, r, wBase); put(B, r, wTop); } else put(A || B, r, 1);
-      }
-      for (let q = k; q < SPR.quads.length; q++) SPR.quads[q].visible = false;
-      SPR.n = k;
       renderer.autoClear = false;
-      try { renderer.render(SPR.scene, SPR.cam); } finally { renderer.autoClear = true; }
+      try {
+        for (const j of order) {
+          const A = SPR.views[a] && SPR.views[a][j], B = SPR.views[a + 1] && SPR.views[a + 1][j];
+          if (A && B) { put(A, wBase); put(B, wTop); } else put(A || B, 1);
+        }
+      } finally { renderer.autoClear = true; }
+      SPR.n = k;
     }
-    return { scene: gs, cam, bays, get idx() { return idx; }, set, go, step, render, reveal, idle, moving, snap, dragStart, dragMove, dragEnd,
-      get lite() { return lite; }, set lite(v) { lite = !!v && isTouch; if (lite) { snap(); takePictures(); } }, takePictures, get sprites() { return { key: SPR.key, views: SPR.views.map((v) => v.map((c) => c && [c.pic.width, c.pic.height])), drawn: SPR.n }; } };
+    // (for the rules screen's measurements: one picture of the car park, whole or in part: 'all', 'bg' (no cars),
+    // 'cars' (the cars alone), 'flat' (the cars alone in flat white: their triangles without their shading), a number
+    // (that car alone), 'slide' (the lite slide's picture))
+    function probe(what) {
+      const ex = renderer.toneMappingExposure, vis = gs.children.map((o) => o.visible), shows = bays.map((b) => !!b.show && b.show.visible);
+      renderer.toneMappingExposure = 0.85; renderer.shadowMap.needsUpdate = false; renderer.setRenderTarget(null);
+      try {
+        if (what === 'slide') { if (lite && SPR.key === sprKey()) slidePicture(); return; }
+        if (what === 'cars' || what === 'flat' || typeof what === 'number') gs.children.forEach((o) => { if (!o.isLight && !bays.some((b) => b.holder === o)) o.visible = false; });
+        bays.forEach((b, j) => { if (b.show) b.show.visible = what === 'bg' ? false : typeof what === 'number' ? j === what : true; });
+        if (what === 'flat') gs.overrideMaterial = maskMat;
+        renderer.render(gs, cam);
+      } finally { gs.overrideMaterial = null; gs.children.forEach((o, k) => { o.visible = vis[k]; }); bays.forEach((b, j) => { if (b.show) b.show.visible = shows[j]; }); renderer.toneMappingExposure = ex; }
+    }
+    return { scene: gs, cam, bays, get idx() { return idx; }, set, go, step, render, reveal, idle, moving, snap, dragStart, dragMove, dragEnd, probe,
+      get lite() { return lite; }, set lite(v) { lite = !!v && isTouch; if (lite) { snap(); takePictures(); } }, takePictures, get sprites() { return { key: SPR.key, views: SPR.views.map((v) => v.map((c) => c && [c.pic.width, c.pic.height, c.mesh.geometry.index.count / 3])), drawn: SPR.n }; } };
   })();
   // the card, the dots, the arrows and the two game buttons follow the car shown
   const dotsEl = $('carDots');
@@ -3647,6 +3708,61 @@ body {
   $('fpsOpt').addEventListener('change', (e) => { fpsOn = e.target.checked; fpsN = fpsT = fpsWorst = 0; fpsEl.textContent = '…'; fpsShow(); try { localStorage.setItem('corniche-fps', fpsOn ? '1' : '0'); } catch (err) {} });
   fpsShow();
 
+  // ---------------- measure this phone (rules screen, V32) ----------------
+  // How long this phone's graphics card takes over each part of a picture: the car park with and without its cars,
+  // each car alone, the cars in flat white (their triangles without their paint's shading), the road in both views,
+  // without the sun's shadow pass, with twelve traffic cars. Each is drawn three times, then one pixel is read back:
+  // only that waits for the graphics card (JOURNAL section 8). The result is a few lines of text to screenshot: the
+  // game cannot be made lighter for a phone without knowing where that phone spends its time
+  let measuring = false;
+  async function measurePhone() {
+    if (measuring || S.mode !== 'menu' || !modelsReady || LD.up) return;
+    measuring = true;
+    const out = $('measOut'), gl = renderer.getContext(), px = new Uint8Array(4), ms = {};
+    out.hidden = false;
+    const sync = () => gl.readPixels(0, 0, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, px);
+    const steps = [], add = (k, draw) => steps.push([k, draw]);
+    const keep = { car: playerCar.visible, traffic: S.traffic, pos: camera.position.clone(), quat: camera.quaternion.clone(), fov: camera.fov, auto: renderer.autoClear };
+    const road = (shadow, car) => { playerCar.visible = car; renderer.shadowMap.needsUpdate = shadow; renderer.setRenderTarget(null); renderer.render(scene, camera); };
+    const cock = () => { road(true, false); if (!cockpit) return; renderer.autoClear = false; renderer.clearDepth(); renderer.shadowMap.needsUpdate = false; renderer.render(cockpit.scene, cockpit.cam); renderer.autoClear = true; };
+    // (twelve traffic cars from 12 to 250 m ahead, as in the middle of a game)
+    const fake = []; for (let i = 0; i < 12; i++) { const c = makeInstCar([0xc8102e, 0x1f4e9c, 0xf2f2f0, 0x2b2b2e][i % 4], 'car'); c.position.set(LANES[(i * 3) % 4], 0, -12 - i * 21.6); fake.push(c); }
+    add('park', () => G.probe('all')); add('bg', () => G.probe('bg')); add('cars', () => G.probe('cars')); add('flat', () => G.probe('flat'));
+    CARS.forEach((c, k) => { if (c.ready) add('car' + k, () => G.probe(k)); });
+    if (G.lite) add('slide', () => G.probe('slide'));
+    add('chase', () => road(true, true)); add('chaseNoShadow', () => road(false, true)); add('roadOnly', () => road(false, false)); add('cockpit', cock);
+    add('chaseTraffic', () => road(true, true)); add('cockpitTraffic', cock);
+    try {
+      camera.position.set(S.x * 0.85, 3.1, 7.5); camera.lookAt(S.x, 1.1, -12); camera.fov = 56; camera.updateProjectionMatrix();
+      for (let k = 0; k < steps.length; k++) {
+        out.textContent = 'Mesure en cours… ' + (k + 1) + ' / ' + steps.length;
+        await new Promise((ok) => setTimeout(ok, 30));        // (the page shows its progress between two measurements)
+        const [name, draw] = steps[k];
+        if (name === 'chaseTraffic') { S.traffic = fake; syncTraffic(); }
+        draw(); draw(); sync(); const t0 = performance.now(); for (let i = 0; i < 3; i++) draw(); sync();   // (two first, untimed: what is sent to the graphics card on first use)
+        ms[name] = Math.round((performance.now() - t0) / 3);
+      }
+    } catch (e) { console.error(e); ms.error = String(e && e.message || e).slice(0, 80); }
+    finally {
+      S.traffic = keep.traffic; syncTraffic(); playerCar.visible = keep.car; renderer.autoClear = keep.auto; renderer.setRenderTarget(null);
+      camera.position.copy(keep.pos); camera.quaternion.copy(keep.quat); camera.fov = keep.fov; camera.updateProjectionMatrix();
+      measuring = false; redraw = true;
+    }
+    const dbg = gl.getExtension('WEBGL_debug_renderer_info'), gpu = String(dbg ? gl.getParameter(dbg.UNMASKED_RENDERER_WEBGL) : gl.getParameter(gl.RENDERER)).replace(/^ANGLE \((.*)\)$/, '$1').slice(0, 70);
+    const v = (k) => (ms[k] === undefined ? '–' : ms[k]), fr = (x) => x.toFixed(2).replace('.', ',');
+    out.textContent = [
+      'Corniche Rush V32 · ' + gpu,
+      (renderer.capabilities.isWebGL2 ? 'WebGL2' : 'WebGL1') + ' · ' + renderer.domElement.width + '×' + renderer.domElement.height + ' (×' + fr(prNow) + ', écran ×' + fr(window.devicePixelRatio || 1) + ') · lissage ' + gl.getParameter(gl.SAMPLES) + ' · ' + Math.round(1000 / PACE.vs) + ' Hz · ' + (navigator.hardwareConcurrency || '?') + ' cœurs' + (isPhone ? ' · téléphone' : isTouch ? ' · tactile' : '') + (hq ? ' · HD' : ' · SD'),
+      'PARKING  image ' + v('park') + ' ms · sans voitures ' + v('bg') + ' · voitures seules ' + v('cars') + ' · en aplat ' + v('flat'),
+      '         ' + CARS.map((c, k) => c.id + ' ' + v('car' + k)).join(' · ') + (G.lite ? ' · glissement léger ' + v('slide') : ' · glissement 3D'),
+      'ROUTE    vue arrière ' + v('chase') + ' ms · sans ombres ' + v('chaseNoShadow') + ' · sans la voiture ' + v('roadOnly') + ' · cockpit ' + v('cockpit'),
+      '         avec 12 voitures de trafic : vue arrière ' + v('chaseTraffic') + ' · cockpit ' + v('cockpitTraffic') + (TI.lod ? ' (trafic lointain allégé)' : ''),
+      ms.error ? 'erreur : ' + ms.error : 'Fais une capture d\'écran de ce cadre et envoie-la.',
+    ].join('\n');
+    return ms;
+  }
+  $('measBtn').addEventListener('click', () => { measurePhone(); });
+
   const sunLocal = new THREE.Vector3(), qInv = new THREE.Quaternion();
   function renderAll(now) {
     if (S.mode === 'menu') { G.render(G.moving() && !LD.settle ? PACE.gs : 1); return; }   // the car park has its own scene
@@ -3902,6 +4018,7 @@ body {
   function frame(now) {
     // an even rhythm (paceGate, above): on a refresh not drawn nothing is done; its time counts in the next picture
     // (loading: nothing is drawn behind the loading screen; once all is in, the car park's first pictures, until it fades)
+    if (measuring) { last = now; requestAnimationFrame(frame); return; }   // (the rules screen's measurements draw by themselves)
     if (!paceGate(now) || !modelsReady) {
       PACE.prevSkip = true;
       if (isTouch && modelsReady && S.mode === 'menu' && G.idle()) last = now;   // (a fixed car park: its next move starts from now)
