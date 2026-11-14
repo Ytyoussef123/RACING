@@ -39,7 +39,7 @@ func value() -> Vector2:
 	return v / length * ((length - dead_zone) / (1.0 - dead_zone))
 
 
-func draw(canvas: CanvasItem) -> void:
+func render(canvas: CanvasItem) -> void:
 	var active := finger >= 0
 	var base := _base if active else rest_position
 	var knob := _knob if active else rest_position

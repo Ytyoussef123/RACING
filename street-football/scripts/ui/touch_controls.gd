@@ -106,12 +106,12 @@ func _layout() -> void:
 
 
 func _draw() -> void:
-	_joystick.draw(self)
+	_joystick.render(self)
 	var font := get_theme_default_font()
 	for id in BUTTON_IDS:
 		var button: TouchButton = _buttons[id]
 		var font_size := int(button.radius * 0.38)
-		button.draw(self, font, tr(button.label_key), font_size)
+		button.render(self, font, tr(button.label_key), font_size)
 
 
 func _num(key: String, fallback: float) -> float:

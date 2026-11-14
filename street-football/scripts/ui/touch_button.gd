@@ -36,7 +36,7 @@ func consume_press() -> bool:
 	return pressed
 
 
-func draw(canvas: CanvasItem, font: Font, text: String, font_size: int) -> void:
+func render(canvas: CanvasItem, font: Font, text: String, font_size: int) -> void:
 	var held := is_held()
 	canvas.draw_circle(center, radius, Color(color, 0.85 if held else 0.45))
 	canvas.draw_arc(center, radius, 0.0, TAU, 48, Color(1.0, 1.0, 1.0, 0.8), 3.0, true)

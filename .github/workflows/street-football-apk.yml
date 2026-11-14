@@ -73,7 +73,9 @@ jobs:
         run: |
           godot --headless --path "$PROJECT_DIR" --quit-after 120 2>&1 | tee run.log
           godot --headless --path "$PROJECT_DIR" res://scenes/match/match.tscn --quit-after 300 2>&1 | tee match.log
-          if grep -E "SCRIPT ERROR|Parse Error|Failed to load script|Invalid call|Invalid access" import.log test.log run.log match.log; then
+          if grep -E "SCRIPT ERROR|Parse Error|Failed to load script|Invalid call|Invalid access" import.log test.log run.log match.log > errors.log; then
+            echo "Distinct errors (count, file:message), first ones first:"
+            awk '!seen[$0]++' errors.log | head -40
             echo "::error::Godot reported script errors (see above)."
             exit 1
           fi
