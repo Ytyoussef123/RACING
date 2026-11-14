@@ -1,8 +1,10 @@
 extends MenuScreen
-## Settings: language, FPS counter, size of the touch buttons. Saved on the device (Settings).
+## Settings: language, FPS counter, sound, music, size of the touch buttons, camera view.
+## Saved on the device (Settings).
 
 const LANGUAGES := [["en", "English"], ["fr", "Français"]]
 const SIZES := [["small", "SIZE_SMALL"], ["normal", "SIZE_NORMAL"], ["large", "SIZE_LARGE"]]
+const CAMERA_VIEWS := [["close", "CAMERA_CLOSE"], ["normal", "CAMERA_NORMAL"], ["wide", "CAMERA_WIDE"]]
 
 
 func _ready() -> void:
@@ -38,6 +40,15 @@ func _ready() -> void:
 		chip.button_pressed = key == Settings.controls_size
 		chip.pressed.connect(func() -> void: Settings.set_controls_size(key))
 		size_row.add_child(chip)
+	var camera_row := _row("SETTING_CAMERA")
+	var camera_group := ButtonGroup.new()
+	for view in CAMERA_VIEWS:
+		var key := str(view[0])
+		var chip := UiBuild.chip(str(view[1]), camera_group, 260.0)
+		chip.name = "Camera_" + key
+		chip.button_pressed = key == Settings.camera_view
+		chip.pressed.connect(func() -> void: Settings.set_camera_view(key))
+		camera_row.add_child(chip)
 	add_footer_button("BTN_BACK", go_back)
 
 

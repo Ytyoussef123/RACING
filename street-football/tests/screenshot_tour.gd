@@ -52,6 +52,12 @@ func _tour() -> void:
 	add_child(match_node)
 	await _settle(150)
 	await _shot("match")
+	var camera: MatchCamera = match_node.get_node("Camera")
+	for view in ["close", "wide"]:
+		camera.apply_preset(view)
+		await _settle(3)
+		await _shot("match_camera_" + view)
+	camera.apply_preset(Settings.camera_view)
 	match_node.call("_open_pause")
 	await _settle(SETTLE_FRAMES)
 	await _shot("match_pause")

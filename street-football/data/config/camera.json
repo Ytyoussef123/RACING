@@ -1,9 +1,12 @@
 {
-	"pitch_degrees": 55.0,
-	"distance": 19.0,
-	"fov": 45.0,
+	"_note": "Match camera above the near long side, following the ball. Three views, picked in Settings: pitch = angle down from horizontal (degrees), distance = meters from the followed point, fov = vertical field of view (degrees), z_follow_factor = how much it follows the ball across the court (0 = stays on the halfway line). 'wide' is the original Phase 2 view.",
+	"presets": {
+		"close": {"pitch_degrees": 38.0, "distance": 13.5, "fov": 45.0, "z_follow_factor": 0.6},
+		"normal": {"pitch_degrees": 44.0, "distance": 17.0, "fov": 45.0, "z_follow_factor": 0.5},
+		"wide": {"pitch_degrees": 55.0, "distance": 19.0, "fov": 45.0, "z_follow_factor": 0.4}
+	},
+	"default_preset": "normal",
 	"follow_speed": 4.0,
 	"look_ahead_seconds": 0.25,
-	"z_follow_factor": 0.4,
 	"x_limit_margin": 6.0
 }

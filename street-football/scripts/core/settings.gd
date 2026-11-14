@@ -1,6 +1,6 @@
 extends Node
-## Autoload "Settings": the player's preferences (language, FPS counter, touch button size, sound),
-## saved on the device in user://settings.cfg. Adds the FPS overlay on top of every screen.
+## Autoload "Settings": the player's preferences (language, FPS counter, touch button size, sound,
+## camera view), saved on the device in user://settings.cfg. Adds the FPS overlay on top of every screen.
 
 const SAVE_PATH := "user://settings.cfg"
 const FPS_OVERLAY := preload("res://scenes/ui/fps_overlay.tscn")
@@ -12,11 +12,14 @@ var show_fps: bool = false
 var controls_size: String = "normal"
 var sound_on: bool = true
 var music_on: bool = true
+## Match camera view: a key of camera.json -> presets ("close", "normal", "wide").
+var camera_view: String = ""
 
 var _fps_overlay: CanvasLayer
 
 
 func _ready() -> void:
+	camera_view = str(Config.get_value("camera", "default_preset", "normal"))
 	_load()
 	if not language.is_empty():
 		TranslationServer.set_locale(language)
@@ -52,6 +55,11 @@ func set_sound_on(on: bool) -> void:
 	save()
 
 
+func set_camera_view(view: String) -> void:
+	camera_view = view
+	save()
+
+
 func set_music_on(on: bool) -> void:
 	music_on = on
 	Sfx.refresh_music()
@@ -65,6 +73,7 @@ func save() -> void:
 	file.set_value("controls", "size", controls_size)
 	file.set_value("audio", "sound_on", sound_on)
 	file.set_value("audio", "music_on", music_on)
+	file.set_value("display", "camera", camera_view)
 	file.save(SAVE_PATH)
 
 
@@ -77,3 +86,4 @@ func _load() -> void:
 	controls_size = str(file.get_value("controls", "size", "normal"))
 	sound_on = bool(file.get_value("audio", "sound_on", true))
 	music_on = bool(file.get_value("audio", "music_on", true))
+	camera_view = str(file.get_value("display", "camera", camera_view))

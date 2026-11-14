@@ -204,6 +204,9 @@ func _test_settings() -> void:
 	_press(screen, "Size_large")
 	_check("settings: large buttons", Settings.controls_size == "large" and Settings.controls_scale() > 1.0)
 	_press(screen, "Size_normal")
+	_press(screen, "Camera_close")
+	_check("settings: close camera", Settings.camera_view == "close")
+	_press(screen, "Camera_normal")
 	_close(screen)
 
 

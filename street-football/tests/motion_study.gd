@@ -169,9 +169,10 @@ func _capture(side_view: bool) -> Image:
 		_camera.fov = 40.0
 		_camera.look_at_from_position(at + Vector3(0.0, 1.3, 5.5), at + Vector3(0.0, 0.85, 0.0), Vector3.UP)
 	else:
-		var pitch := deg_to_rad(float(Config.get_value("camera", "pitch_degrees", 55.0)))
-		_camera.fov = float(Config.get_value("camera", "fov", 45.0))
-		var offset := Vector3(0.0, sin(pitch), cos(pitch)) * float(Config.get_value("camera", "distance", 19.0))
+		var view := MatchCamera.preset(str(Config.get_value("camera", "default_preset", "normal")))
+		var pitch := deg_to_rad(float(view.get("pitch_degrees", 44.0)))
+		_camera.fov = float(view.get("fov", 45.0))
+		var offset := Vector3(0.0, sin(pitch), cos(pitch)) * float(view.get("distance", 17.0))
 		_camera.look_at_from_position(at + offset, at, Vector3.UP)
 	await RenderingServer.frame_post_draw
 	var image := get_viewport().get_texture().get_image()

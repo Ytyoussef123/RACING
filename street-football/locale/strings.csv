@@ -127,6 +127,10 @@ SETTING_CONTROLS_SIZE,Button size,Taille des boutons
 SIZE_SMALL,Small,Petit
 SIZE_NORMAL,Normal,Normal
 SIZE_LARGE,Large,Grand
+SETTING_CAMERA,Camera,Caméra
+CAMERA_CLOSE,Close,Proche
+CAMERA_NORMAL,Normal,Normale
+CAMERA_WIDE,Wide,Large
 ON,ON,OUI
 OFF,OFF,NON
 SETTING_SOUND,Sound,Sons
