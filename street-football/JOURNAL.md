@@ -17,6 +17,29 @@ A dated log, newest entry first: what was done, what was decided and why, and wh
 
 ## Log
 
+### 2026-11-14 — Phase 3: touch dribbling and shoulder charge (user feedback)
+
+#### Feedback
+
+- The user asked (like eFootball) for a shoulder charge: double-tap the joystick near the ball carrier to push him with the shoulder, later based on each player's physical strength. They also asked for realistic dribbling: the player taps the ball ahead and catches it, and taps harder when sprinting, instead of the ball being glued to the foot.
+
+#### Done
+
+- Shoulder charge (`scripts/gameplay/shoulder_charge.gd`): double-tap the joystick when your side does not have the ball. `FloatingStick` detects two short taps close together within `double_tap_seconds` (0.3 s); keyboard F.
+  - Within `shoulder_reach` (1.4 m) of the carrier: win the duel and the carrier is pushed, off balance (`shoulder_victim_stun`), can't retake the ball for a moment, and the ball comes loose. Lose and the charger bounces off and is slowed.
+  - Too far: a small lunge and a short slowdown.
+  - Chance = `shoulder_base_chance` 0.5 + strength difference x `shoulder_strength_factor` 0.01, clamped 0.15 to 0.85. `Player.strength` = `default_strength` 50 for everyone until the Phase 4 stats.
+  - The keeper is protected in his goal area. Works together with PRESS.
+- Touch dribbling (`scripts/gameplay/dribbling.gd`): when moving, the dribbler knocks the ball ahead (extra speed over his own: about 1.6 m/s slow, 2.6 running, 4.5 sprinting) and catches up with it. A dribbled ball slows faster (`dribble_ball_friction`) so it stays close. With the joystick released the ball is stopped and kept at the feet. Measured in tests: about 0.9 m ahead when running, about 1.8 m when sprinting.
+  - The ball is lost if it gets beyond `dribble_leash` (2.4 m, 3.6 m sprinting). A ball knocked more than `dribble_exposed_distance` (0.8 m) ahead can be stolen by an opponent who is closer to it.
+- Kicks now need the ball within `kick_reach` (1.1 m). A pass, through pass or shot asked while the ball is ahead waits (up to `kick_buffer_dribble_seconds` 1.2 s, with the aim chosen when pressing) and `DribbleAssist` (`scripts/gameplay/dribble_assist.gd`) runs the player onto the ball to play it. With the joystick released he goes to stop the ball. Same rules for the AI.
+- `BallHandling` now delegates dribbling to `Dribbling` (keeps files small).
+- CI green: 27 physics tests (new: touches run vs sprint, steal of a ball knocked ahead vs safe at the feet, shoulder duel about 50 % at equal strength, out of reach does nothing, stronger player has more chance). AI-vs-AI match ended 2-1, longest still loose ball 0.8 s.
+
+#### Next
+
+- User tests on the phone. Then merge `feature/five-v-five` into `main` and propose the Phase 4 plan (stats will drive strength, dribbling, speed and more).
+
 ### 2026-11-14 — Phase 3: eFootball button layout, receive assist, bigger court (user feedback)
 
 #### Feedback
