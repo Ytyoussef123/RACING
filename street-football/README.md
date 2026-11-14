@@ -7,7 +7,7 @@ Street / neighborhood football for your phone: **5v5 (1 goalkeeper + 4 outfield 
 
 ## Status
 
-**Phase 2 (core match), in test.** Branch `feature/core-match`, not yet tested on the phone. The start screen has two buttons, "Play — Concrete Cage" (walls on: the ball bounces off the boards) and "Play — Open Lot" (no walls: a ball leaving the court shows OUT and restarts), plus the language button. The match is a 3D low-poly court (30 x 18 m, small goals) with one controllable player and one ball. No teams or AI yet. See [JOURNAL.md](JOURNAL.md) for the phases and the log.
+**Phase 2 (core match) is done and tested on the phone. Phase 3 (5v5) is next.** The start screen has two buttons, "Play — Concrete Cage" (walls on: the ball bounces off the boards) and "Play — Open Lot" (no walls: a ball leaving the court shows OUT and restarts), plus the language button. The match is a 3D low-poly court (30 x 18 m, small goals) with one controllable player and one ball. No teams or AI yet. See [JOURNAL.md](JOURNAL.md) for the phases and the log.
 
 ## How to play (controls)
 

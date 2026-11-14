@@ -7,8 +7,8 @@ A dated log, newest entry first: what was done, what was decided and why, and wh
 | # | Phase | Status |
 |---|---|---|
 | 1 | Setup | Done, tested on phone (2026-11-14) |
-| 2 | Core match: court, ball physics, one controllable player, touch controls, shooting | Done, waiting for phone test |
-| 3 | 5v5: teams, goalkeepers, formations, basic AI, score, timer | Not started |
+| 2 | Core match: court, ball physics, one controllable player, touch controls, shooting | Done, tested on phone (2026-11-14) |
+| 3 | 5v5: teams, goalkeepers, formations, basic AI, score, timer | Next |
 | 4 | Player stats: data files, attributes affect gameplay, 30 fictional players | Not started |
 | 5 | Menus and UI: main menu, team/formation, court selection, results, translations | Not started |
 | 6 | Skills and polish: skill moves, animations, sounds, music, effects, wall bounces | Not started |
@@ -16,6 +16,22 @@ A dated log, newest entry first: what was done, what was decided and why, and wh
 | 8 | Release build: optimized APK, full file review | Not started |
 
 ## Log
+
+### 2026-11-14 — Phase 2 tested on the phone
+
+#### Done
+
+- The user tested Phase 2 on the phone and answered "Good".
+- Before that, CI caught two bugs that broke the match scene (the physics tests passed every time):
+  - Helper methods named `draw()` clashed with the CanvasItem `draw` signal, so they were renamed to `render()`.
+  - `class_name VirtualJoystick` is hidden by Godot 4.7's built-in `VirtualJoystick` class, so it was renamed to `FloatingStick` (`scripts/ui/floating_stick.gd`). `TouchButton` was renamed to `ActionButton` (`scripts/ui/action_button.gd`) for safety.
+- The rule against these naming traps was added to `CLAUDE.md`.
+- CI now prints each distinct error once.
+
+#### Next
+
+- Merge `feature/core-match` into `main`.
+- Then propose the Phase 3 plan (5v5) and wait for the user's OK.
 
 ### 2026-11-14 — Phase 2: core match
 
