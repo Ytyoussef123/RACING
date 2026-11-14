@@ -110,6 +110,15 @@ jobs:
             exit 1
           fi
 
+      - name: Screenshots of every screen (for review, never blocks the build)
+        continue-on-error: true
+        timeout-minutes: 6
+        run: |
+          sudo apt-get update -qq && sudo apt-get install -y -qq xvfb libgl1-mesa-dri > /dev/null
+          xvfb-run -a -s "-screen 0 2400x1080x24" godot --path "$PROJECT_DIR" --rendering-driver opengl3 \
+            --resolution 2400x1080 res://tests/screenshot_tour.tscn 2>&1 | tee shots.log | grep -v "^SHOT_DATA" || true
+          echo "Shots captured: $(grep -c '^SHOT_END' shots.log || true)"
+
       - name: Export debug APK
         env:
           GODOT_ANDROID_KEYSTORE_DEBUG_PATH: ${{ github.workspace }}/.github/keystore/debug.keystore
