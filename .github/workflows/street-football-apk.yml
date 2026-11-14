@@ -136,3 +136,8 @@ jobs:
           name: street-football-debug-apk-${{ github.sha }}
           path: build/street-football-debug.apk
           retention-days: 14
+
+      - name: Print screenshots (base64 JPEG, decoded for review)
+        if: always()
+        continue-on-error: true
+        run: grep '^SHOT_' shots.log || echo "no screenshots"
