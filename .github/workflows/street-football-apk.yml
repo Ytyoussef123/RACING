@@ -61,10 +61,19 @@ jobs:
       - name: Import project
         run: godot --headless --path "$PROJECT_DIR" --import 2>&1 | tee import.log
 
-      - name: Run the main scene briefly and check for script errors
+      - name: Physics tests (headless)
+        run: |
+          godot --headless --path "$PROJECT_DIR" res://tests/physics_smoke_test.tscn --quit-after 2000 2>&1 | tee test.log
+          if ! grep -q "TESTS DONE: 0 failure" test.log; then
+            echo "::error::Physics tests failed or did not finish (see above)."
+            exit 1
+          fi
+
+      - name: Run the scenes briefly and check for script errors
         run: |
           godot --headless --path "$PROJECT_DIR" --quit-after 120 2>&1 | tee run.log
-          if grep -E "SCRIPT ERROR|Parse Error|Failed to load script" import.log run.log; then
+          godot --headless --path "$PROJECT_DIR" res://scenes/match/match.tscn --quit-after 300 2>&1 | tee match.log
+          if grep -E "SCRIPT ERROR|Parse Error|Failed to load script|Invalid call|Invalid access" import.log test.log run.log match.log; then
             echo "::error::Godot reported script errors (see above)."
             exit 1
           fi

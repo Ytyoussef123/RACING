@@ -1,0 +1,61 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://scripts/gameplay/ball.gd" id="1_ball"]
+
+[sub_resource type="StandardMaterial3D" id="mat_ball"]
+albedo_color = Color(0.96, 0.96, 0.94, 1)
+roughness = 0.6
+
+[sub_resource type="SphereMesh" id="mesh_ball"]
+material = SubResource("mat_ball")
+radius = 1.0
+height = 2.0
+radial_segments = 20
+rings = 10
+
+[sub_resource type="StandardMaterial3D" id="mat_seam"]
+albedo_color = Color(0.1, 0.1, 0.12, 1)
+
+[sub_resource type="TorusMesh" id="mesh_seam"]
+material = SubResource("mat_seam")
+inner_radius = 0.96
+outer_radius = 1.05
+rings = 24
+ring_segments = 6
+
+[sub_resource type="StandardMaterial3D" id="mat_shadow"]
+transparency = 1
+shading_mode = 0
+albedo_color = Color(0, 0, 0, 0.4)
+
+[sub_resource type="CylinderMesh" id="mesh_shadow"]
+material = SubResource("mat_shadow")
+top_radius = 1.0
+bottom_radius = 1.0
+height = 0.002
+radial_segments = 16
+rings = 1
+
+[node name="Ball" type="Node3D"]
+script = ExtResource("1_ball")
+
+[node name="Visual" type="Node3D" parent="."]
+
+[node name="Body" type="Node3D" parent="Visual"]
+
+[node name="Mesh" type="MeshInstance3D" parent="Visual/Body"]
+mesh = SubResource("mesh_ball")
+cast_shadow = 0
+
+[node name="Seam" type="MeshInstance3D" parent="Visual/Body"]
+mesh = SubResource("mesh_seam")
+cast_shadow = 0
+
+[node name="Seam2" type="MeshInstance3D" parent="Visual/Body"]
+rotation = Vector3(1.5708, 0, 0)
+mesh = SubResource("mesh_seam")
+cast_shadow = 0
+
+[node name="Shadow" type="MeshInstance3D" parent="."]
+mesh = SubResource("mesh_shadow")
+cast_shadow = 0

@@ -1,0 +1,71 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://scripts/gameplay/player.gd" id="1_player"]
+
+[sub_resource type="StandardMaterial3D" id="mat_body"]
+albedo_color = Color(1, 0.36, 0.1, 1)
+roughness = 0.8
+
+[sub_resource type="CapsuleMesh" id="mesh_body"]
+material = SubResource("mat_body")
+radius = 0.35
+height = 1.75
+radial_segments = 16
+rings = 4
+
+[sub_resource type="StandardMaterial3D" id="mat_front"]
+albedo_color = Color(0.12, 0.12, 0.14, 1)
+
+[sub_resource type="BoxMesh" id="mesh_front"]
+material = SubResource("mat_front")
+size = Vector3(0.3, 0.14, 0.2)
+
+[sub_resource type="StandardMaterial3D" id="mat_ring"]
+transparency = 1
+shading_mode = 0
+albedo_color = Color(1, 0.84, 0.1, 0.9)
+
+[sub_resource type="TorusMesh" id="mesh_ring"]
+material = SubResource("mat_ring")
+inner_radius = 0.48
+outer_radius = 0.58
+rings = 32
+ring_segments = 4
+
+[sub_resource type="StandardMaterial3D" id="mat_shadow"]
+transparency = 1
+shading_mode = 0
+albedo_color = Color(0, 0, 0, 0.35)
+
+[sub_resource type="CylinderMesh" id="mesh_shadow"]
+material = SubResource("mat_shadow")
+top_radius = 0.42
+bottom_radius = 0.42
+height = 0.002
+radial_segments = 16
+rings = 1
+
+[node name="Player" type="Node3D"]
+script = ExtResource("1_player")
+
+[node name="Shadow" type="MeshInstance3D" parent="."]
+position = Vector3(0, 0.01, 0)
+mesh = SubResource("mesh_shadow")
+cast_shadow = 0
+
+[node name="SelectionRing" type="MeshInstance3D" parent="."]
+position = Vector3(0, 0.03, 0)
+mesh = SubResource("mesh_ring")
+cast_shadow = 0
+
+[node name="Body" type="Node3D" parent="."]
+
+[node name="Torso" type="MeshInstance3D" parent="Body"]
+position = Vector3(0, 0.875, 0)
+mesh = SubResource("mesh_body")
+cast_shadow = 0
+
+[node name="Front" type="MeshInstance3D" parent="Body"]
+position = Vector3(0, 1.3, 0.3)
+mesh = SubResource("mesh_front")
+cast_shadow = 0

@@ -1,8 +1,16 @@
 keys,en,fr
 TITLE,STREET FOOTBALL 5v5,STREET FOOTBALL 5v5
-BOOT_SUBTITLE,Phase 1 — setup test,Phase 1 — test de l'installation
-TAP_TEST,Tap me,Touche-moi
-TAP_COUNT,Taps: %d,Touches : %d
+BOOT_SUBTITLE,Phase 2 — core match test,Phase 2 — test du match
+PLAY_CAGE,Play — Concrete Cage,Jouer — Cage en béton
+PLAY_OPEN,Play — Open Lot,Jouer — Terrain ouvert
 LANGUAGE,Language: English,Langue : Français
 FPS_LABEL,FPS: %d,IPS : %d
 DEVICE_INFO,Screen %d × %d · %s · Godot %s,Écran %d × %d · %s · Godot %s
+COURT_CAGE,Concrete Cage,Cage en béton
+COURT_OPEN,Open Lot,Terrain ouvert
+BTN_SHOOT,SHOOT,TIR
+BTN_PASS,PASS,PASSE
+BTN_SPRINT,SPRINT,SPRINT
+MSG_GOAL,GOAL!,BUT !
+MSG_OUT,OUT,SORTIE
+MENU,MENU,MENU
