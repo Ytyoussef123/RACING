@@ -33,7 +33,7 @@ The player-motion work is an extra feature branch between Phase 7 and Phase 8 (`
   - Every dribble touch is now done by a foot. Running onto the ball, the foot starts its swing 0.1 s before the ball is in reach, so it meets the ball exactly when the touch lands. The foot on the ball's side is used, otherwise the preferred foot.
   - Jog dribbling is closer: the ball stays about 0.3 to 1.0 m ahead with a touch about every 0.3 s; sprinting still knocks it 1.5 to 3 m ahead.
   - Turning with the ball: the touch sends the ball to just ahead of where the player will be once turned. If the ball is out of reach when the stick turns, the player first goes to it, then turns with it (new `PlayerIntent.dribble_dir`).
-  - After a long sprint knock-on, the ball stays his until he catches it, even if he lets go of SPRINT.
+  - After a long sprint knock-on, the ball stays his while he chases it (sprint leash until his next touch), even if he lets go of SPRINT or starts a shot.
   - The ball is held a little closer at the feet when standing. The ball's rolling now matches its drawn size.
 - Look is checked on CI: the screenshot tour ends with a motion study (`tests/motion_study.gd`): frame grids of a jog with the ball and a sprint seen from the side, a turn and a shot seen from the match camera, a line-up of bodies in poses (idle, keeper ready, jog, sprint, kick, touch, tackle, dive) and a close-up of heads. It also prints the ball's distance ahead of the player for every frame ("MOTION" lines in the log).
 
@@ -46,7 +46,7 @@ The player-motion work is an extra feature branch between Phase 7 and Phase 8 (`
 #### Checked
 
 - CI: all headless test suites pass (physics, stats, progression, menus, AI match), no script errors, APK built. The motion study images were reviewed after each change; they led to fixing the hair (the head showed through), adding a face, closer jog touches, and the turn touch (the ball was left at the player's side in turns).
-- Balance (3 fixed-seed AI matches): 4.00 goals, 26.3 shots, 11.7 saves per 150-second match (before: 3.33 goals, 24.3 shots, 9.0 saves). With only 3 matches the goal count moves a lot between runs (1.67 to 4.00 during this work), so it will be watched.
+- Balance (3 fixed-seed AI matches, final run): 5.00 goals, 28.3 shots, 11.0 saves per 150-second match (before this work: 3.33 goals, 24.3 shots, 9.0 saves). Players now keep the ball when they turn, so attacks last longer and there are more shots. With only 3 matches the goal count moves a lot between runs (1.67 to 5.00 during this work); to be checked on the phone: if scoring feels too easy, the keeper save chances in data/config/ai.json can be raised.
 
 #### Next
 
