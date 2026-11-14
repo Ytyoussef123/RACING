@@ -7,7 +7,24 @@ Street / neighborhood football for your phone: **5v5 (1 goalkeeper + 4 outfield 
 
 ## Status
 
-**Phase 1 (setup).** There is a test screen only (tap counter, EN/FR switch, FPS counter, device info). No gameplay yet. See [JOURNAL.md](JOURNAL.md) for the phases and the log.
+**Phase 2 (core match), in test.** Branch `feature/core-match`, not yet tested on the phone. The start screen has two buttons, "Play — Concrete Cage" (walls on: the ball bounces off the boards) and "Play — Open Lot" (no walls: a ball leaving the court shows OUT and restarts), plus the language button. The match is a 3D low-poly court (30 x 18 m, small goals) with one controllable player and one ball. No teams or AI yet. See [JOURNAL.md](JOURNAL.md) for the phases and the log.
+
+## How to play (controls)
+
+Touch (phone):
+
+- **Move:** floating joystick on the left part of the screen (it appears under your thumb).
+- **SHOOT:** hold to charge (a power bar appears above the player), release to shoot. Turning while shooting curls the ball.
+- **PASS:** tap for a ground pass in the joystick direction.
+- **SPRINT:** hold.
+- **MENU** (top-left) returns to the start screen.
+
+Keyboard (PC):
+
+- WASD or arrows: move
+- Shift: sprint
+- Space: shoot (hold to charge)
+- E: pass
 
 ## Tech
 
@@ -35,6 +52,7 @@ scripts/   core (autoloads), gameplay, physics, ai, data, ui
 data/      config, players, courts, formations (JSON)
 locale/    strings.csv (en, fr)
 assets/    art, audio, fonts (free/original only)
+tests/     headless physics tests (tests/physics_smoke_test.tscn, run by CI, excluded from the APK)
 docs/      design notes, Android export guide
 ```
 

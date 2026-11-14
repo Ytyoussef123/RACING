@@ -7,7 +7,7 @@ A dated log, newest entry first: what was done, what was decided and why, and wh
 | # | Phase | Status |
 |---|---|---|
 | 1 | Setup | Done, tested on phone (2026-11-14) |
-| 2 | Core match: court, ball physics, one controllable player, touch controls, shooting | Next |
+| 2 | Core match: court, ball physics, one controllable player, touch controls, shooting | Done, waiting for phone test |
 | 3 | 5v5: teams, goalkeepers, formations, basic AI, score, timer | Not started |
 | 4 | Player stats: data files, attributes affect gameplay, 30 fictional players | Not started |
 | 5 | Menus and UI: main menu, team/formation, court selection, results, translations | Not started |
@@ -16,6 +16,38 @@ A dated log, newest entry first: what was done, what was decided and why, and wh
 | 8 | Release build: optimized APK, full file review | Not started |
 
 ## Log
+
+### 2026-11-14 — Phase 2: core match
+
+#### Done
+
+- Branch `feature/core-match`. Not yet tested on the phone.
+- Start screen: two buttons, "Play — Concrete Cage" (walls on, the ball bounces off the boards) and "Play — Open Lot" (no walls: the ball leaving the court shows OUT and restarts), plus the language button.
+- Match: 3D low-poly court 30 x 18 m, small goals (3 m wide, 2 m high, 1 m deep, with nets), fixed camera at 55 degrees following the ball. One controllable player (orange capsule, yellow ring) and one ball. GOAL! message, then kick-off from the center after 2 s; OUT after 1.5 s. MENU button top-left returns to the start screen. Court name shown top center.
+- Touch controls: floating joystick on the left; right side SHOOT (hold to charge, power bar above the player, release to shoot, turning while shooting curls the ball), PASS (tap, ground pass in the joystick direction), SPRINT (hold). Keyboard on PC: WASD/arrows, Shift, Space (hold), E.
+- Ball physics: gravity, ground bounces, rolling friction, air drag, curve (spin), walls, posts, crossbar, nets. Player: acceleration, sprint, turning, dribbling (ball kept in front); the ball bounces off the body when not controlled.
+- Every number is in `data/config/`: `ball.json`, `player.json`, `camera.json`, `controls.json`, `match.json`. Courts in `data/courts/cage_concrete.json` and `data/courts/open_lot.json`. New autoload `MatchSetup` (`scripts/core/match_setup.gd`) holds the chosen court.
+- Code layout: `scripts/physics/` (`ball_physics.gd`, `court_bounds.gd`, `player_motion.gd`: pure simulation, no nodes, so it is testable and ready for online play), `scripts/gameplay/` (`ball.gd`, `player.gd`, `ball_handling.gd`, `goal_detector.gd`, `player_intent.gd`, `human_input.gd`, `court_builder.gd`, `match_camera.gd`, `match.gd`), `scripts/ui/` (`touch_controls.gd`, `virtual_joystick.gd`, `touch_button.gd`, `match_hud.gd`, `boot_screen.gd`), `scripts/data/court_data.gd`.
+- CI (GitHub Actions) now also runs headless physics tests (`tests/physics_smoke_test.tscn`, excluded from the APK) and runs the match scene, before exporting the APK.
+
+#### Decisions (and why)
+
+- **Custom ball physics instead of Godot's RigidBody:** predictable, tunable from JSON, same result on every phone, easier to sync online later.
+- **`PlayerIntent` is the single input format:** the Phase 3 AI will drive players the same way as the human.
+- **Touch controls handle every finger themselves:** reliable multi-touch.
+- **Near-side fence not drawn:** it would hide the play (the physics walls are still there).
+- **Blob shadows instead of real shadows:** cheap on phones and they show the ball height.
+
+#### How to test
+
+- Open Godot on the phone, re-download the branch ZIP `feature/core-match`, import `street-football/project.godot`, run.
+- Try both courts (Concrete Cage and Open Lot): move, sprint, dribble, shoot (charge and release, with a curl), pass, score a goal, send the ball out, use MENU.
+
+#### Next
+
+- Phone test.
+- Then merge `feature/core-match` into `main`.
+- Then the Phase 3 plan (5v5: teams, goalkeepers, formations, basic AI), to be agreed before starting.
 
 ### 2026-11-14 — Phase 1 tested on the phone
 
