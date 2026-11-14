@@ -26,7 +26,7 @@ static func _decide(player: Player, ctx: MatchContext) -> PlayerIntent:
 	var goal := Vector3(team.target_goal_x(court), 0.0, 0.0)
 	var dist_to_goal := player.flat_distance_to(goal)
 	var frac := team.to_frac(player.position.x, court)
-	if dist_to_goal < tuning.shoot_range and frac > Steering.num("shot_min_frac", 0.6):
+	if dist_to_goal < tuning.shoot_range and frac > Steering.num("shot_min_frac", 0.6) and _good_shot(player, ctx, dist_to_goal):
 		_start_shot(player, ctx, dist_to_goal)
 		return _continue_shot(player, 0.0)
 	var pressure := team.opponent.nearest_distance_to(player.position)
@@ -40,6 +40,27 @@ static func _decide(player: Player, ctx: MatchContext) -> PlayerIntent:
 			return intent
 	state.action = AiPlayerState.Action.DRIBBLE
 	return null
+
+
+## Worth a shot: the goal is not seen at too tight an angle, and no outfield defender stands in
+## the shot's path (unless very close to goal).
+static func _good_shot(player: Player, ctx: MatchContext, dist_to_goal: float) -> bool:
+	var court := ctx.court
+	var goal_x := player.team.target_goal_x(court)
+	var to_near := Vector2(goal_x - player.position.x, court.half_goal_width - player.position.z)
+	var to_far := Vector2(goal_x - player.position.x, -court.half_goal_width - player.position.z)
+	if rad_to_deg(absf(to_near.angle_to(to_far))) < Steering.num("shot_min_goal_angle_degrees", 9.0):
+		return false
+	if dist_to_goal < Steering.num("shot_close_distance", 6.0):
+		return true
+	var from := Vector2(player.position.x, player.position.z)
+	var to := Vector2(goal_x, 0.0)
+	var width := Steering.num("shot_lane_width", 0.5)
+	for opp in player.team.opponent.outfield():
+		var p := Vector2(opp.position.x, opp.position.z)
+		if Geometry2D.get_closest_point_to_segment(p, from, to).distance_to(p) < width:
+			return false
+	return true
 
 
 static func _start_shot(player: Player, ctx: MatchContext, dist_to_goal: float) -> void:
