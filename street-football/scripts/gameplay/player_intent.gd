@@ -13,3 +13,5 @@ var pass_pressed: bool = false
 var tackle_pressed: bool = false
 ## True only on the frame the human asks to switch player.
 var switch_pressed: bool = false
+## True while the human holds PRESS: the player runs at the ball carrier by himself.
+var press_held: bool = false

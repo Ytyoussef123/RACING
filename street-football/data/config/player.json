@@ -36,12 +36,20 @@
 	"tackle_whiff_stun": 0.35,
 	"tackle_victim_cooldown": 0.6,
 	"tackle_cooldown": 0.8,
-	"pass_cone_degrees": 40.0,
+	"pass_cone_degrees": 70.0,
 	"pass_target_min_distance": 1.5,
 	"pass_target_max_distance": 24.0,
 	"pass_speed_base": 6.0,
 	"pass_speed_per_meter": 0.55,
 	"pass_speed_min": 7.0,
 	"pass_speed_max": 16.0,
-	"pass_lead_factor": 0.8
+	"pass_lead_factor": 0.8,
+	"pass_assist_max_degrees": 120.0,
+	"pass_angle_weight": 3.0,
+	"pass_distance_weight": 0.04,
+	"pass_blocked_penalty": 0.8,
+	"press_close_distance": 2.0,
+	"press_goal_side_offset": 0.6,
+	"press_tackle_reach_factor": 0.85,
+	"press_tackle_interval": 0.6
 }

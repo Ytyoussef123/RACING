@@ -19,6 +19,7 @@ func _ready() -> void:
 	_test_shot_over_goal_is_no_goal()
 	_test_open_court_out()
 	_test_dribble_and_shoot_scores()
+	_test_pass_assist_finds_teammate()
 	print("TESTS DONE: %d failure(s)" % _failures)
 	get_tree().quit(1 if _failures > 0 else 0)
 
@@ -167,6 +168,34 @@ func _test_dribble_and_shoot_scores() -> void:
 	_check("player takes the ball", had_ball)
 	_check("player shoots", shot_done)
 	_check("dribble and shot score at +x", goal == 1, "goal=%d ball=%s" % [goal, ctx.ball.position])
+
+
+## Pass assist: a teammate 50 degrees off the joystick line still gets the pass;
+## with nobody in the cone, the closest direction (up to the assist limit) is used.
+func _test_pass_assist_finds_teammate() -> void:
+	var team := Team.new()
+	team.tuning = AiTuning.for_difficulty("normal")
+	var passer: Player = PLAYER_SCENE.instantiate()
+	var mate: Player = PLAYER_SCENE.instantiate()
+	for p: Player in [passer, mate]:
+		add_child(p)
+		p.team = team
+		team.players.append(p)
+	passer.reset_to(Vector3.ZERO, Vector3.RIGHT)
+	var angle := deg_to_rad(50.0)
+	mate.reset_to(Vector3(cos(angle), 0.0, sin(angle)) * 8.0, Vector3.RIGHT)
+	var ctx := MatchContext.new()
+	ctx.court = CourtData.load_court("cage_concrete")
+	ctx.ball = _new_ball(Vector3(0.5, ball_radius(), 0.0), Vector3.ZERO)
+	_check("pass assist: teammate 50 degrees off the line", PassTargeting.choose(passer, Vector3.RIGHT, ctx) == mate)
+	angle = deg_to_rad(100.0)
+	mate.reset_to(Vector3(cos(angle), 0.0, sin(angle)) * 8.0, Vector3.RIGHT)
+	_check("pass assist: fallback to the closest direction", PassTargeting.choose(passer, Vector3.RIGHT, ctx) == mate)
+	angle = deg_to_rad(170.0)
+	mate.reset_to(Vector3(cos(angle), 0.0, sin(angle)) * 8.0, Vector3.RIGHT)
+	_check("pass assist: no pass backwards past the limit", PassTargeting.choose(passer, Vector3.RIGHT, ctx) == null)
+	passer.queue_free()
+	mate.queue_free()
 
 
 func ball_radius() -> float:

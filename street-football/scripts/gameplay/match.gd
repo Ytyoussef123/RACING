@@ -71,11 +71,18 @@ func _physics_process(delta: float) -> void:
 		var intent := _input.read()
 		_human.update(delta, intent, ctx)
 		human_player = _human.controlled
-		if _human.opponent_has_ball(ctx) and intent.pass_pressed:
-			intent.pass_pressed = false
-			intent.tackle_pressed = true
+		var defending := _human.opponent_has_ball(ctx)
+		if defending:
+			# Defense layout: PASS becomes TACKLE, SHOOT becomes PRESS (hold to chase the ball).
+			if intent.pass_pressed:
+				intent.pass_pressed = false
+				intent.tackle_pressed = true
+			if intent.shoot_held:
+				intent.shoot_held = false
+				intent = PressAssist.apply(human_player, intent, delta, ctx)
 		human_player.intent = intent
-		_touch.set_button_label("pass", "BTN_TACKLE" if _human.opponent_has_ball(ctx) else "BTN_PASS")
+		_touch.set_button_label("pass", "BTN_TACKLE" if defending else "BTN_PASS")
+		_touch.set_button_label("shoot", "BTN_PRESS" if defending else "BTN_SHOOT")
 	for team in ctx.teams:
 		team.brain.update(delta, ctx, human_player)
 	var playing := flow.state == MatchFlow.State.PLAYING

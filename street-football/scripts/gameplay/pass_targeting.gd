@@ -1,15 +1,20 @@
 class_name PassTargeting
 extends RefCounted
-## Picks the teammate a pass goes to (the best one in the aim direction) and the pass speed.
-## Numbers: data/config/player.json (pass_*).
+## Pass assist: picks the teammate a pass goes to and the pass speed.
+## The receiver is the teammate closest to the aim direction (wide cone), not only one exactly
+## on the line; if nobody is in the cone, the teammate with the smallest angle up to
+## pass_assist_max_degrees. Numbers: data/config/player.json (pass_*).
 
 
 static func choose(passer: Player, aim: Vector3, ctx: MatchContext) -> Player:
-	var cone := cos(deg_to_rad(_cfg("pass_cone_degrees", 40.0)))
+	var cone := cos(deg_to_rad(_cfg("pass_cone_degrees", 70.0)))
+	var assist := cos(deg_to_rad(_cfg("pass_assist_max_degrees", 120.0)))
 	var min_d := _cfg("pass_target_min_distance", 1.5)
 	var max_d := _cfg("pass_target_max_distance", 24.0)
-	var best: Player = null
-	var best_score := -INF
+	var best_in_cone: Player = null
+	var best_in_cone_score := -INF
+	var best_angle: Player = null
+	var best_angle_cos := assist
 	for mate in passer.team.players:
 		if mate == passer:
 			continue
@@ -18,15 +23,25 @@ static func choose(passer: Player, aim: Vector3, ctx: MatchContext) -> Player:
 		if d < min_d or d > max_d:
 			continue
 		var c := aim.dot(to / d)
-		if c < cone:
-			continue
-		var score := c * 2.0 - d * 0.05
-		if mate.is_keeper:
-			score -= 1.0
-		if score > best_score:
-			best_score = score
-			best = mate
-	return best
+		if c >= cone:
+			var score := _score(passer, mate, c, d, ctx)
+			if score > best_in_cone_score:
+				best_in_cone_score = score
+				best_in_cone = mate
+		elif c > best_angle_cos and not mate.is_keeper:
+			best_angle_cos = c
+			best_angle = mate
+	return best_in_cone if best_in_cone != null else best_angle
+
+
+## Angle matters most, distance a little; a blocked lane or the keeper costs points.
+static func _score(passer: Player, mate: Player, cos_angle: float, dist: float, ctx: MatchContext) -> float:
+	var score := cos_angle * _cfg("pass_angle_weight", 3.0) - dist * _cfg("pass_distance_weight", 0.04)
+	if mate.is_keeper:
+		score -= 1.0
+	if passer.team.opponent != null and not CarrierAI.lane_clear(passer.position, mate.position, passer.team.opponent):
+		score -= _cfg("pass_blocked_penalty", 0.8)
+	return score
 
 
 ## Ground pass toward where the receiver will be, faster for longer passes.
