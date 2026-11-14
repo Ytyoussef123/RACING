@@ -17,6 +17,37 @@ A dated log, newest entry first: what was done, what was decided and why, and wh
 
 ## Log
 
+### 2026-11-14 — Phase 3: eFootball button layout, receive assist, bigger court (user feedback)
+
+#### Feedback
+
+- The user sent eFootball screenshots. PRESS must be available whenever you don't have the ball, on the same button as SPRINT (eFootball "Dash & Press"). The player receiving a pass needs an assist. The pitch felt too small and crowded ("quite bigger, not a lot"). The pass assist was confirmed good.
+
+#### Done
+
+- Four buttons in an eFootball-style diamond (`data/config/controls.json`):
+
+| Position | Attack | Defense |
+|---|---|---|
+| Top-left | THROUGH | MATCH-UP |
+| Top-right | SHOOT | TACKLE |
+| Bottom-left | PASS | SWITCH |
+| Bottom-right | SPRINT | PRESS |
+
+- Labels and meaning switch with possession (`HumanControl.is_attacking`): attack layout when our side holds the ball or touched the loose ball last (our pass or shot travelling), defense layout otherwise. The separate SWITCH button was removed: SWITCH is now the PASS button on defense (Q on keyboard). Keyboard keys follow the same positions: R, Space, E, Shift.
+- PRESS (hold SPRINT on defense, `scripts/gameplay/press_assist.gd`): sprints goal-side of the carrier, then to the ball, auto-tackles in reach. On a loose ball it sprints to where the player can meet it.
+- MATCH-UP (hold, `scripts/gameplay/match_up_assist.gd`): shadows the carrier goal-side at `match_up_contain_distance` (1.6 m) and follows his moves. No auto tackle (tap TACKLE).
+- Receive assist (`scripts/gameplay/receive_assist.gd`): the pass target runs to the earliest point of the predicted ball path (`BallPhysics.copy()` stepped with walls, 2 s ahead) he can reach in time, and waits there. The joystick keeps aiming (`PlayerIntent.aim`), so first-time kicks go where you point (forward if the stick is neutral). Before, control switched to the receiver but he did not move to the ball, and the joystick (still pointing along the pass) could push him away.
+- First-time buffer (`BallHandling`): PASS, THROUGH or a shot released up to `kick_buffer_seconds` (0.5 s) before the ball arrives is kept and played when the ball comes within reach.
+- THROUGH pass (`PassTargeting.through_velocity`): into the space `through_lead_distance` (4 m) in front of the receiver, mostly toward the opponent goal and partly along his run, kept inside the court.
+- AI receivers and loose-ball chasers now use the same intercept prediction. A pass deflected by the other team stops being a pass (`Possession.touched`). Tackling when nobody has the ball no longer stuns.
+- Courts are now 36 x 22 m (was 30 x 18): center circle 3 m, goal areas 3.5 x 8 m. Goals unchanged (3 x 2 m).
+- CI green: 18 physics tests pass (new: receive assist meets a pass rolling past the receiver even with the joystick pushed along the pass; through pass aimed ahead of the receiver). AI-vs-AI match on the bigger court ended 2-1, 3 goals, ball never stuck.
+
+#### Next
+
+- User tests on the phone. Then merge `feature/five-v-five` into `main` and propose the Phase 4 plan.
+
 ### 2026-11-14 — Phase 3: PRESS button and pass assist (user feedback)
 
 #### Done

@@ -7,7 +7,7 @@ Street / neighborhood football for your phone: **5v5 (1 goalkeeper + 4 outfield 
 
 ## Status
 
-**Phase 3 (5v5) is in test** (branch `feature/five-v-five`). CI is green (physics tests and a headless AI-vs-AI match), but it is not tested on the phone yet. Phase 2 (core match) is done and tested on the phone. The match is a 3D low-poly court (30 x 18 m, small goals), 5v5 with AI opponents, a score and a 3:00 clock. See [JOURNAL.md](JOURNAL.md) for the phases and the log.
+**Phase 3 (5v5) is in test** (branch `feature/five-v-five`). CI is green (physics tests and a headless AI-vs-AI match), but it is not tested on the phone yet. Phase 2 (core match) is done and tested on the phone. The match is a 3D low-poly court (36 x 22 m, small goals), 5v5 with AI opponents, a score and a 3:00 clock. See [JOURNAL.md](JOURNAL.md) for the phases and the log.
 
 ## How to play
 
@@ -29,19 +29,35 @@ Match:
 Touch (phone):
 
 - **Move:** floating joystick on the left part of the screen (it appears under your thumb).
-- **SHOOT:** hold to charge (a power bar appears above the player), release to shoot. Turning while shooting curls the ball. Becomes **PRESS** when an opponent has the ball: hold it and the player runs goal-side of the ball carrier, then goes for the ball and tackles by himself when in reach.
-- **PASS:** goes to the teammate closest to the joystick direction (it does not need to be exactly on the line). Becomes **TACKLE** when an opponent has the ball.
+Four buttons in a diamond (eFootball style). Labels and meaning switch with possession: the attack layout shows when your side holds the ball or touched the loose ball last (your pass or shot is travelling), the defense layout otherwise.
+
+| Position | Attack | Defense | Key |
+|---|---|---|---|
+| Top-left | THROUGH | MATCH-UP | R |
+| Top-right | SHOOT | TACKLE | Space |
+| Bottom-left | PASS | SWITCH | E (SWITCH: Q) |
+| Bottom-right | SPRINT | PRESS | Shift |
+
+- **SHOOT:** hold to charge (a power bar appears above the player), release to shoot. Turning while shooting curls the ball.
+- **PASS:** goes to the teammate closest to the joystick direction (it does not need to be exactly on the line).
+- **THROUGH:** a pass into the space 4 m in front of the receiver, mostly toward the opponent goal and partly along his run, kept inside the court.
 - **SPRINT:** hold.
+- **PRESS** (hold SPRINT on defense): the player sprints goal-side of the ball carrier, then to the ball, and tackles by himself when in reach. On a loose ball he sprints to where he can meet it.
+- **MATCH-UP** (hold): the player shadows the ball carrier goal-side at 1.6 m and follows his moves. No automatic tackle: tap TACKLE.
+- **TACKLE:** tap when an opponent is in reach.
 - **SWITCH:** jump to the teammate nearest the ball. Switching is also automatic when a pass leaves for a teammate, when a teammate gets the ball, and when defending if a teammate is clearly closer.
+- **Receive assist:** the player a pass is aimed at runs to the earliest point of the ball's path he can reach and waits there. The joystick keeps aiming, so a first-time kick goes where you point (forward if the stick is neutral).
+- **First-time kicks:** PASS, THROUGH or a shot pressed up to 0.5 s before the ball arrives is kept and played when the ball comes within reach.
 - Goalkeepers are always AI.
 
 Keyboard (PC):
 
 - WASD or arrows: move
-- Shift: sprint
-- Space: shoot (hold to charge)
-- E: pass / tackle
-- Q: switch player
+- R: through pass / match-up
+- Space: shoot (hold to charge) / tackle
+- E: pass / switch
+- Shift: sprint / press
+- Q: switch player (any time)
 
 ## Tech
 
