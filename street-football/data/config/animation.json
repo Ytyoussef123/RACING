@@ -23,5 +23,9 @@
 	"hit_shake_strength": 0.12,
 	"hit_shake_seconds": 0.2,
 	"message_pop_scale": 1.6,
-	"message_pop_seconds": 0.35
+	"message_pop_seconds": 0.35,
+	"skill_seconds": 0.3,
+	"skill_roll_degrees": 16.0,
+	"skill_hop": 0.12,
+	"ball_visual_scale": 1.5
 }

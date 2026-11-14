@@ -1,7 +1,8 @@
 class_name FloatingStick
 extends RefCounted
 ## Floating joystick: it appears where the thumb lands inside its zone.
-## Two quick taps close together are a double tap (shoulder charge on defense).
+## Two quick taps close together are a double tap (shoulder charge on defense); a quick swipe and
+## release is a flick (skill move with the ball).
 ## TouchControls feeds it fingers (with the time in seconds) and draws it.
 ## Sizes and tap timings are set by TouchControls from controls.json.
 
@@ -12,6 +13,9 @@ var rest_position: Vector2 = Vector2.ZERO
 var double_tap_seconds: float = 0.3
 var tap_max_seconds: float = 0.25
 var double_tap_distance: float = 150.0
+var flick_max_seconds: float = 0.22
+## Minimum swipe length for a flick, as a fraction of the radius.
+var flick_min_fraction: float = 0.55
 ## Index of the finger using the stick, -1 when free.
 var finger: int = -1
 
@@ -21,6 +25,7 @@ var _down_time: float = 0.0
 var _last_tap_time: float = -100.0
 var _last_tap_pos: Vector2 = Vector2.ZERO
 var _double_tap: bool = false
+var _flick: Vector2 = Vector2.ZERO
 
 
 func begin(index: int, pos: Vector2, now: float) -> void:
@@ -39,15 +44,25 @@ func drag(pos: Vector2) -> void:
 
 ## Finger lifted. A short touch that barely moved counts as a tap.
 func end(now: float) -> void:
-	if finger >= 0 and now - _down_time <= tap_max_seconds and _knob.distance_to(_base) < radius * 0.5:
+	var swipe := _knob - _base
+	if finger >= 0 and now - _down_time <= tap_max_seconds and swipe.length() < radius * 0.5:
 		_last_tap_time = now
 		_last_tap_pos = _base
+	elif finger >= 0 and now - _down_time <= flick_max_seconds and swipe.length() >= radius * flick_min_fraction:
+		_flick = swipe.normalized()
 	finger = -1
 
 
 ## Finger lost without a real lift (app paused...): never counts as a tap.
 func cancel() -> void:
 	finger = -1
+
+
+## Direction of the last flick (screen axes), once; ZERO when there was none.
+func consume_flick() -> Vector2:
+	var flick := _flick
+	_flick = Vector2.ZERO
+	return flick
 
 
 ## True once after a double tap.

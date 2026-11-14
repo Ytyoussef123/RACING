@@ -12,6 +12,8 @@ var pass_pressure_distance: float = 2.2
 var tackle_attempt_chance: float = 0.45
 var tackle_success_bonus: float = 0.0
 var keeper_save_chance: float = 0.6
+## Chance per decision to try a skill move when pressed (scaled by the player's skill stars).
+var skill_tendency: float = 0.15
 
 
 static func for_difficulty(difficulty_name: String) -> AiTuning:
@@ -28,4 +30,5 @@ static func for_difficulty(difficulty_name: String) -> AiTuning:
 	t.tackle_attempt_chance = float(d.get("tackle_attempt_chance", t.tackle_attempt_chance))
 	t.tackle_success_bonus = float(d.get("tackle_success_bonus", t.tackle_success_bonus))
 	t.keeper_save_chance = float(d.get("keeper_save_chance", t.keeper_save_chance))
+	t.skill_tendency = float(d.get("skill_tendency", t.skill_tendency))
 	return t

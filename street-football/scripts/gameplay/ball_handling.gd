@@ -17,6 +17,7 @@ var dribbling: Dribbling = Dribbling.new()
 var _cooldown: float = 0.0
 var _tackle_cooldown: float = 0.0
 var _shoulder_cooldown: float = 0.0
+var _skill_cooldown: float = 0.0
 ## Kick waiting for the ball: "" (none), "pass", "through" or "shot".
 var _queued: String = ""
 var _queued_charge: float = 0.0
@@ -30,6 +31,7 @@ func reset() -> void:
 	_cooldown = 0.0
 	_tackle_cooldown = 0.0
 	_shoulder_cooldown = 0.0
+	_skill_cooldown = 0.0
 	_queued = ""
 	_queue_timer = 0.0
 	dribbling.reset()
@@ -56,6 +58,9 @@ func update(delta: float, player: Player, ctx: MatchContext) -> void:
 		_queue("pass", 0.0, aim, has_ball)
 	elif intent.through_pressed:
 		_queue("through", 0.0, aim, has_ball)
+	elif intent.skill != Vector3.ZERO and has_ball and _skill_cooldown <= 0.0:
+		_skill_cooldown = float(Config.get_value("skills", "cooldown", 1.0))
+		_queue("skill", 0.0, intent.skill, true)
 	if intent.shoulder_pressed and not has_ball:
 		if _shoulder_cooldown <= 0.0:
 			_shoulder_cooldown = _cfg("shoulder_cooldown", 1.0)
@@ -88,6 +93,7 @@ func _tick_timers(delta: float) -> void:
 	_cooldown = maxf(0.0, _cooldown - delta)
 	_tackle_cooldown = maxf(0.0, _tackle_cooldown - delta)
 	_shoulder_cooldown = maxf(0.0, _shoulder_cooldown - delta)
+	_skill_cooldown = maxf(0.0, _skill_cooldown - delta)
 	_queue_timer = maxf(0.0, _queue_timer - delta)
 	if _queue_timer <= 0.0:
 		_queued = ""
@@ -95,7 +101,7 @@ func _tick_timers(delta: float) -> void:
 
 ## Takes a loose ball in control range, or steals one an opponent knocked too far ahead.
 func _try_take(player: Player, ctx: MatchContext) -> void:
-	if _cooldown > 0.0 or player.stun_timer > 0.0 or not _can_take(player, ctx):
+	if _cooldown > 0.0 or player.stun_timer > 0.0 or player.ghost_timer > 0.0 or not _can_take(player, ctx):
 		return
 	var holder := ctx.possession.holder
 	if holder == null:
@@ -122,6 +128,8 @@ func _play_queued(player: Player, ctx: MatchContext) -> void:
 			_through_pass(player, ctx, _queued_aim)
 		"shot":
 			_shoot(player, ctx, _queued_aim, _queued_charge)
+		"skill":
+			SkillMoves.perform(player, ctx, _queued_aim)
 	_queued = ""
 	_queue_timer = 0.0
 	is_charging = false
@@ -159,11 +167,15 @@ func _shoot(player: Player, ctx: MatchContext, aim: Vector3, charge: float) -> v
 	var lift := lerpf(_cfg("shot_lift_min", 0.5), _cfg("shot_lift_max", 5.5), charge)
 	# Turning while shooting curls the ball the same way.
 	var spin := player.motion.turn_rate * _cfg("shot_curve_from_turn", 0.35)
-	# Accuracy: finishing, plus long shots beyond long_shot_distance, worse on the weak foot.
+	# Accuracy: finishing, plus long shots beyond long_shot_distance, worse on the weak foot,
+	# better first-time for players with that special skill.
+	var first_time := ctx.possession.holder != player
 	var goal := Vector3(player.team.target_goal_x(ctx.court), 0.0, 0.0)
 	var beyond := maxf(0.0, player.flat_distance_to(goal) - StatEffects.num("long_shot_distance", 12.0))
 	var error := player.stat("shot_error_degrees", 0.0) + beyond * player.stat("long_shot_error_per_meter", 0.0)
 	error *= _weak_foot_mult(player, aim)
+	if first_time and player.profile != null and player.profile.special_skills.has("first_time_shot"):
+		error *= float(Config.get_value("skills", "first_time_shot_error_mult", 0.6))
 	ctx.stats.shots[player.team.index] += 1
 	_kick(player, ctx, _with_error(aim * speed + Vector3.UP * lift, error, ctx), spin, null, "shot")
 
@@ -178,7 +190,8 @@ func _with_error(kick_velocity: Vector3, degrees: float, ctx: MatchContext) -> V
 
 ## Kicks aimed well to the weak-foot side are less accurate (weak_foot 1..4 stars).
 func _weak_foot_mult(player: Player, aim: Vector3) -> float:
-	if player.profile == null:
+	if player.profile == null or player.profile.special_skills.has("rabona"):
+		# Rabona: kicks on the weak side are done behind the standing leg, with the good foot.
 		return 1.0
 	var facing := player.motion.facing
 	if rad_to_deg(facing.angle_to(aim)) < StatEffects.num("weak_side_degrees", 35.0):
@@ -203,7 +216,7 @@ func _kick(player: Player, ctx: MatchContext, kick_velocity: Vector3, spin: floa
 
 func _bounce_off_body(player: Player, ctx: MatchContext) -> void:
 	var ball := ctx.ball
-	if ball.position.y > player.height:
+	if ball.position.y > player.height or player.ghost_timer > 0.0:
 		return
 	var d := Vector2(ball.position.x - player.position.x, ball.position.z - player.position.z)
 	var min_dist := player.radius + ball.radius

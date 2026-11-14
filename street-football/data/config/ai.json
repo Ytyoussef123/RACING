@@ -12,7 +12,8 @@
 			"pass_pressure_distance": 1.8,
 			"tackle_attempt_chance": 0.25,
 			"tackle_success_bonus": -0.15,
-			"keeper_save_chance": 0.35
+			"keeper_save_chance": 0.35,
+			"skill_tendency": 0.05
 		},
 		"normal": {
 			"decision_interval": 0.28,
@@ -23,7 +24,8 @@
 			"pass_pressure_distance": 2.2,
 			"tackle_attempt_chance": 0.45,
 			"tackle_success_bonus": 0.0,
-			"keeper_save_chance": 0.55
+			"keeper_save_chance": 0.55,
+			"skill_tendency": 0.15
 		},
 		"hard": {
 			"decision_interval": 0.15,
@@ -34,7 +36,8 @@
 			"pass_pressure_distance": 2.6,
 			"tackle_attempt_chance": 0.7,
 			"tackle_success_bonus": 0.1,
-			"keeper_save_chance": 0.7
+			"keeper_save_chance": 0.7,
+			"skill_tendency": 0.3
 		}
 	},
 	"role_shift": {

@@ -132,3 +132,8 @@ ON,ON,OUI
 OFF,OFF,NON
 SETTING_SOUND,Sound,Sons
 SETTING_MUSIC,Music,Musique
+SKILL_KNOCK_ON,Knock-on!,Accélération !
+SKILL_STEP_OVER,Step-over!,Passement de jambes !
+SKILL_DRAG_BACK,Drag-back!,Râteau !
+SKILL_ELASTICO,Elastico!,Élastico !
+SKILL_FAILED,Lost it!,Raté !

@@ -28,8 +28,10 @@ var is_keeper: bool = false
 var intent: PlayerIntent = PlayerIntent.new()
 var handling: BallHandling = BallHandling.new()
 var ai: AiPlayerState = AiPlayerState.new()
-## Seconds left slowed down after a missed tackle or a lost shoulder duel.
+## Seconds left slowed down after a missed tackle or a lost shoulder duel (or fooled by a skill).
 var stun_timer: float = 0.0
+## Seconds left during which the ball passes through this player (nutmegged).
+var ghost_timer: float = 0.0
 ## Identity and attributes; null for anonymous test players.
 var profile: PlayerProfile = null
 var number: int = 0
@@ -141,6 +143,7 @@ func reset_to(ground_position: Vector3, facing: Vector3) -> void:
 ## Moves the player with its current intent. dribbling: this player has the ball.
 func move(delta: float, court: CourtData, dribbling: bool) -> void:
 	stun_timer = maxf(0.0, stun_timer - delta)
+	ghost_timer = maxf(0.0, ghost_timer - delta)
 	var dir := intent.move
 	var sprint := intent.sprint
 	if stun_timer > 0.0:

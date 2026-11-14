@@ -58,6 +58,10 @@ func update(delta: float, speed: float, top_speed: float) -> void:
 			"dive":
 				roll = deg_to_rad(_num("dive_roll_degrees", 80.0)) * pulse * _side
 				height -= _num("dive_drop", 0.35) * pulse
+			"skill":
+				roll = deg_to_rad(_num("skill_roll_degrees", 16.0)) * pulse * _side
+				height += _num("skill_hop", 0.12) * pulse
+				left = -deg_to_rad(_num("kick_swing_degrees", 75.0)) * 0.5 * pulse * _side
 			"celebrate":
 				height += absf(sin(t * PI * _num("celebrate_jumps", 4.0))) * _num("celebrate_jump", 0.35)
 		if t >= 1.0:

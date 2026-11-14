@@ -15,8 +15,8 @@ var rng: RandomNumberGenerator = RandomNumberGenerator.new()
 var events: Array[Dictionary] = []
 
 
-func emit_event(kind: String, at: Vector3, strength: float = 1.0) -> void:
-	events.append({"kind": kind, "position": at, "strength": strength})
+func emit_event(kind: String, at: Vector3, strength: float = 1.0, label: String = "") -> void:
+	events.append({"kind": kind, "position": at, "strength": strength, "label": label})
 
 
 func _init() -> void:

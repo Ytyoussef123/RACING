@@ -32,5 +32,7 @@
 	"through_radius": 0.085,
 	"double_tap_seconds": 0.3,
 	"tap_max_seconds": 0.25,
-	"double_tap_distance": 0.15
+	"double_tap_distance": 0.15,
+	"flick_max_seconds": 0.22,
+	"flick_min_fraction": 0.55
 }

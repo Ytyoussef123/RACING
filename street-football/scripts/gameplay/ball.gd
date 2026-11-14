@@ -6,6 +6,7 @@ extends Node3D
 const SHADOW_LIFT := 0.012
 
 var physics: BallPhysics
+var _visual_scale: float = 1.0
 
 @onready var _visual: Node3D = $Visual
 @onready var _body: Node3D = $Visual/Body
@@ -15,7 +16,10 @@ var physics: BallPhysics
 
 func _ready() -> void:
 	physics = BallPhysics.new()
-	_body.scale = Vector3.ONE * physics.radius
+	# Drawn bigger than its physics size so it reads well on a phone, lifted to touch the ground.
+	_visual_scale = float(Config.get_value("animation", "ball_visual_scale", 1.0))
+	_body.scale = Vector3.ONE * physics.radius * _visual_scale
+	_visual.position.y = physics.radius * (_visual_scale - 1.0)
 	_update_visual(0.0)
 
 
@@ -40,5 +44,5 @@ func _update_visual(delta: float) -> void:
 	_trail.emitting = physics.horizontal_speed() > float(Config.get_value("animation", "ball_trail_min_speed", 14.0))
 	var height := physics.position.y - physics.radius
 	_shadow.position = Vector3(0.0, -physics.position.y + SHADOW_LIFT, 0.0)
-	var shadow_size := physics.radius * lerpf(1.3, 0.6, clampf(height / 3.0, 0.0, 1.0))
+	var shadow_size := physics.radius * _visual_scale * lerpf(1.3, 0.6, clampf(height / 3.0, 0.0, 1.0))
 	_shadow.scale = Vector3(shadow_size, 1.0, shadow_size)

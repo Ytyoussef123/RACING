@@ -36,6 +36,11 @@ func get_move_vector() -> Vector2:
 	return _joystick.value()
 
 
+## Direction of a quick flick on the joystick (screen axes), once; ZERO when there was none.
+func consume_stick_flick() -> Vector2:
+	return _joystick.consume_flick()
+
+
 ## True once after a double tap on the joystick.
 func consume_stick_double_tap() -> bool:
 	return _joystick.consume_double_tap()
@@ -118,6 +123,8 @@ func _layout() -> void:
 	_joystick.double_tap_seconds = _num("double_tap_seconds", 0.3)
 	_joystick.tap_max_seconds = _num("tap_max_seconds", 0.25)
 	_joystick.double_tap_distance = short_side * _num("double_tap_distance", 0.15)
+	_joystick.flick_max_seconds = _num("flick_max_seconds", 0.22)
+	_joystick.flick_min_fraction = _num("flick_min_fraction", 0.55)
 	_hit_scale = _num("button_hit_scale", 1.25)
 	for id in BUTTON_IDS:
 		var button: ActionButton = _buttons[id]

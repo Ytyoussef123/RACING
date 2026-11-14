@@ -44,6 +44,24 @@ func show_message(text: String) -> void:
 		.set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
 
 
+## Short text near a player that fades out (skill move names).
+func show_callout(text: String, screen_position: Vector2) -> void:
+	var label := Label.new()
+	label.text = text
+	label.auto_translate_mode = AUTO_TRANSLATE_MODE_DISABLED
+	label.add_theme_font_size_override("font_size", 40)
+	label.add_theme_color_override("font_color", Color(1.0, 0.84, 0.1))
+	label.add_theme_color_override("font_outline_color", Color.BLACK)
+	label.add_theme_constant_override("outline_size", 12)
+	label.mouse_filter = MOUSE_FILTER_IGNORE
+	add_child(label)
+	label.position = screen_position - Vector2(label.size.x * 0.5, 0.0)
+	var tween := create_tween()
+	tween.tween_property(label, "position:y", label.position.y - 60.0, 0.9)
+	tween.parallel().tween_property(label, "modulate:a", 0.0, 0.9)
+	tween.tween_callback(label.queue_free)
+
+
 func hide_message() -> void:
 	_message.visible = false
 

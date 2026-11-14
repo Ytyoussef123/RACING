@@ -125,6 +125,11 @@ func _play_events() -> void:
 				_effects.dust(at)
 			"post":
 				_camera.shake(_anim("hit_shake_strength", 0.12), _anim("hit_shake_seconds", 0.2))
+			"skill":
+				var label := str(e.get("label", ""))
+				if not label.is_empty() and not _camera.is_position_behind(at):
+					_hud.show_callout(tr(label), _camera.unproject_position(at + Vector3.UP * 2.4))
+				Sfx.play("kick_soft", 10.0)
 			"wall":
 				if strength > 8.0:
 					_camera.shake(_anim("hit_shake_strength", 0.12) * 0.6, _anim("hit_shake_seconds", 0.2))

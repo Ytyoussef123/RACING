@@ -30,6 +30,13 @@ static func _decide(player: Player, ctx: MatchContext) -> PlayerIntent:
 		_start_shot(player, ctx, dist_to_goal)
 		return _continue_shot(player, 0.0)
 	var pressure := team.opponent.nearest_distance_to(player.position)
+	var stars := player.profile.skill_moves if player.profile != null else 2
+	if pressure < float(Config.get_value("skills", "ai_skill_pressure", 2.0)) \
+			and ctx.rng.randf() < tuning.skill_tendency * stars / 5.0:
+		var skill_intent := PlayerIntent.new()
+		skill_intent.move = player.motion.facing
+		skill_intent.skill = _skill_direction(player, team)
+		return skill_intent
 	if pressure < tuning.pass_pressure_distance or ctx.rng.randf() < tuning.pass_tendency:
 		var target := best_pass(player, ctx)
 		if target != null:
@@ -61,6 +68,25 @@ static func _good_shot(player: Player, ctx: MatchContext, dist_to_goal: float) -
 		if Geometry2D.get_closest_point_to_segment(p, from, to).distance_to(p) < width:
 			return false
 	return true
+
+
+## Side step away from the closest defender, or straight on when nobody is in front.
+static func _skill_direction(player: Player, team: Team) -> Vector3:
+	var facing := player.motion.facing
+	var closest: Player = null
+	var best := INF
+	for opp in team.opponent.outfield():
+		var d := player.flat_distance_to(opp.position)
+		if d < best:
+			best = d
+			closest = opp
+	if closest == null:
+		return facing
+	var to := Steering.flat(closest.position - player.position)
+	if to.normalized().dot(facing) < 0.3:
+		return facing
+	var side := Vector3(-facing.z, 0.0, facing.x)
+	return -side if side.dot(to) > 0.0 else side
 
 
 static func _start_shot(player: Player, ctx: MatchContext, dist_to_goal: float) -> void:

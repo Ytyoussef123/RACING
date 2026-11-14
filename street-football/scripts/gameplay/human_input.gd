@@ -4,8 +4,9 @@ extends RefCounted
 ## The four buttons change meaning with possession, like eFootball:
 ##   with the ball:     THROUGH (tap)    SHOOT (hold)   PASS (tap)     SPRINT (hold)
 ##   without the ball:  MATCH-UP (hold)  TACKLE (tap)   SWITCH (tap)   PRESS (hold)
-## Double-tap the joystick without the ball: shoulder charge.
-## Keyboard, same order: R, Space, E, Shift; WASD / arrows move; Q always switches; F shoulder.
+## Double-tap the joystick without the ball: shoulder charge. Flick it with the ball: skill move.
+## Keyboard, same order: R, Space, E, Shift; WASD / arrows move; Q always switches; F shoulder;
+## C skill move in the direction held.
 
 var _touch: TouchControls
 var _keys_down: Dictionary = {}
@@ -29,6 +30,8 @@ func read(attacking: bool) -> PlayerIntent:
 	var q_tap := _key_tapped(KEY_Q)
 	var f_tap := _key_tapped(KEY_F)
 	var double_tap := _touch.consume_stick_double_tap()
+	var flick := _touch.consume_stick_flick()
+	var c_tap := _key_tapped(KEY_C)
 	var shoot_tap := _touch.consume_press("shoot") or space_tap
 	var pass_tap := _touch.consume_press("pass") or e_tap
 	var through_tap := _touch.consume_press("through") or r_tap
@@ -47,6 +50,10 @@ func read(attacking: bool) -> PlayerIntent:
 		intent.pass_pressed = pass_tap
 		intent.through_pressed = through_tap
 		intent.sprint = sprint_hold
+		if flick != Vector2.ZERO:
+			intent.skill = Vector3(flick.x, 0.0, flick.y)
+		elif c_tap:
+			intent.skill = intent.move if intent.move.length() > 0.3 else Vector3.RIGHT
 	else:
 		intent.tackle_pressed = shoot_tap
 		intent.switch_pressed = intent.switch_pressed or pass_tap

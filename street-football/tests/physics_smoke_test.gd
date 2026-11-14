@@ -25,6 +25,7 @@ func _ready() -> void:
 	_test_touch_dribbling()
 	_test_steal_ball_knocked_ahead()
 	_test_shoulder_charge()
+	_test_skill_moves()
 	print("TESTS DONE: %d failure(s)" % _failures)
 	get_tree().quit(1 if _failures > 0 else 0)
 
@@ -383,6 +384,77 @@ func _test_shoulder_charge() -> void:
 		ShoulderCharge.success_chance(charger, carrier) > ShoulderCharge.success_chance(carrier, charger))
 	carrier.queue_free()
 	charger.queue_free()
+
+
+## Sets up a dribbler (with optional special skills) facing +x with the ball at his feet, and an
+## optional defender ahead at `defender_distance` (0 = none). Returns [ctx, dribbler, defender].
+func _skill_setup(specials: Array, defender_distance: float) -> Array:
+	var home := _make_team(0, 1.0)
+	var away := _make_team(1, -1.0)
+	home.opponent = away
+	away.opponent = home
+	var dribbler := _spawn(home, Vector3.ZERO, Vector3.RIGHT)
+	var profile := PlayerProfile.new()
+	profile.short_name = "Test"
+	profile.positions = ["WING"]
+	profile.skill_moves = 5
+	profile.special_skills = specials
+	dribbler.profile = profile
+	var defender: Player = null
+	if defender_distance > 0.0:
+		defender = _spawn(away, Vector3(defender_distance, 0.0, 0.0), Vector3.LEFT)
+	var ctx := MatchContext.new()
+	ctx.court = CourtData.load_court("cage_concrete")
+	ctx.ball = _new_ball(Vector3(0.55, ball_radius(), 0.0), Vector3.ZERO)
+	ctx.possession.take(dribbler, ctx.ball)
+	return [ctx, dribbler, defender]
+
+
+func _free_setup(setup: Array) -> void:
+	for i in [1, 2]:
+		if setup[i] != null:
+			(setup[i] as Node).queue_free()
+
+
+func _test_skill_moves() -> void:
+	var s := _skill_setup([], 0.0)
+	var ctx: MatchContext = s[0]
+	var p: Player = s[1]
+	var move := SkillMoves.perform(p, ctx, Vector3.RIGHT, 0.0)
+	_check("skill: forward flick is a knock-on", move == "knock_on" and ctx.ball.velocity.x >= 6.0
+		and ctx.possession.pass_target == p, "move=%s v=%s" % [move, ctx.ball.velocity])
+	_free_setup(s)
+	s = _skill_setup(["flip_flap"], 0.0)
+	ctx = s[0]
+	move = SkillMoves.perform(s[1], ctx, Vector3(0.0, 0.0, 1.0), 0.0)
+	_check("skill: side flick with flip-flap is an elastico", move == "elastico" and ctx.ball.velocity.z > 3.0,
+		"move=%s v=%s" % [move, ctx.ball.velocity])
+	_free_setup(s)
+	s = _skill_setup(["nutmeg"], 1.2)
+	ctx = s[0]
+	move = SkillMoves.perform(s[1], ctx, Vector3.RIGHT, 0.0)
+	_check("skill: nutmeg through a defender right in front", move == "nutmeg" and (s[2] as Player).ghost_timer > 0.0,
+		"move=%s" % move)
+	_free_setup(s)
+	s = _skill_setup(["rainbow"], 2.5)
+	ctx = s[0]
+	move = SkillMoves.perform(s[1], ctx, Vector3.RIGHT, 0.0)
+	_check("skill: rainbow flick lifts the ball over the defender", move == "rainbow" and ctx.ball.velocity.y > 3.0,
+		"move=%s v=%s" % [move, ctx.ball.velocity])
+	_free_setup(s)
+	s = _skill_setup([], 0.0)
+	ctx = s[0]
+	p = s[1]
+	move = SkillMoves.perform(p, ctx, Vector3.LEFT, 0.0)
+	_check("skill: back flick is a drag-back that turns the player", move == "drag_back" and p.motion.facing.x < -0.9,
+		"move=%s facing=%s" % [move, p.motion.facing])
+	_free_setup(s)
+	s = _skill_setup([], 0.0)
+	ctx = s[0]
+	move = SkillMoves.perform(s[1], ctx, Vector3.RIGHT, 0.999)
+	_check("skill: a failed move is a bad touch (ball lost)", move == "failed" and ctx.possession.holder == null,
+		"move=%s" % move)
+	_free_setup(s)
 
 
 func ball_radius() -> float:
