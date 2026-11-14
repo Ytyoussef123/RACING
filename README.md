@@ -7,6 +7,7 @@ Jeu de conduite en vue cockpit sur la corniche de Casablanca (Casa Port → Aïn
 - `src/cockpit/` : sources du cockpit (p1 à p6), incluses dans `index.html`.
 - `tools/` : conversion des modèles ; `tools/carpack.mjs` convertit une voiture Sketchfab au format du jeu ; `tools/heropack.mjs` regroupe les pièces de la voiture standard ; `tools/lodpack.mjs` fabrique la voiture de trafic allégée vue de loin ; `tools/phonetex.mjs` fabrique les textures réduites du téléphone. `tests/` : tests Playwright (voir JOURNAL, section Tests).
 - `versions/` : copies de versions antérieures, pour revenir en arrière. `vN.html` est le jeu juste avant la version N+1 ; `v32.html` = actuelle.
+- `android/` : l'application Android (APK) du jeu, hors connexion ; construite par GitHub (`.github/workflows/android.yml`) à chaque changement du jeu ; à télécharger dans les Releases du dépôt (CornicheRush.apk) ; `android/prepare_assets.py` y copie le jeu.
 - `incoming/cars/` : dossier où déposer le zip des nouvelles voitures (voir son README).
 - `CLAUDE.md` : règles de travail pour Claude (modèles à utiliser).
 
