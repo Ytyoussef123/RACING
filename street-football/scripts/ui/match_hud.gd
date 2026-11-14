@@ -1,9 +1,9 @@
 class_name MatchHud
 extends Control
 ## Match overlay: team names, score and clock, big messages (GOAL!, OUT, FULL TIME), shot power
-## bar, name tag with stamina above the human's player, court name, formation and menu buttons.
+## bar, name tag with stamina above the human's player, court name, formation and pause buttons.
 
-signal menu_pressed
+signal pause_pressed
 signal formation_pressed
 
 @onready var _message: Label = $Message
@@ -26,7 +26,7 @@ signal formation_pressed
 
 
 func _ready() -> void:
-	_menu_button.pressed.connect(func() -> void: menu_pressed.emit())
+	_menu_button.pressed.connect(func() -> void: pause_pressed.emit())
 	_formation_button.pressed.connect(func() -> void: formation_pressed.emit())
 	hide_message()
 	_power_bar.visible = false

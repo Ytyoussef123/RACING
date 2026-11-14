@@ -1,12 +1,16 @@
 extends Node
-## Autoload "MatchSetup": what the next match uses. The start screen fills it
-## (Phase 5 menus will replace it); the match scene reads it.
+## Autoload "MatchSetup": what the next match uses (crews, formation, court, difficulty, length),
+## filled by the quick match screens and read by the match scene; also keeps the last result.
 
 var court_id: String = ""
 var formation_id: String = ""
 var difficulty: String = ""
 var home_team_id: String = ""
 var away_team_id: String = ""
+## Match length chosen on the court screen (0 = default from match.json).
+var match_minutes: int = 0
+## Last finished match, for the results screen: scores, goals, stats.
+var last_result: Dictionary = {}
 ## Tests only: both teams are AI, the match length is overridden, and full time does not leave the scene.
 var test_mode: bool = false
 var test_match_seconds: float = 0.0
@@ -29,7 +33,13 @@ func get_difficulty() -> String:
 func get_match_seconds() -> float:
 	if test_mode and test_match_seconds > 0.0:
 		return test_match_seconds
-	return float(Config.get_value("match", "match_seconds", 180.0))
+	return get_match_minutes() * 60.0
+
+
+func get_match_minutes() -> int:
+	if match_minutes > 0:
+		return match_minutes
+	return roundi(float(Config.get_value("match", "match_seconds", 180.0)) / 60.0)
 
 
 func get_home_team_id() -> String:
@@ -50,12 +60,12 @@ func get_away_team_id() -> String:
 	return fallback
 
 
-## Next opponent in the roster order (skipping the home team), for the start screen.
-func next_away_team_id() -> String:
+## The crew `step` places away in the roster order, skipping `skip` (e.g. the home crew).
+func cycle_team(current: String, step: int, skip: String) -> String:
 	var ids: Array[String] = Roster.team_ids()
-	var index := ids.find(get_away_team_id())
-	for step in range(1, ids.size() + 1):
-		var candidate := ids[(index + step) % ids.size()]
-		if candidate != get_home_team_id():
+	var index := ids.find(current)
+	for i in range(1, ids.size() + 1):
+		var candidate := ids[posmod(index + step * i, ids.size())]
+		if candidate != skip:
 			return candidate
-	return get_away_team_id()
+	return current

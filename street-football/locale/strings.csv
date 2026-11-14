@@ -1,9 +1,5 @@
 keys,en,fr
 TITLE,STREET FOOTBALL 5v5,STREET FOOTBALL 5v5
-BOOT_SUBTITLE,Phase 4 — player stats test,Phase 4 — test des stats des joueurs
-PLAY_CAGE,Play — Concrete Cage,Jouer — Cage en béton
-PLAY_OPEN,Play — Open Lot,Jouer — Terrain ouvert
-LANGUAGE,Language: English,Langue : Français
 FPS_LABEL,FPS: %d,IPS : %d
 DEVICE_INFO,Screen %d × %d · %s · Godot %s,Écran %d × %d · %s · Godot %s
 COURT_CAGE,Concrete Cage,Cage en béton
@@ -13,22 +9,18 @@ BTN_PASS,PASS,PASSE
 BTN_SPRINT,SPRINT,SPRINT
 MSG_GOAL,GOAL!,BUT !
 MSG_OUT,OUT,SORTIE
-MENU,MENU,MENU
 BTN_TACKLE,TACKLE,TACLE
 BTN_SWITCH,SWITCH,CHANGER
 MSG_FULL_TIME,FULL TIME,FIN DU MATCH
 MSG_KICK_IN,KICK-IN,RENTRÉE
 MSG_CORNER,CORNER,CORNER
 MSG_GOAL_KICK,GOAL KICK,SIX MÈTRES
-FORMATION_LABEL,Formation: %s,Formation : %s
-DIFFICULTY_LABEL,Difficulty: %s,Difficulté : %s
 DIFF_EASY,Easy,Facile
 DIFF_NORMAL,Normal,Normal
 DIFF_HARD,Hard,Difficile
 BTN_PRESS,PRESS,PRESSING
 BTN_THROUGH,THROUGH,P. PROF.
 BTN_MATCH_UP,MATCH-UP,MARQUAGE
-OPPONENT_LABEL,Opponent: %s,Adversaire : %s
 PLAYSTYLE_STREET_DRIBBLER,Street Dribbler,Dribbleur de rue
 PLAYSTYLE_WALL_PASSER,Wall Passer,Passeur une-deux
 PLAYSTYLE_ROCK_DEFENDER,Rock Defender,Défenseur roc
@@ -46,3 +38,95 @@ SKILL_RABONA,Rabona,Rabona
 SKILL_FIRST_TIME_SHOT,First-time shot,Frappe en une touche
 SKILL_ROULETTE,Roulette,Roulette
 SKILL_HEEL_FLICK,Heel flick,Talonnade
+MENU_TAGLINE,"Street football, 5 against 5.","Le foot de rue, à 5 contre 5."
+MENU_QUICK_MATCH,QUICK MATCH,MATCH RAPIDE
+MENU_MY_CREW,MY CREW,MON ÉQUIPE
+MENU_SETTINGS,SETTINGS,RÉGLAGES
+BTN_BACK,BACK,RETOUR
+BTN_NEXT,NEXT,SUIVANT
+BTN_PLAY,PLAY,JOUER
+BTN_REMATCH,REMATCH,REVANCHE
+BTN_MAIN_MENU,MAIN MENU,MENU PRINCIPAL
+BTN_RESUME,RESUME,REPRENDRE
+BTN_QUIT_MATCH,QUIT MATCH,QUITTER LE MATCH
+BTN_PAUSE,PAUSE,PAUSE
+BTN_CLOSE,CLOSE,FERMER
+TITLE_TEAM_SELECT,CHOOSE THE CREWS,CHOISIS LES ÉQUIPES
+TITLE_FORMATION,FORMATION,FORMATION
+TITLE_COURT,COURT AND RULES,TERRAIN ET RÈGLES
+TITLE_PAUSE,PAUSED,PAUSE
+LABEL_YOUR_CREW,YOUR CREW,TON ÉQUIPE
+LABEL_OPPONENT,OPPONENT,ADVERSAIRE
+LABEL_TEAM_RATING,Team rating %d,Note d'équipe %d
+LABEL_DIFFICULTY,DIFFICULTY,DIFFICULTÉ
+LABEL_MATCH_LENGTH,MATCH LENGTH,DURÉE DU MATCH
+MINUTES_FMT,%d min,%d min
+COURT_WALLS_ON,Walls: the ball bounces back,Murs : le ballon rebondit
+COURT_WALLS_OFF,No walls: kick-ins and corners,Sans murs : rentrées et corners
+COURT_SIZE_FMT,%d × %d m,%d × %d m
+LABEL_GOALS,GOALS,BUTS
+LABEL_STATS,MATCH STATS,STATISTIQUES
+STAT_SHOTS,Shots,Tirs
+STAT_SAVES,Saves,Arrêts
+STAT_PASSES,Passes completed,Passes réussies
+STAT_BALLS_WON,Balls won,Ballons gagnés
+STAT_POSSESSION,Possession,Possession
+LABEL_OWN_GOAL,own goal,contre son camp
+NO_GOALS,No goals,Aucun but
+RESULT_WIN,YOU WIN!,VICTOIRE !
+RESULT_DRAW,DRAW,MATCH NUL
+RESULT_LOSS,YOU LOSE,DÉFAITE
+SQUAD_HINT,Tap a player to see his card. Choose the crew you play with in Quick match.,Touche un joueur pour voir sa fiche. Choisis ton équipe dans Match rapide.
+CARD_AGE,%d years,%d ans
+CARD_HEIGHT,%d cm,%d cm
+CARD_FOOT_RIGHT,Right foot,Pied droit
+CARD_FOOT_LEFT,Left foot,Pied gauche
+CARD_POSITIONS,Positions,Postes
+CARD_PLAYSTYLE,Playstyle,Style de jeu
+CARD_WEAK_FOOT,Weak foot,Mauvais pied
+CARD_SKILL_MOVES,Skill moves,Gestes techniques
+CARD_SPECIAL_SKILLS,Special skills,Compétences spéciales
+GROUP_ATTACK,Attack,Attaque
+GROUP_CONTROL,Ball control,Contrôle
+GROUP_PASSING,Passing,Passes
+GROUP_PHYSICAL,Physical,Physique
+GROUP_DEFENSE,Defense,Défense
+GROUP_GOALKEEPING,Goalkeeping,Gardien
+ATTR_FINISHING,Finishing,Finition
+ATTR_SHOT_POWER,Shot power,Puissance de tir
+ATTR_LONG_SHOTS,Long shots,Tirs de loin
+ATTR_HEADING,Heading,Jeu de tête
+ATTR_DRIBBLING,Dribbling,Dribble
+ATTR_BALL_CONTROL,Ball control,Contrôle de balle
+ATTR_TIGHT_POSSESSION,Tight possession,Conservation
+ATTR_LOW_PASS,Low pass,Passe courte
+ATTR_LOFTED_PASS,Lofted pass,Passe lobée
+ATTR_VISION,Vision,Vision du jeu
+ATTR_SPEED,Speed,Vitesse
+ATTR_ACCELERATION,Acceleration,Accélération
+ATTR_STAMINA,Stamina,Endurance
+ATTR_STRENGTH,Strength,Force
+ATTR_BALANCE,Balance,Équilibre
+ATTR_JUMP,Jump,Détente
+ATTR_TACKLING,Tackling,Tacle
+ATTR_INTERCEPTION,Interception,Interception
+ATTR_MARKING,Marking,Marquage
+ATTR_AGGRESSION,Aggression,Agressivité
+ATTR_GK_REFLEXES,GK reflexes,Réflexes (G)
+ATTR_GK_DIVING,GK diving,Plongeon (G)
+ATTR_GK_HANDLING,GK handling,Prise de balle (G)
+ATTR_GK_POSITIONING,GK positioning,Placement (G)
+ATTR_GK_KICKING,GK kicking,Dégagement (G)
+POS_GK,GK,G
+POS_DEF,DEF,DÉF
+POS_MID,MID,MIL
+POS_WING,WING,AIL
+POS_ATT,ATT,ATT
+SETTING_LANGUAGE,Language,Langue
+SETTING_SHOW_FPS,Show FPS,Afficher les IPS
+SETTING_CONTROLS_SIZE,Button size,Taille des boutons
+SIZE_SMALL,Small,Petit
+SIZE_NORMAL,Normal,Normal
+SIZE_LARGE,Large,Grand
+ON,ON,OUI
+OFF,OFF,NON

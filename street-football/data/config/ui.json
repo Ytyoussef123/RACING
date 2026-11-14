@@ -1,0 +1,42 @@
+{
+	"_note": "Menu look and navigation. Colors are #rrggbb, sizes in pixels of the 1920x1080 base screen.",
+	"screens": {
+		"main_menu": "res://scenes/menus/main_menu.tscn",
+		"team_select": "res://scenes/menus/team_select.tscn",
+		"formation_select": "res://scenes/menus/formation_select.tscn",
+		"court_select": "res://scenes/menus/court_select.tscn",
+		"match": "res://scenes/match/match.tscn",
+		"results": "res://scenes/menus/results.tscn",
+		"squad": "res://scenes/menus/squad.tscn",
+		"settings": "res://scenes/menus/settings.tscn"
+	},
+	"colors": {
+		"background": "#15161b",
+		"background_2": "#1d1f26",
+		"panel": "#23252e",
+		"panel_border": "#363944",
+		"button": "#2b2e38",
+		"button_hover": "#363a47",
+		"text": "#f2f2f2",
+		"text_dim": "#9aa0aa",
+		"accent": "#ff5c1a",
+		"accent_2": "#ffd61a",
+		"accent_3": "#20c4d8",
+		"good": "#4fd16b",
+		"bad": "#ff4f4f"
+	},
+	"font_sizes": {
+		"title": 112,
+		"heading": 60,
+		"button": 42,
+		"body": 34,
+		"small": 26
+	},
+	"button_min_height": 104,
+	"corner_radius": 14,
+	"screen_margin_x": 72,
+	"screen_margin_y": 40,
+	"match_minutes": [3, 4, 5],
+	"controls_scales": {"small": 0.85, "normal": 1.0, "large": 1.18},
+	"stat_bar_colors": [[85, "#20c4d8"], [75, "#4fd16b"], [60, "#ffd61a"], [0, "#ff4f4f"]]
+}

@@ -108,7 +108,8 @@ func _finger_up(index: int) -> void:
 
 func _layout() -> void:
 	var s := size
-	var short_side := minf(s.x, s.y)
+	# The player's button-size setting scales the stick and the buttons.
+	var short_side := minf(s.x, s.y) * Settings.controls_scale()
 	var zone_top := _num("joystick_zone_top", 0.18)
 	_joystick.zone = Rect2(0.0, s.y * zone_top, s.x * _num("joystick_zone_width", 0.45), s.y * (1.0 - zone_top))
 	_joystick.radius = short_side * _num("joystick_radius", 0.13)

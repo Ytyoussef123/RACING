@@ -26,5 +26,9 @@
 	"kickoff_taker_offset": 0.6,
 	"default_home_team": "concrete_kings",
 	"default_away_team": "rooftop_rebels",
-	"kit_clash_distance": 0.35
+	"kit_clash_distance": 0.35,
+	"courts": [
+		"cage_concrete",
+		"open_lot"
+	]
 }
