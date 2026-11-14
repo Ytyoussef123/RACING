@@ -1,0 +1,47 @@
+{
+	"name": "Seun Adegboro",
+	"short_name": "S. Adegboro",
+	"nationality": "Nigeria",
+	"age": 25,
+	"height_cm": 189,
+	"preferred_foot": "right",
+	"weak_foot": 2,
+	"positions": [
+		"DEF"
+	],
+	"playstyle": "enforcer",
+	"skill_moves": 1,
+	"special_skills": [],
+	"look": {
+		"skin": "#5e3a22",
+		"hair": "#1b1410",
+		"hair_style": "buzz"
+	},
+	"attributes": {
+		"finishing": 38,
+		"shot_power": 71,
+		"long_shots": 45,
+		"heading": 82,
+		"dribbling": 49,
+		"ball_control": 61,
+		"tight_possession": 47,
+		"low_pass": 59,
+		"lofted_pass": 55,
+		"vision": 47,
+		"speed": 67,
+		"acceleration": 64,
+		"stamina": 80,
+		"strength": 87,
+		"balance": 59,
+		"jump": 77,
+		"tackling": 80,
+		"interception": 75,
+		"marking": 73,
+		"aggression": 92,
+		"gk_reflexes": 24,
+		"gk_diving": 19,
+		"gk_handling": 15,
+		"gk_positioning": 19,
+		"gk_kicking": 30
+	}
+}

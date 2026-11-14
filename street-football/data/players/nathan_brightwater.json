@@ -1,0 +1,47 @@
+{
+	"name": "Nathan Brightwater",
+	"short_name": "N. Brightwater",
+	"nationality": "Canada",
+	"age": 22,
+	"height_cm": 179,
+	"preferred_foot": "right",
+	"weak_foot": 3,
+	"positions": [
+		"WING"
+	],
+	"playstyle": "speedster",
+	"skill_moves": 3,
+	"special_skills": [],
+	"look": {
+		"skin": "#f1c7a5",
+		"hair": "#b5502a",
+		"hair_style": "short"
+	},
+	"attributes": {
+		"finishing": 78,
+		"shot_power": 74,
+		"long_shots": 62,
+		"heading": 57,
+		"dribbling": 82,
+		"ball_control": 80,
+		"tight_possession": 70,
+		"low_pass": 66,
+		"lofted_pass": 57,
+		"vision": 63,
+		"speed": 97,
+		"acceleration": 91,
+		"stamina": 80,
+		"strength": 60,
+		"balance": 78,
+		"jump": 68,
+		"tackling": 34,
+		"interception": 38,
+		"marking": 35,
+		"aggression": 52,
+		"gk_reflexes": 20,
+		"gk_diving": 17,
+		"gk_handling": 18,
+		"gk_positioning": 23,
+		"gk_kicking": 31
+	}
+}

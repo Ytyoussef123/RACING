@@ -8,7 +8,8 @@
 		"match": "res://scenes/match/match.tscn",
 		"results": "res://scenes/menus/results.tscn",
 		"squad": "res://scenes/menus/squad.tscn",
-		"settings": "res://scenes/menus/settings.tscn"
+		"settings": "res://scenes/menus/settings.tscn",
+		"shop": "res://scenes/menus/shop.tscn"
 	},
 	"colors": {
 		"background": "#15161b",
@@ -36,7 +37,32 @@
 	"corner_radius": 14,
 	"screen_margin_x": 72,
 	"screen_margin_y": 40,
-	"match_minutes": [3, 4, 5],
-	"controls_scales": {"small": 0.85, "normal": 1.0, "large": 1.18},
-	"stat_bar_colors": [[85, "#20c4d8"], [75, "#4fd16b"], [60, "#ffd61a"], [0, "#ff4f4f"]]
+	"match_minutes": [
+		3,
+		4,
+		5
+	],
+	"controls_scales": {
+		"small": 0.85,
+		"normal": 1.0,
+		"large": 1.18
+	},
+	"stat_bar_colors": [
+		[
+			85,
+			"#20c4d8"
+		],
+		[
+			75,
+			"#4fd16b"
+		],
+		[
+			60,
+			"#ffd61a"
+		],
+		[
+			0,
+			"#ff4f4f"
+		]
+	]
 }

@@ -1,5 +1,5 @@
 extends MenuScreen
-## Main menu: quick match, my crew, settings. The Android back button quits the app here.
+## Main menu: quick match, my crew, shop, settings, and the coins. Android back quits the app here.
 
 const VERSION_TEXT := "v0.5"
 
@@ -17,10 +17,12 @@ func _ready() -> void:
 	buttons.alignment = BoxContainer.ALIGNMENT_CENTER
 	_menu_button(buttons, "MENU_QUICK_MATCH", "team_select", true)
 	_menu_button(buttons, "MENU_MY_CREW", "squad", false)
+	_menu_button(buttons, "MENU_SHOP", "shop", false)
 	_menu_button(buttons, "MENU_SETTINGS", "settings", false)
 	content.add_child(buttons)
 	footer.alignment = BoxContainer.ALIGNMENT_BEGIN
 	_add_tag()
+	_add_coins()
 	var info := UiBuild.label(_device_info(), "small", "text_dim")
 	info.auto_translate_mode = AUTO_TRANSLATE_MODE_DISABLED
 	footer.add_child(info)
@@ -28,6 +30,19 @@ func _ready() -> void:
 
 func go_back() -> void:
 	get_tree().quit()
+
+
+func _add_coins() -> void:
+	var coins := UiBuild.label(tr("COINS_FMT") % SaveGame.coins, "heading", "accent_2", HORIZONTAL_ALIGNMENT_RIGHT)
+	coins.name = "Coins"
+	coins.auto_translate_mode = AUTO_TRANSLATE_MODE_DISABLED
+	coins.anchor_left = 1.0
+	coins.anchor_right = 1.0
+	coins.offset_left = -700.0
+	coins.offset_right = -72.0
+	coins.offset_top = 40.0
+	coins.offset_bottom = 120.0
+	add_child(coins)
 
 
 ## Big tilted "5v5" on the right, like a spray-painted tag on a wall.

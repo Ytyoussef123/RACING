@@ -1,0 +1,47 @@
+{
+	"name": "Moussa Kanderé",
+	"short_name": "M. Kanderé",
+	"nationality": "Mali",
+	"age": 20,
+	"height_cm": 186,
+	"preferred_foot": "right",
+	"weak_foot": 2,
+	"positions": [
+		"ATT"
+	],
+	"playstyle": "box_finisher",
+	"skill_moves": 2,
+	"special_skills": [],
+	"look": {
+		"skin": "#3f2716",
+		"hair": "#1b1410",
+		"hair_style": "buzz"
+	},
+	"attributes": {
+		"finishing": 82,
+		"shot_power": 76,
+		"long_shots": 67,
+		"heading": 75,
+		"dribbling": 70,
+		"ball_control": 77,
+		"tight_possession": 63,
+		"low_pass": 59,
+		"lofted_pass": 47,
+		"vision": 62,
+		"speed": 70,
+		"acceleration": 71,
+		"stamina": 62,
+		"strength": 75,
+		"balance": 64,
+		"jump": 71,
+		"tackling": 25,
+		"interception": 26,
+		"marking": 20,
+		"aggression": 54,
+		"gk_reflexes": 22,
+		"gk_diving": 23,
+		"gk_handling": 20,
+		"gk_positioning": 18,
+		"gk_kicking": 28
+	}
+}

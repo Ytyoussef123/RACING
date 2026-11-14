@@ -33,6 +33,9 @@ func go_back() -> void:
 
 func _select(formation_id: String) -> void:
 	MatchSetup.formation_id = formation_id
+	if MatchSetup.get_home_team_id() == SaveGame.MY_CREW_ID:
+		SaveGame.formation_id = formation_id
+		SaveGame.save()
 	_refresh()
 
 

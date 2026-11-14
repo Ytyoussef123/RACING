@@ -1,0 +1,47 @@
+{
+	"name": "Bruno Sallestra",
+	"short_name": "B. Sallestra",
+	"nationality": "Uruguay",
+	"age": 22,
+	"height_cm": 185,
+	"preferred_foot": "right",
+	"weak_foot": 2,
+	"positions": [
+		"GK"
+	],
+	"playstyle": "line_keeper",
+	"skill_moves": 1,
+	"special_skills": [],
+	"look": {
+		"skin": "#e0ac7e",
+		"hair": "#3b2416",
+		"hair_style": "short"
+	},
+	"attributes": {
+		"finishing": 26,
+		"shot_power": 52,
+		"long_shots": 31,
+		"heading": 40,
+		"dribbling": 38,
+		"ball_control": 47,
+		"tight_possession": 34,
+		"low_pass": 55,
+		"lofted_pass": 61,
+		"vision": 49,
+		"speed": 50,
+		"acceleration": 55,
+		"stamina": 60,
+		"strength": 73,
+		"balance": 57,
+		"jump": 76,
+		"tackling": 33,
+		"interception": 37,
+		"marking": 27,
+		"aggression": 37,
+		"gk_reflexes": 71,
+		"gk_diving": 70,
+		"gk_handling": 72,
+		"gk_positioning": 70,
+		"gk_kicking": 54
+	}
+}

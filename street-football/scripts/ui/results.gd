@@ -20,6 +20,8 @@ func _ready() -> void:
 	var away_score := int(r.get("away_score", 0))
 	content.add_child(_headline(home_score, away_score))
 	content.add_child(_score_row(home, away, home_score, away_score))
+	if r.has("coins_earned"):
+		content.add_child(_plain(tr("REWARD_FMT") % [int(r["coins_earned"]), int(r.get("coins_total", 0))], "body"))
 	var row := UiBuild.hbox(40)
 	row.size_flags_vertical = SIZE_EXPAND_FILL
 	row.add_child(_goals_card(r.get("goals", []), home, away))

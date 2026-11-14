@@ -1,0 +1,47 @@
+{
+	"name": "Elías Montoyera",
+	"short_name": "E. Montoyera",
+	"nationality": "Mexico",
+	"age": 27,
+	"height_cm": 186,
+	"preferred_foot": "right",
+	"weak_foot": 3,
+	"positions": [
+		"GK"
+	],
+	"playstyle": "sweeper_keeper",
+	"skill_moves": 1,
+	"special_skills": [],
+	"look": {
+		"skin": "#a86b45",
+		"hair": "#1b1410",
+		"hair_style": "short"
+	},
+	"attributes": {
+		"finishing": 24,
+		"shot_power": 55,
+		"long_shots": 33,
+		"heading": 38,
+		"dribbling": 34,
+		"ball_control": 45,
+		"tight_possession": 32,
+		"low_pass": 66,
+		"lofted_pass": 68,
+		"vision": 60,
+		"speed": 60,
+		"acceleration": 64,
+		"stamina": 59,
+		"strength": 71,
+		"balance": 57,
+		"jump": 71,
+		"tackling": 29,
+		"interception": 33,
+		"marking": 27,
+		"aggression": 37,
+		"gk_reflexes": 80,
+		"gk_diving": 78,
+		"gk_handling": 77,
+		"gk_positioning": 78,
+		"gk_kicking": 86
+	}
+}

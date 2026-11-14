@@ -1,0 +1,47 @@
+{
+	"name": "Dimitar Volkhanov",
+	"short_name": "D. Volkhanov",
+	"nationality": "Bulgaria",
+	"age": 28,
+	"height_cm": 192,
+	"preferred_foot": "right",
+	"weak_foot": 2,
+	"positions": [
+		"DEF"
+	],
+	"playstyle": "rock_defender",
+	"skill_moves": 2,
+	"special_skills": [],
+	"look": {
+		"skin": "#f1c7a5",
+		"hair": "#6b4423",
+		"hair_style": "buzz"
+	},
+	"attributes": {
+		"finishing": 42,
+		"shot_power": 69,
+		"long_shots": 51,
+		"heading": 84,
+		"dribbling": 59,
+		"ball_control": 66,
+		"tight_possession": 54,
+		"low_pass": 69,
+		"lofted_pass": 66,
+		"vision": 53,
+		"speed": 67,
+		"acceleration": 69,
+		"stamina": 81,
+		"strength": 88,
+		"balance": 63,
+		"jump": 84,
+		"tackling": 88,
+		"interception": 87,
+		"marking": 90,
+		"aggression": 84,
+		"gk_reflexes": 19,
+		"gk_diving": 20,
+		"gk_handling": 15,
+		"gk_positioning": 18,
+		"gk_kicking": 29
+	}
+}

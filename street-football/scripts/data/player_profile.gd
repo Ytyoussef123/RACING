@@ -23,6 +23,8 @@ var skill_moves: int = 1
 var special_skills: Array = []
 var look: Dictionary = {}
 var attributes: Dictionary = {}
+## Added to every attribute (player levels bought with coins, see SaveGame). 0 for opponents.
+var level_bonus: float = 0.0
 
 
 static func load_player(player_id: String) -> PlayerProfile:
@@ -51,7 +53,7 @@ static func load_player(player_id: String) -> PlayerProfile:
 
 
 func attr(key: String) -> float:
-	return float(attributes.get(key, 50.0))
+	return minf(99.0, float(attributes.get(key, 50.0)) + level_bonus)
 
 
 func is_keeper() -> bool:

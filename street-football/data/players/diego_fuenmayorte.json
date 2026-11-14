@@ -1,0 +1,49 @@
+{
+	"name": "Diego Fuenmayorte",
+	"short_name": "D. Fuenmayorte",
+	"nationality": "Venezuela",
+	"age": 26,
+	"height_cm": 184,
+	"preferred_foot": "right",
+	"weak_foot": 3,
+	"positions": [
+		"ATT"
+	],
+	"playstyle": "box_finisher",
+	"skill_moves": 3,
+	"special_skills": [
+		"first_time_shot"
+	],
+	"look": {
+		"skin": "#a86b45",
+		"hair": "#1b1410",
+		"hair_style": "short"
+	},
+	"attributes": {
+		"finishing": 93,
+		"shot_power": 88,
+		"long_shots": 77,
+		"heading": 85,
+		"dribbling": 77,
+		"ball_control": 89,
+		"tight_possession": 80,
+		"low_pass": 73,
+		"lofted_pass": 61,
+		"vision": 72,
+		"speed": 84,
+		"acceleration": 82,
+		"stamina": 71,
+		"strength": 89,
+		"balance": 74,
+		"jump": 86,
+		"tackling": 34,
+		"interception": 35,
+		"marking": 35,
+		"aggression": 70,
+		"gk_reflexes": 22,
+		"gk_diving": 20,
+		"gk_handling": 17,
+		"gk_positioning": 22,
+		"gk_kicking": 26
+	}
+}

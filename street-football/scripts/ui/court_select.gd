@@ -6,7 +6,10 @@ const DIFFICULTY_KEYS := {"easy": "DIFF_EASY", "normal": "DIFF_NORMAL", "hard": 
 
 func _ready() -> void:
 	build_frame("TITLE_COURT")
-	var courts := UiBuild.hbox(24)
+	var courts := GridContainer.new()
+	courts.columns = 2
+	courts.add_theme_constant_override("h_separation", 24)
+	courts.add_theme_constant_override("v_separation", 16)
 	var court_group := ButtonGroup.new()
 	for court_id in Config.get_value("match", "courts", ["cage_concrete"]):
 		courts.add_child(_court_chip(str(court_id), court_group))
@@ -41,12 +44,21 @@ func go_back() -> void:
 func _court_chip(court_id: String, group: ButtonGroup) -> Button:
 	var court := CourtData.load_court(court_id)
 	var rule := tr("COURT_WALLS_ON") if court.walls else tr("COURT_WALLS_OFF")
-	var text := "%s\n%s\n%s" % [tr(court.name_key), rule, tr("COURT_SIZE_FMT") % [int(court.length), int(court.width)]]
-	var chip := UiBuild.chip(text, group, 640.0)
+	if court.ball_friction_mult > 1.2:
+		rule = "%s · %s" % [rule, tr("COURT_SAND")]
+	var size_text := tr("COURT_SIZE_FMT") % [int(court.length), int(court.width)]
+	var unlocked := SaveGame.court_unlocked(court_id)
+	if not unlocked:
+		size_text = tr("LOCKED_FMT") % SaveGame.court_price(court_id)
+	var text := "%s\n%s\n%s" % [tr(court.name_key), rule, size_text]
+	var chip := UiBuild.chip(text, group, 860.0)
 	chip.name = "Court_" + court_id
 	chip.auto_translate_mode = AUTO_TRANSLATE_MODE_DISABLED
-	chip.custom_minimum_size.y = 220.0
-	chip.button_pressed = court_id == MatchSetup.get_court_id()
+	chip.custom_minimum_size.y = 180.0
+	chip.disabled = not unlocked
+	if not unlocked and MatchSetup.get_court_id() == court_id:
+		MatchSetup.court_id = ""
+	chip.button_pressed = unlocked and court_id == MatchSetup.get_court_id()
 	chip.pressed.connect(func() -> void: MatchSetup.court_id = court_id)
 	return chip
 

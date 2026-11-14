@@ -1,0 +1,48 @@
+{
+	"name": "Leon Achterbosch",
+	"short_name": "L. Achterbosch",
+	"nationality": "Netherlands",
+	"age": 19,
+	"height_cm": 180,
+	"preferred_foot": "left",
+	"weak_foot": 3,
+	"positions": [
+		"WING",
+		"ATT"
+	],
+	"playstyle": "speedster",
+	"skill_moves": 3,
+	"special_skills": [],
+	"look": {
+		"skin": "#f1c7a5",
+		"hair": "#c9a15b",
+		"hair_style": "short"
+	},
+	"attributes": {
+		"finishing": 68,
+		"shot_power": 65,
+		"long_shots": 54,
+		"heading": 49,
+		"dribbling": 71,
+		"ball_control": 67,
+		"tight_possession": 64,
+		"low_pass": 63,
+		"lofted_pass": 51,
+		"vision": 53,
+		"speed": 87,
+		"acceleration": 84,
+		"stamina": 75,
+		"strength": 55,
+		"balance": 70,
+		"jump": 61,
+		"tackling": 28,
+		"interception": 32,
+		"marking": 24,
+		"aggression": 43,
+		"gk_reflexes": 23,
+		"gk_diving": 22,
+		"gk_handling": 21,
+		"gk_positioning": 17,
+		"gk_kicking": 25
+	}
+}

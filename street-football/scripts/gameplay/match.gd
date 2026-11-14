@@ -39,6 +39,7 @@ func _ready() -> void:
 		ctx.rng.randomize()
 	ctx.court = CourtData.load_court(MatchSetup.get_court_id())
 	ctx.ball = _ball.physics
+	ctx.ball.apply_surface(ctx.court.ball_friction_mult, ctx.court.ball_bounce_mult)
 	_builder.build(ctx.court)
 	_build_teams()
 	_input = HumanInput.new(_touch)
@@ -202,6 +203,10 @@ func _run_pending(action: Dictionary) -> void:
 			RestartPlacer.apply_restart(ctx, action["plan"])
 		"end":
 			MatchSetup.last_result = _build_result()
+			if not MatchSetup.test_mode:
+				var earned := SaveGame.record_match(flow.scores[0], flow.scores[1], MatchSetup.get_difficulty())
+				MatchSetup.last_result["coins_earned"] = earned
+				MatchSetup.last_result["coins_total"] = SaveGame.coins
 			if not MatchSetup.test_mode:
 				Screens.go("results")
 

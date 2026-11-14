@@ -1,0 +1,52 @@
+{
+	"name": "Bayo Ruiz-Okun",
+	"short_name": "B. Ruiz-Okun",
+	"nationality": "Spain",
+	"age": 24,
+	"height_cm": 174,
+	"preferred_foot": "right",
+	"weak_foot": 4,
+	"positions": [
+		"ATT",
+		"WING"
+	],
+	"playstyle": "street_dribbler",
+	"skill_moves": 5,
+	"special_skills": [
+		"rainbow",
+		"rabona",
+		"nutmeg"
+	],
+	"look": {
+		"skin": "#8a5534",
+		"hair": "#7a2fd0",
+		"hair_style": "afro"
+	},
+	"attributes": {
+		"finishing": 77,
+		"shot_power": 70,
+		"long_shots": 65,
+		"heading": 51,
+		"dribbling": 97,
+		"ball_control": 94,
+		"tight_possession": 93,
+		"low_pass": 78,
+		"lofted_pass": 69,
+		"vision": 78,
+		"speed": 87,
+		"acceleration": 96,
+		"stamina": 78,
+		"strength": 53,
+		"balance": 91,
+		"jump": 64,
+		"tackling": 39,
+		"interception": 45,
+		"marking": 38,
+		"aggression": 45,
+		"gk_reflexes": 24,
+		"gk_diving": 20,
+		"gk_handling": 20,
+		"gk_positioning": 23,
+		"gk_kicking": 27
+	}
+}

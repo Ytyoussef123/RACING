@@ -1,0 +1,47 @@
+{
+	"name": "Arjun Malhovar",
+	"short_name": "A. Malhovar",
+	"nationality": "India",
+	"age": 20,
+	"height_cm": 174,
+	"preferred_foot": "right",
+	"weak_foot": 3,
+	"positions": [
+		"MID"
+	],
+	"playstyle": "wall_passer",
+	"skill_moves": 3,
+	"special_skills": [],
+	"look": {
+		"skin": "#8a5534",
+		"hair": "#1b1410",
+		"hair_style": "short"
+	},
+	"attributes": {
+		"finishing": 59,
+		"shot_power": 63,
+		"long_shots": 65,
+		"heading": 44,
+		"dribbling": 67,
+		"ball_control": 71,
+		"tight_possession": 71,
+		"low_pass": 77,
+		"lofted_pass": 73,
+		"vision": 78,
+		"speed": 58,
+		"acceleration": 61,
+		"stamina": 73,
+		"strength": 55,
+		"balance": 66,
+		"jump": 51,
+		"tackling": 59,
+		"interception": 63,
+		"marking": 53,
+		"aggression": 50,
+		"gk_reflexes": 24,
+		"gk_diving": 21,
+		"gk_handling": 20,
+		"gk_positioning": 18,
+		"gk_kicking": 25
+	}
+}

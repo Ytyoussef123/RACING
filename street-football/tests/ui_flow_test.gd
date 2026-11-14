@@ -12,6 +12,8 @@ var _failures := 0
 func _ready() -> void:
 	Screens.test_mode = true
 	MatchSetup.test_mode = false
+	SaveGame.in_memory = true
+	SaveGame.start_new()
 	_test_translations_complete()
 	_test_main_menu()
 	_test_team_select()
@@ -19,6 +21,8 @@ func _ready() -> void:
 	_test_court_select()
 	_test_results()
 	_test_squad_player_card()
+	_test_squad_swap_and_upgrade()
+	_test_shop()
 	_test_settings()
 	print("UI TESTS DONE: %d failure(s)" % _failures)
 	get_tree().quit(1 if _failures > 0 else 0)
@@ -103,6 +107,8 @@ func _test_main_menu() -> void:
 	_check("main menu: my crew", Screens.last_requested == "squad")
 	_press(menu, "MENU_SETTINGS")
 	_check("main menu: settings", Screens.last_requested == "settings")
+	_press(menu, "MENU_SHOP")
+	_check("main menu: shop", Screens.last_requested == "shop")
 	_close(menu)
 
 
@@ -171,11 +177,9 @@ func _test_results() -> void:
 func _test_squad_player_card() -> void:
 	var screen := _open("squad")
 	var card := _find_type(screen, "PlayerCard") as Control
-	var row := _first_player_row(screen)
-	_check("squad: player rows are listed", row != null)
-	if row != null:
-		row.pressed.emit()
-	_check("squad: tapping a player opens his card", card != null and card.visible)
+	_check("squad: player rows are listed", _find_button(screen, "Player_moussa_kandere") != null)
+	_press(screen, "BTN_INFO")
+	_check("squad: INFO opens the player card", card != null and card.visible)
 	_press(screen, "BTN_BACK")
 	_check("squad: BACK", Screens.last_requested == "main_menu")
 	_close(screen)
@@ -200,6 +204,31 @@ func _test_settings() -> void:
 	_press(screen, "Size_large")
 	_check("settings: large buttons", Settings.controls_size == "large" and Settings.controls_scale() > 1.0)
 	_press(screen, "Size_normal")
+	_close(screen)
+
+
+func _test_squad_swap_and_upgrade() -> void:
+	var screen := _open("squad")
+	_press(screen, "Player_moussa_kandere")
+	_press(screen, "Player_rayan_ouaddi")
+	_check("squad: two taps swap a starter and a bench player",
+		SaveGame.starters.has("rayan_ouaddi") and not SaveGame.starters.has("moussa_kandere"))
+	SaveGame.coins = 1000
+	_press(screen, "Upgrade_rayan_ouaddi")
+	_check("squad: upgrade raises the level and costs coins", SaveGame.level_of("rayan_ouaddi") == 2 and SaveGame.coins == 750,
+		"level=%d coins=%d" % [SaveGame.level_of("rayan_ouaddi"), SaveGame.coins])
+	_close(screen)
+
+
+func _test_shop() -> void:
+	SaveGame.coins = 5000
+	var screen := _open("shop")
+	_press(screen, "Buy_kaito_shimazu")
+	_check("shop: buying a free agent signs him", SaveGame.owned.has("kaito_shimazu") and SaveGame.coins < 5000)
+	_press(screen, "Unlock_beach_sand")
+	_check("shop: unlocking a court", SaveGame.court_unlocked("beach_sand"))
+	_press(screen, "BTN_BACK")
+	_check("shop: BACK", Screens.last_requested == "main_menu")
 	_close(screen)
 
 

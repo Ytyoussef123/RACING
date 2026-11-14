@@ -1,0 +1,51 @@
+{
+	"name": "Kaito Shimazu",
+	"short_name": "K. Shimazu",
+	"nationality": "Japan",
+	"age": 21,
+	"height_cm": 171,
+	"preferred_foot": "left",
+	"weak_foot": 4,
+	"positions": [
+		"WING",
+		"MID"
+	],
+	"playstyle": "street_dribbler",
+	"skill_moves": 5,
+	"special_skills": [
+		"flip_flap",
+		"nutmeg"
+	],
+	"look": {
+		"skin": "#e0ac7e",
+		"hair": "#2fd07a",
+		"hair_style": "mohawk"
+	},
+	"attributes": {
+		"finishing": 78,
+		"shot_power": 71,
+		"long_shots": 68,
+		"heading": 50,
+		"dribbling": 96,
+		"ball_control": 91,
+		"tight_possession": 89,
+		"low_pass": 74,
+		"lofted_pass": 63,
+		"vision": 74,
+		"speed": 90,
+		"acceleration": 91,
+		"stamina": 75,
+		"strength": 49,
+		"balance": 90,
+		"jump": 59,
+		"tackling": 37,
+		"interception": 39,
+		"marking": 32,
+		"aggression": 48,
+		"gk_reflexes": 25,
+		"gk_diving": 20,
+		"gk_handling": 21,
+		"gk_positioning": 21,
+		"gk_kicking": 31
+	}
+}

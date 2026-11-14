@@ -1,0 +1,48 @@
+{
+	"name": "Yohan Bertrandeau",
+	"short_name": "Y. Bertrandeau",
+	"nationality": "France",
+	"age": 23,
+	"height_cm": 181,
+	"preferred_foot": "right",
+	"weak_foot": 3,
+	"positions": [
+		"ATT",
+		"WING"
+	],
+	"playstyle": "speedster",
+	"skill_moves": 3,
+	"special_skills": [],
+	"look": {
+		"skin": "#8a5534",
+		"hair": "#1b1410",
+		"hair_style": "buzz"
+	},
+	"attributes": {
+		"finishing": 73,
+		"shot_power": 74,
+		"long_shots": 60,
+		"heading": 56,
+		"dribbling": 76,
+		"ball_control": 75,
+		"tight_possession": 73,
+		"low_pass": 66,
+		"lofted_pass": 55,
+		"vision": 60,
+		"speed": 95,
+		"acceleration": 95,
+		"stamina": 81,
+		"strength": 60,
+		"balance": 75,
+		"jump": 69,
+		"tackling": 32,
+		"interception": 35,
+		"marking": 29,
+		"aggression": 49,
+		"gk_reflexes": 19,
+		"gk_diving": 23,
+		"gk_handling": 16,
+		"gk_positioning": 17,
+		"gk_kicking": 27
+	}
+}

@@ -37,6 +37,9 @@ func _ready() -> void:
 	MatchSetup.test_mode = true
 	MatchSetup.test_match_seconds = MATCH_SECONDS
 	MatchSetup.court_id = "cage_concrete"
+	# Fixed crews (not My Crew, which changes with the save) so the balance numbers stay comparable.
+	MatchSetup.home_team_id = "concrete_kings"
+	MatchSetup.away_team_id = "rooftop_rebels"
 	_start_next()
 
 

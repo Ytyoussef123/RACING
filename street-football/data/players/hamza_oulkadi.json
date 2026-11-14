@@ -1,0 +1,48 @@
+{
+	"name": "Hamza Oulkadi",
+	"short_name": "H. Oulkadi",
+	"nationality": "Tunisia",
+	"age": 24,
+	"height_cm": 182,
+	"preferred_foot": "right",
+	"weak_foot": 3,
+	"positions": [
+		"MID",
+		"DEF"
+	],
+	"playstyle": "engine",
+	"skill_moves": 3,
+	"special_skills": [],
+	"look": {
+		"skin": "#c68a5e",
+		"hair": "#1b1410",
+		"hair_style": "short"
+	},
+	"attributes": {
+		"finishing": 63,
+		"shot_power": 77,
+		"long_shots": 72,
+		"heading": 65,
+		"dribbling": 71,
+		"ball_control": 74,
+		"tight_possession": 71,
+		"low_pass": 75,
+		"lofted_pass": 69,
+		"vision": 70,
+		"speed": 78,
+		"acceleration": 71,
+		"stamina": 97,
+		"strength": 81,
+		"balance": 72,
+		"jump": 76,
+		"tackling": 74,
+		"interception": 75,
+		"marking": 71,
+		"aggression": 77,
+		"gk_reflexes": 22,
+		"gk_diving": 17,
+		"gk_handling": 20,
+		"gk_positioning": 23,
+		"gk_kicking": 31
+	}
+}

@@ -30,7 +30,9 @@ func _ready() -> void:
 
 
 func _tour() -> void:
-	for screen_id in ["main_menu", "team_select", "formation_select", "court_select", "settings", "results"]:
+	SaveGame.in_memory = true
+	SaveGame.start_new()
+	for screen_id in ["main_menu", "team_select", "formation_select", "court_select", "settings", "results", "squad", "shop"]:
 		await _shot_screen(screen_id, screen_id)
 	TranslationServer.set_locale("fr")
 	await _shot_screen("team_select", "team_select_fr")

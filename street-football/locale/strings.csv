@@ -76,7 +76,6 @@ NO_GOALS,No goals,Aucun but
 RESULT_WIN,YOU WIN!,VICTOIRE !
 RESULT_DRAW,DRAW,MATCH NUL
 RESULT_LOSS,YOU LOSE,DÉFAITE
-SQUAD_HINT,Tap a player to see his card. Choose the crew you play with in Quick match.,Touche un joueur pour voir sa fiche. Choisis ton équipe dans Match rapide.
 CARD_AGE,%d years,%d ans
 CARD_HEIGHT,%d cm,%d cm
 CARD_FOOT_RIGHT,Right foot,Pied droit
@@ -137,3 +136,24 @@ SKILL_STEP_OVER,Step-over!,Passement de jambes !
 SKILL_DRAG_BACK,Drag-back!,Râteau !
 SKILL_ELASTICO,Elastico!,Élastico !
 SKILL_FAILED,Lost it!,Raté !
+MENU_SHOP,SHOP,BOUTIQUE
+COINS_FMT,%d coins,%d pièces
+MY_CREW_NAME,My Crew,Mon équipe
+LABEL_STARTERS,STARTERS,TITULAIRES
+LABEL_BENCH,BENCH,REMPLAÇANTS
+LABEL_LEVEL,Lv %d,Niv %d
+LABEL_MAX_LEVEL,MAX LEVEL,NIVEAU MAX
+BTN_INFO,INFO,INFO
+BTN_BUY,BUY · %d,ACHETER · %d
+BTN_UPGRADE,LV %d · %d,NIV %d · %d
+SHOP_PLAYERS,FREE AGENTS,JOUEURS LIBRES
+SHOP_COURTS,COURTS,TERRAINS
+SHOP_EMPTY,Nothing left to buy!,Plus rien à acheter !
+LOCKED_FMT,Locked · %d coins,Verrouillé · %d pièces
+REWARD_FMT,+%d coins  (total %d),+%d pièces  (total %d)
+RECORD_FMT,Played %d · Won %d · Drawn %d · Lost %d,Joués %d · Gagnés %d · Nuls %d · Perdus %d
+SQUAD_SWAP_HINT,Tap two players to swap them. INFO opens the card. LV upgrades a player with coins.,Touche deux joueurs pour les échanger. INFO ouvre la fiche. NIV améliore un joueur avec des pièces.
+SQUAD_NO_KEEPER,No keeper among the starters!,Pas de gardien parmi les titulaires !
+COURT_ROOFTOP,Rooftop Cage,Cage sur le toit
+COURT_BEACH,Beach Court,Terrain de plage
+COURT_SAND,sand: the ball rolls slower,sable : le ballon roule moins

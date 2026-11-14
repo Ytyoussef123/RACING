@@ -1,0 +1,48 @@
+{
+	"name": "Tomás Velarrubia",
+	"short_name": "T. Velarrubia",
+	"nationality": "Chile",
+	"age": 22,
+	"height_cm": 178,
+	"preferred_foot": "right",
+	"weak_foot": 3,
+	"positions": [
+		"MID",
+		"DEF"
+	],
+	"playstyle": "engine",
+	"skill_moves": 2,
+	"special_skills": [],
+	"look": {
+		"skin": "#a86b45",
+		"hair": "#1b1410",
+		"hair_style": "short"
+	},
+	"attributes": {
+		"finishing": 57,
+		"shot_power": 67,
+		"long_shots": 59,
+		"heading": 57,
+		"dribbling": 62,
+		"ball_control": 65,
+		"tight_possession": 58,
+		"low_pass": 68,
+		"lofted_pass": 61,
+		"vision": 61,
+		"speed": 65,
+		"acceleration": 65,
+		"stamina": 86,
+		"strength": 65,
+		"balance": 62,
+		"jump": 64,
+		"tackling": 66,
+		"interception": 66,
+		"marking": 59,
+		"aggression": 68,
+		"gk_reflexes": 21,
+		"gk_diving": 19,
+		"gk_handling": 20,
+		"gk_positioning": 17,
+		"gk_kicking": 27
+	}
+}

@@ -1,0 +1,62 @@
+{
+	"_note": "Progression: coins, rewards, prices, upgrades and the starting save. Coins are whole numbers.",
+	"save_version": 1,
+	"starting_coins": 500,
+	"starting_players": [
+		"bruno_sallestra",
+		"ilyes_benzerrak",
+		"arjun_malhovar",
+		"leon_achterbosch",
+		"moussa_kandere",
+		"tomas_velarrubia",
+		"rayan_ouaddi"
+	],
+	"starting_starters": [
+		"bruno_sallestra",
+		"ilyes_benzerrak",
+		"arjun_malhovar",
+		"leon_achterbosch",
+		"moussa_kandere"
+	],
+	"starting_courts": [
+		"cage_concrete",
+		"open_lot"
+	],
+	"rewards": {
+		"win": 150,
+		"draw": 80,
+		"loss": 50,
+		"per_goal": 15
+	},
+	"difficulty_reward_mult": {
+		"easy": 0.8,
+		"normal": 1.0,
+		"hard": 1.4
+	},
+	"player_price_base": 400,
+	"player_price_per_point": 60,
+	"player_price_reference_overall": 70,
+	"max_level": 5,
+	"level_costs": [
+		0,
+		250,
+		450,
+		700,
+		1000
+	],
+	"attribute_bonus_per_level": 2,
+	"court_prices": {
+		"rooftop_cage": 600,
+		"beach_sand": 900
+	},
+	"my_crew": {
+		"short_name": "YOU",
+		"home_court": "cage_concrete",
+		"colors": {
+			"kit": "#ff5c1a",
+			"keeper": "#ffd61a",
+			"alt_kit": "#f2f2f2",
+			"alt_keeper": "#2f2f36"
+		}
+	}
+}

@@ -53,7 +53,7 @@ func _side(title_key: String, prefix: String, card: TeamCard) -> VBoxContainer:
 
 func _cycle(home: bool, step: int) -> void:
 	if home:
-		MatchSetup.home_team_id = MatchSetup.cycle_team(MatchSetup.get_home_team_id(), step, "")
+		MatchSetup.home_team_id = MatchSetup.cycle_team(MatchSetup.get_home_team_id(), step, "", true)
 		if MatchSetup.get_away_team_id() == MatchSetup.home_team_id:
 			MatchSetup.away_team_id = MatchSetup.cycle_team(MatchSetup.home_team_id, 1, "")
 	else:

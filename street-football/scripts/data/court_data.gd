@@ -14,6 +14,9 @@ var goal_height: float = 2.0
 var goal_depth: float = 1.0
 var post_radius: float = 0.06
 var walls: bool = true
+## Surface: how much faster the ball slows down when rolling, and how much it bounces (1 = concrete).
+var ball_friction_mult: float = 1.0
+var ball_bounce_mult: float = 1.0
 
 var half_length: float:
 	get:
@@ -46,6 +49,8 @@ static func load_court(court_id: String) -> CourtData:
 	court.goal_depth = float(data.get("goal_depth", court.goal_depth))
 	court.post_radius = float(data.get("post_radius", court.post_radius))
 	court.walls = bool(data.get("walls", court.walls))
+	court.ball_friction_mult = float(data.get("ball_friction_mult", 1.0))
+	court.ball_bounce_mult = float(data.get("ball_bounce_mult", 1.0))
 	return court
 
 

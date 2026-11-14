@@ -30,6 +30,8 @@ var _curve_accel: float
 var _curve_ground_factor: float
 var _spin_decay: float
 var _max_spin: float
+var _friction_mult: float = 1.0
+var _bounce_mult: float = 1.0
 
 
 func _init() -> void:
@@ -56,9 +58,19 @@ func place(new_position: Vector3) -> void:
 	controlled = false
 
 
+## Court surface (sand, rooftop...): rolling friction and bounce multipliers from the court data.
+func apply_surface(friction_mult: float, bounce_mult: float) -> void:
+	_rolling_friction *= friction_mult / _friction_mult
+	_rolling_drag *= friction_mult / _friction_mult
+	_ground_restitution = minf(0.95, _ground_restitution * bounce_mult / _bounce_mult)
+	_friction_mult = friction_mult
+	_bounce_mult = bounce_mult
+
+
 ## Independent copy of the ball's state, used to predict where it is going.
 func copy() -> BallPhysics:
 	var twin := BallPhysics.new()
+	twin.apply_surface(_friction_mult, _bounce_mult)
 	twin.position = position
 	twin.velocity = velocity
 	twin.spin = spin

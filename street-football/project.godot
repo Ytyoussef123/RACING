@@ -23,6 +23,7 @@ config/quit_on_go_back=false
 Config="*res://scripts/core/config.gd"
 FrameRate="*res://scripts/core/frame_rate.gd"
 Roster="*res://scripts/core/roster.gd"
+SaveGame="*res://scripts/core/save_game.gd"
 MatchSetup="*res://scripts/core/match_setup.gd"
 UiTheme="*res://scripts/core/ui_theme.gd"
 Screens="*res://scripts/core/screens.gd"

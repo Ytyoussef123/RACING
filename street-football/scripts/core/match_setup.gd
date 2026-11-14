@@ -23,7 +23,11 @@ func get_court_id() -> String:
 
 
 func get_formation_id() -> String:
-	return formation_id if not formation_id.is_empty() else str(Config.get_value("match", "default_formation", "2-1-1"))
+	if not formation_id.is_empty():
+		return formation_id
+	if get_home_team_id() == SaveGame.MY_CREW_ID and not SaveGame.formation_id.is_empty():
+		return SaveGame.formation_id
+	return str(Config.get_value("match", "default_formation", "2-1-1"))
 
 
 func get_difficulty() -> String:
@@ -60,9 +64,9 @@ func get_away_team_id() -> String:
 	return fallback
 
 
-## The crew `step` places away in the roster order, skipping `skip` (e.g. the home crew).
-func cycle_team(current: String, step: int, skip: String) -> String:
-	var ids: Array[String] = Roster.team_ids()
+## The crew `step` places away, skipping `skip` (e.g. the home crew). Home choices include My Crew.
+func cycle_team(current: String, step: int, skip: String, home: bool = false) -> String:
+	var ids: Array[String] = Roster.home_team_ids() if home else Roster.team_ids()
 	var index := ids.find(current)
 	for i in range(1, ids.size() + 1):
 		var candidate := ids[posmod(index + step * i, ids.size())]

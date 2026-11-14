@@ -1,0 +1,27 @@
+{
+	"name_key": "COURT_BEACH",
+	"length": 34.0,
+	"width": 20.0,
+	"goal_width": 3.0,
+	"goal_height": 2.0,
+	"goal_depth": 1.0,
+	"post_radius": 0.06,
+	"walls": false,
+	"wall_height": 0.0,
+	"fence_height": 0.0,
+	"center_circle_radius": 2.8,
+	"goal_area_depth": 3.2,
+	"goal_area_width": 7.5,
+	"line_width": 0.14,
+	"apron": 8.0,
+	"ball_friction_mult": 1.9,
+	"ball_bounce_mult": 0.7,
+	"colors": {
+		"ground": "#d9c48f",
+		"surround": "#2f8fb8",
+		"lines": "#2b6cdf",
+		"walls": "#2b2d33",
+		"accent": "#ff5c1a",
+		"goal": "#f5f5f5"
+	}
+}

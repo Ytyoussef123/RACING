@@ -1,0 +1,50 @@
+{
+	"name": "Rayan Ouaddi",
+	"short_name": "R. Ouaddi",
+	"nationality": "Morocco",
+	"age": 18,
+	"height_cm": 169,
+	"preferred_foot": "left",
+	"weak_foot": 3,
+	"positions": [
+		"WING",
+		"ATT"
+	],
+	"playstyle": "street_dribbler",
+	"skill_moves": 4,
+	"special_skills": [
+		"roulette"
+	],
+	"look": {
+		"skin": "#c68a5e",
+		"hair": "#1b1410",
+		"hair_style": "mohawk"
+	},
+	"attributes": {
+		"finishing": 65,
+		"shot_power": 58,
+		"long_shots": 54,
+		"heading": 37,
+		"dribbling": 79,
+		"ball_control": 79,
+		"tight_possession": 77,
+		"low_pass": 61,
+		"lofted_pass": 54,
+		"vision": 64,
+		"speed": 77,
+		"acceleration": 81,
+		"stamina": 62,
+		"strength": 43,
+		"balance": 82,
+		"jump": 48,
+		"tackling": 21,
+		"interception": 28,
+		"marking": 23,
+		"aggression": 36,
+		"gk_reflexes": 22,
+		"gk_diving": 20,
+		"gk_handling": 17,
+		"gk_positioning": 22,
+		"gk_kicking": 28
+	}
+}

@@ -43,7 +43,8 @@ func show_player(profile: PlayerProfile, number: int) -> void:
 	for child in _body.get_children():
 		child.queue_free()
 	var header := UiBuild.hbox(24)
-	var name_label := UiBuild.label("%d  %s" % [number, profile.name], "heading", "accent_2")
+	var title := "%d  %s" % [number, profile.name] if number > 0 else profile.name
+	var name_label := UiBuild.label(title, "heading", "accent_2")
 	name_label.auto_translate_mode = AUTO_TRANSLATE_MODE_DISABLED
 	header.add_child(name_label)
 	header.add_child(UiBuild.spacer())

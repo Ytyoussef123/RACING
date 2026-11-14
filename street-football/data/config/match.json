@@ -24,11 +24,13 @@
 	"restart_clear_distance": 3.0,
 	"restart_inset": 0.4,
 	"kickoff_taker_offset": 0.6,
-	"default_home_team": "concrete_kings",
+	"default_home_team": "my_crew",
 	"default_away_team": "rooftop_rebels",
 	"kit_clash_distance": 0.35,
 	"courts": [
 		"cage_concrete",
-		"open_lot"
+		"open_lot",
+		"rooftop_cage",
+		"beach_sand"
 	]
 }
