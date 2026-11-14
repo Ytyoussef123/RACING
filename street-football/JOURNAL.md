@@ -9,13 +9,46 @@ A dated log, newest entry first: what was done, what was decided and why, and wh
 | 1 | Setup | Done, tested on phone (2026-11-14) |
 | 2 | Core match: court, ball physics, one controllable player, touch controls, shooting | Done, tested on phone (2026-11-14) |
 | 3 | 5v5: teams, goalkeepers, formations, basic AI, score, timer | Done, waiting for phone test |
-| 4 | Player stats: data files, attributes affect gameplay, 30 fictional players | Not started |
+| 4 | Player stats: data files, attributes affect gameplay, 30 fictional players | Done, waiting for phone test |
 | 5 | Menus and UI: main menu, team/formation, court selection, results, translations | Not started |
 | 6 | Skills and polish: skill moves, animations, sounds, music, effects, wall bounces | Not started |
 | 7 | Progression: coins, unlocks, upgrades, save system | Not started |
 | 8 | Release build: optimized APK, full file review | Not started |
 
 ## Log
+
+### 2026-11-14 — Phase 4: player stats
+
+#### Done
+
+- Branch `feature/player-stats`, created from `feature/five-v-five` (Phase 3). The user asked to start Phase 4 without waiting for the Phase 3 phone test ("don't stop working"); Phase 3 remarks will be fixed when they come. Nothing is merged into `main` yet, per the rule "merge only after the phone test".
+- 30 fictional players (`data/players/*.json`) in 6 fictional street crews of 5 (`data/teams/*.json`): Concrete Kings (the user's crew for now, CKS), Rooftop Rebels (RTR), Harbor Hounds (HBH), Neon Nomads (NNM), Parking Lot Pirates (PLP), Sandstorm Strikers (SST). Each player: name, short name, nationality, age, height, preferred foot, weak foot 1-4, natural positions, playstyle (10 kinds), skill-move stars 1-5, special skills, look (skin, hair color, hair style) and 25 attributes 0-99. Overall ratings 74-88; crew averages 79-82. A one-time generator script was used only to create the files; the JSON files are the source of truth. Format: `docs/player-data.md`.
+- Code: `Roster` autoload (`scripts/core/roster.gd`) loads all players and crews at start. `PlayerProfile`, `TeamData`, `Ratings`, `StatEffects` in `scripts/data/`.
+- `data/config/stat_effects.json`: every attribute maps linearly (40 to 99) to a gameplay number (full list in `docs/player-data.md`): speed, acceleration, turning (balance), dribbling (touch distance, speed and turning with the ball), tight possession (how far the ball can be before it can be stolen), ball control and jump (receiving), interception, shot power, finishing, long shots, low pass, lofted pass, vision (through-pass lead), tackling, balance (harder to tackle), strength (plus a little balance) in shoulder duels, stamina, marking and aggression (AI), goalkeeper reflexes, diving, handling, positioning and kicking. Weak foot: kicks aimed well to the weak side are less accurate.
+- `data/config/ratings.json`: overall per role (weights) and position fitness (natural 1.0, adjacent 0.95, other 0.88, keeper outfield 0.75, outfielder in goal 0.6), which also scales a player's attributes out of position. `SlotAssigner` puts the keeper in goal and the 4 others in the slots giving the best total overall, at kick-off and on every formation change.
+- Stamina: sprinting drains energy (less with high stamina); below 40 % energy the top speed drops (to 85 % when empty); it recovers when not sprinting.
+- Look: players have a head (skin color) and hair (color + style: bald, buzz, short, afro, long, mohawk) and are scaled to their real height.
+- HUD: crew short names next to the score; a name tag above the human's player ("number  name  overall") with a stamina bar (green, orange, red). Start screen: new Opponent button cycles the 5 other crews. The away crew wears its alternate kit when the kits clash.
+- Match statistics (`scripts/gameplay/match_stats.gd`): shots, keeper saves, passes and passes completed, balls won (tackles, shoulder charges, steals), possession time. For the coming results screen and for balance tests.
+- Tests: new stats suite (`tests/stats_test.tscn`) in CI: roster data valid (30 players, 6 crews of 5 with one keeper each, attributes 0-99, known playstyles/skills/positions, overall 60-95), slot assignment for every crew and formation, and that attributes really change play (faster players cover more ground, better dribblers touch closer, finishing, shot power, passing, long shots, stamina, tackling and balance, strength in shoulder duels, keeper attributes, position fitness). The AI match test now plays 3 matches with fixed seeds (repeatable) and prints a balance report.
+
+#### Decisions (and why)
+
+- **JSON files are the source of truth for players; the generator script was one-time only:** content is data, and a player can be edited without code.
+- **Every attribute reaches gameplay through `stat_effects.json` (linear 40 to 99):** all stat numbers are tunable without touching code (rule: no magic numbers).
+- **Position fitness also scales attributes:** playing out of position has a real cost, so formations and slot choice matter.
+- **Phase 4 started before the Phase 3 phone test:** the user's choice, to keep working. Cost: Phase 3 fixes will land on `feature/five-v-five` and need merging into this branch.
+
+#### Balance (data only)
+
+- With stats, AI matches averaged 32.7 shots, 8.3 saves and only 1.67 goals per 150 s: most shots missed.
+- Changes: AI aims 55 cm inside the post (was 35); smaller AI aim errors (easy 6, normal 3, hard 1.5 degrees, added to the player's own stat-based error); the AI skips shots at a goal angle under 9 degrees or through a defender unless within 6 m; keeper save chance easy 0.35 / normal 0.55 / hard 0.7.
+- Result: 23.7 shots, 9.7 saves, 3.67 goals per 150 s (about 4.4 per 3-minute match). Test matches ended 1-1, 3-2, 2-2.
+
+#### Next
+
+- Wrap up Phase 4, then continue with Phase 5 (menus and UI) while waiting for the user's phone tests of Phases 3 and 4.
+- Then fix their remarks, merge into `main`, and continue.
 
 ### 2026-11-14 — Phase 3: touch dribbling and shoulder charge (user feedback)
 

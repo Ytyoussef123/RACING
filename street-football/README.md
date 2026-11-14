@@ -7,7 +7,14 @@ Street / neighborhood football for your phone: **5v5 (1 goalkeeper + 4 outfield 
 
 ## Status
 
-**Phase 3 (5v5) is in test** (branch `feature/five-v-five`). CI is green (physics tests and a headless AI-vs-AI match), but it is not tested on the phone yet. Phase 2 (core match) is done and tested on the phone. The match is a 3D low-poly court (36 x 22 m, small goals), 5v5 with AI opponents, a score and a 3:00 clock. See [JOURNAL.md](JOURNAL.md) for the phases and the log.
+**Phase 4 (player stats) is built** (branch `feature/player-stats`, created from `feature/five-v-five`). It waits for the phone test together with Phase 3 (5v5); nothing is merged into `main` yet. Phase 2 (core match) is done and tested on the phone. The match is a 3D low-poly court (36 x 22 m, small goals), 5v5 with AI opponents, a score and a 3:00 clock. See [JOURNAL.md](JOURNAL.md) for the phases and the log.
+
+## Players and crews
+
+- 30 fictional players (`data/players/*.json`) in 6 fictional street crews of 5 (`data/teams/*.json`): Concrete Kings (your crew for now), Rooftop Rebels, Harbor Hounds, Neon Nomads, Parking Lot Pirates, Sandstorm Strikers.
+- Each player has a name, nationality, age, height, preferred foot, weak foot, positions, playstyle, skill-move stars, special skills, a look and 25 attributes (0-99).
+- The attributes drive gameplay: speed, dribbling, passing, shooting, tackling, strength, stamina, goalkeeper skills and more. Players are placed in the formation slots where their overall rating is best.
+- To add or edit players and crews (field names, attribute effects, ratings), see [docs/player-data.md](docs/player-data.md). No code change is needed.
 
 ## How to play
 
@@ -17,9 +24,12 @@ Start screen:
 - **Difficulty:** Easy / Normal / Hard.
 - **Play — Concrete Cage:** walls on, the ball bounces off the boards.
 - **Play — Open Lot:** no walls. After the ball goes out: KICK-IN, CORNER or GOAL KICK for the team that did not touch it last.
+- **Opponent:** cycles the 5 other crews. The away crew wears its alternate kit when the kits clash.
 - Language button (English / French).
 
 Match:
+
+- Crew short names are shown next to the score. A name tag above your player shows "number  name  overall" with a stamina bar (green, orange, red). Sprinting drains stamina; when it is low, top speed drops.
 
 - Your team is orange (keeper yellow) and attacks to the right. The AI team is cyan (keeper purple, formation 1-2-1).
 - Top: score and 3:00 clock, court name under it. MENU (top-left) returns to the start screen. The formation button (top-right) changes your formation during the match.
@@ -88,7 +98,7 @@ scripts/   core (autoloads), gameplay, physics, ai, data, ui
 data/      config, players, courts, formations (JSON)
 locale/    strings.csv (en, fr)
 assets/    art, audio, fonts (free/original only)
-tests/     headless tests run by CI, excluded from the APK (tests/physics_smoke_test.tscn, tests/match_sim_test.tscn: 150 s AI-vs-AI match)
+tests/     headless tests run by CI: physics_smoke_test, stats_test, match_sim_test (excluded from the APK)
 docs/      design notes, Android export guide
 ```
 
