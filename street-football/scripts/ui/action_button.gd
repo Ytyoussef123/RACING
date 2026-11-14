@@ -1,4 +1,4 @@
-class_name TouchButton
+class_name ActionButton
 extends RefCounted
 ## A round on-screen action button (shoot, pass, sprint). TouchControls feeds it fingers and draws it.
 

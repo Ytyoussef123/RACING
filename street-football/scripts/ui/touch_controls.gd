@@ -12,7 +12,7 @@ const BUTTON_COLORS := {
 	"sprint": Color(1.0, 0.84, 0.1),
 }
 
-var _joystick := VirtualJoystick.new()
+var _joystick := FloatingStick.new()
 var _buttons: Dictionary = {}
 var _hit_scale: float = 1.25
 
@@ -20,7 +20,7 @@ var _hit_scale: float = 1.25
 func _ready() -> void:
 	mouse_filter = MOUSE_FILTER_IGNORE
 	for id in BUTTON_IDS:
-		var button := TouchButton.new()
+		var button := ActionButton.new()
 		button.label_key = BUTTON_LABELS[id]
 		button.color = BUTTON_COLORS[id]
 		_buttons[id] = button
@@ -33,19 +33,19 @@ func get_move_vector() -> Vector2:
 
 
 func is_held(id: String) -> bool:
-	var button: TouchButton = _buttons.get(id)
+	var button: ActionButton = _buttons.get(id)
 	return button != null and button.is_held()
 
 
 func consume_press(id: String) -> bool:
-	var button: TouchButton = _buttons.get(id)
+	var button: ActionButton = _buttons.get(id)
 	return button != null and button.consume_press()
 
 
 func release_all() -> void:
 	_joystick.end()
 	for id in BUTTON_IDS:
-		(_buttons[id] as TouchButton).release()
+		(_buttons[id] as ActionButton).release()
 
 
 func _notification(what: int) -> void:
@@ -75,7 +75,7 @@ func _finger_down(index: int, pos: Vector2) -> void:
 		_joystick.begin(index, pos)
 		return
 	for id in BUTTON_IDS:
-		var button: TouchButton = _buttons[id]
+		var button: ActionButton = _buttons[id]
 		if not button.is_held() and button.contains(pos, _hit_scale):
 			button.press(index)
 			return
@@ -85,7 +85,7 @@ func _finger_up(index: int) -> void:
 	if index == _joystick.finger:
 		_joystick.end()
 	for id in BUTTON_IDS:
-		var button: TouchButton = _buttons[id]
+		var button: ActionButton = _buttons[id]
 		if button.finger == index:
 			button.release()
 
@@ -100,7 +100,7 @@ func _layout() -> void:
 	_joystick.rest_position = _screen_point("joystick_rest_position", Vector2(0.15, 0.72), s)
 	_hit_scale = _num("button_hit_scale", 1.25)
 	for id in BUTTON_IDS:
-		var button: TouchButton = _buttons[id]
+		var button: ActionButton = _buttons[id]
 		button.center = _screen_point(id + "_position", Vector2(0.85, 0.75), s)
 		button.radius = short_side * _num(id + "_radius", 0.09)
 
@@ -109,7 +109,7 @@ func _draw() -> void:
 	_joystick.render(self)
 	var font := get_theme_default_font()
 	for id in BUTTON_IDS:
-		var button: TouchButton = _buttons[id]
+		var button: ActionButton = _buttons[id]
 		var font_size := int(button.radius * 0.38)
 		button.render(self, font, tr(button.label_key), font_size)
 

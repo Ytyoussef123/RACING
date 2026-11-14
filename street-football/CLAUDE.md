@@ -43,6 +43,8 @@ street-football/
 `scripts/physics/` is pure simulation (RefCounted, no nodes): testable headless and ready for online sync.
 Every controller (human now, AI later) produces a `PlayerIntent`; players never read input directly.
 
+**GDScript naming traps (learned the hard way):** never give a `class_name` the name of a Godot built-in class (Godot 4.7 has `VirtualJoystick`, for example), and never name a method like a built-in signal or method of the base class (`draw` is a `CanvasItem` signal). Check the Godot class list before naming.
+
 `core/` holds the autoloads; `data/config/` is the single home for numbers (rule 2).
 
 ## Git workflow

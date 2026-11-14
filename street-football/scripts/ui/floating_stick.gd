@@ -1,4 +1,4 @@
-class_name VirtualJoystick
+class_name FloatingStick
 extends RefCounted
 ## Floating joystick: it appears where the thumb lands inside its zone.
 ## TouchControls feeds it fingers and draws it. Sizes are set by TouchControls from controls.json.
