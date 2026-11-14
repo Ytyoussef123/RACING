@@ -6,11 +6,10 @@ extends RefCounted
 
 static func intent_for(player: Player, delta: float, ctx: MatchContext, brain: TeamBrain) -> PlayerIntent:
 	var possession := ctx.possession
-	var ball := ctx.ball
 	var team := player.team
 	var attacking := possession.holder != null and possession.holder.team == team
 	if possession.holder == null and possession.pass_target == player:
-		return Steering.seek(player, _intercept_point(ball))
+		return Steering.seek(player, ReceiveAssist.intercept_point(player, ctx))
 	if player == brain.chaser:
 		return _chase(player, delta, ctx)
 	if not attacking and player.ai.mark != null:
@@ -25,7 +24,7 @@ static func _chase(player: Player, delta: float, ctx: MatchContext) -> PlayerInt
 	var possession := ctx.possession
 	var carrier := possession.holder
 	if carrier == null:
-		return Steering.seek(player, _intercept_point(ctx.ball))
+		return Steering.seek(player, ReceiveAssist.intercept_point(player, ctx))
 	# Stay goal-side of the ball carrier and try a tackle when close enough.
 	var own_goal := Vector3(player.team.own_goal_x(ctx.court), 0.0, 0.0)
 	var goal_side := Steering.flat(own_goal - carrier.position).normalized() * 0.6
@@ -38,11 +37,6 @@ static func _chase(player: Player, delta: float, ctx: MatchContext) -> PlayerInt
 		if ctx.rng.randf() < player.team.tuning.tackle_attempt_chance:
 			intent.tackle_pressed = true
 	return intent
-
-
-static func _intercept_point(ball: BallPhysics) -> Vector3:
-	var lead := Steering.num("intercept_lead_seconds", 0.35)
-	return Vector3(ball.position.x + ball.velocity.x * lead, 0.0, ball.position.z + ball.velocity.z * lead)
 
 
 static func _mark_point(player: Player, opponent: Player, ctx: MatchContext) -> Vector3:

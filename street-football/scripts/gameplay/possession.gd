@@ -35,6 +35,9 @@ func kicked(player: Player, target: Player, ball: BallPhysics) -> void:
 
 func touched(player: Player) -> void:
 	last_touch_team = player.team.index
+	# A pass deflected by the other team is no longer a pass to our receiver.
+	if pass_target != null and pass_target.team != player.team:
+		pass_target = null
 
 
 func reset(ball: BallPhysics) -> void:

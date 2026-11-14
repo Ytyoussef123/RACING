@@ -1,7 +1,8 @@
 class_name HumanControl
 extends RefCounted
-## Which player the human controls, and switching: on request, when a pass leaves for a
-## teammate, when a teammate gets the ball, and automatically when defending.
+## Which player the human controls, and switching: on request (SWITCH when not having the ball,
+## or Q), when a pass leaves for a teammate, when a teammate gets the ball, and automatically
+## when defending.
 ## Numbers: data/config/match.json (auto_switch*, switch_cooldown).
 
 var team: Team
@@ -48,7 +49,15 @@ func update(delta: float, intent: PlayerIntent, ctx: MatchContext) -> void:
 			select(nearest)
 
 
-## The human's PASS button becomes TACKLE when an opponent has the ball.
-func opponent_has_ball(ctx: MatchContext) -> bool:
+## True when the human's side has the ball, or touched the loose ball last (its own pass or
+## shot is travelling): the buttons show the attack layout. Otherwise the defense layout.
+func is_attacking(ctx: MatchContext) -> bool:
 	var holder := ctx.possession.holder
-	return holder != null and holder.team != team
+	if holder != null:
+		return holder.team == team
+	return ctx.possession.last_touch_team == team.index
+
+
+## True while a pass is travelling to the human's player (receive assist runs him to the ball).
+func is_receiving(ctx: MatchContext) -> bool:
+	return controlled != null and ctx.possession.holder == null and ctx.possession.pass_target == controlled

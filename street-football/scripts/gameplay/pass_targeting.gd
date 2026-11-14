@@ -55,5 +55,27 @@ static func pass_velocity(passer: Player, target: Player) -> Vector3:
 	return dir * speed + Vector3.UP * _cfg("pass_lift", 0.0)
 
 
+## Through pass: aimed at the space a few meters in front of the receiver, mostly toward the
+## opponent's goal and partly along his run, kept inside the court.
+static func through_velocity(passer: Player, target: Player, ctx: MatchContext) -> Vector3:
+	var court := ctx.court
+	var forward := Vector3(passer.team.attack_sign, 0.0, 0.0)
+	var run := Steering.flat(target.motion.velocity)
+	var run_dir := run.normalized() if run.length() > 1.0 else forward
+	var w := _cfg("through_forward_weight", 0.6)
+	var lead_dir := forward * w + run_dir * (1.0 - w)
+	lead_dir = lead_dir.normalized() if lead_dir.length() > 0.01 else forward
+	var spot := target.position + lead_dir * _cfg("through_lead_distance", 4.0)
+	var margin := _cfg("through_wall_margin", 1.0)
+	spot.x = clampf(spot.x, -court.half_length + margin, court.half_length - margin)
+	spot.z = clampf(spot.z, -court.half_width + margin, court.half_width - margin)
+	var to := Steering.flat(spot - passer.position)
+	var d := to.length()
+	var speed := clampf(_cfg("through_speed_base", 5.0) + d * _cfg("through_speed_per_meter", 0.5),
+		_cfg("through_speed_min", 7.0), _cfg("through_speed_max", 15.0))
+	var dir := to / d if d > 0.01 else forward
+	return dir * speed
+
+
 static func _cfg(key: String, fallback: float) -> float:
 	return float(Config.get_value("player", key, fallback))

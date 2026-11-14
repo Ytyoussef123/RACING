@@ -1,6 +1,7 @@
 class_name TackleRules
 extends RefCounted
 ## A tackle: in reach of an opponent's ball, it may knock the ball loose; a miss slows the tackler.
+## Tackling when nobody has the ball does nothing (no penalty).
 ## Numbers: data/config/player.json (tackle_*), plus the AI difficulty bonus.
 
 
@@ -8,8 +9,10 @@ static func attempt(tackler: Player, ctx: MatchContext) -> bool:
 	var possession := ctx.possession
 	var carrier := possession.holder
 	var ball := ctx.ball
+	if carrier == null or carrier.team == tackler.team:
+		return false
 	var in_reach := tackler.flat_distance_to(ball.position) <= _cfg("tackle_reach", 1.3)
-	if carrier == null or carrier.team == tackler.team or not in_reach or _is_protected(carrier, ctx):
+	if not in_reach or _is_protected(carrier, ctx):
 		tackler.stun_timer = _cfg("tackle_whiff_stun", 0.35)
 		return false
 	var chance := _cfg("tackle_success", 0.55) + tackler.team.tuning.tackle_success_bonus

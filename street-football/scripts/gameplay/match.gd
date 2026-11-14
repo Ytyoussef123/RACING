@@ -68,21 +68,12 @@ func _physics_process(delta: float) -> void:
 	_frame += 1
 	var human_player: Player = _human.controlled if _human != null else null
 	if _human != null:
-		var intent := _input.read()
+		var attacking := _human.is_attacking(ctx)
+		var intent := _input.read(attacking)
 		_human.update(delta, intent, ctx)
 		human_player = _human.controlled
-		var defending := _human.opponent_has_ball(ctx)
-		if defending:
-			# Defense layout: PASS becomes TACKLE, SHOOT becomes PRESS (hold to chase the ball).
-			if intent.pass_pressed:
-				intent.pass_pressed = false
-				intent.tackle_pressed = true
-			if intent.shoot_held:
-				intent.shoot_held = false
-				intent = PressAssist.apply(human_player, intent, delta, ctx)
-		human_player.intent = intent
-		_touch.set_button_label("pass", "BTN_TACKLE" if defending else "BTN_PASS")
-		_touch.set_button_label("shoot", "BTN_PRESS" if defending else "BTN_SHOOT")
+		human_player.intent = _assist_human(human_player, intent, attacking, delta)
+		_touch.set_defense_layout(not attacking)
 	for team in ctx.teams:
 		team.brain.update(delta, ctx, human_player)
 	var playing := flow.state == MatchFlow.State.PLAYING
@@ -100,6 +91,20 @@ func _physics_process(delta: float) -> void:
 		_run_pending(flow.tick_stop(delta))
 	_camera.follow(delta, ctx.ball.position, ctx.ball.velocity, ctx.court)
 	_update_hud(human_player)
+
+
+## Assists for the human's player: receive assist while a pass comes to him; PRESS and
+## MATCH-UP when his side does not have the ball.
+func _assist_human(player: Player, intent: PlayerIntent, attacking: bool, delta: float) -> PlayerIntent:
+	if attacking:
+		if _human.is_receiving(ctx):
+			return ReceiveAssist.apply(player, intent, ctx)
+		return intent
+	if intent.press_held:
+		return PressAssist.apply(player, intent, delta, ctx)
+	if intent.match_up_held:
+		return MatchUpAssist.apply(player, intent, ctx)
+	return intent
 
 
 ## Fair order: the player who acts first changes every frame.

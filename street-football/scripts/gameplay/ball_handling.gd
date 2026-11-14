@@ -1,7 +1,10 @@
 class_name BallHandling
 extends RefCounted
 ## What one player does with the ball: take control, dribble, shoot (hold to charge), pass,
-## tackle, and bounce the ball off the body. Numbers: data/config/player.json.
+## through pass, tackle, and bounce the ball off the body.
+## A pass, through pass or shot asked a moment before the ball arrives is kept for
+## kick_buffer_seconds and played first-time when the ball comes within reach.
+## Numbers: data/config/player.json.
 
 var is_charging: bool = false
 ## 0..1 while the shoot button is held.
@@ -9,6 +12,10 @@ var shot_charge: float = 0.0
 
 var _cooldown: float = 0.0
 var _tackle_cooldown: float = 0.0
+## Kick waiting for the ball: "" (none), "pass", "through" or "shot".
+var _queued: String = ""
+var _queued_charge: float = 0.0
+var _queue_timer: float = 0.0
 
 
 func reset() -> void:
@@ -16,6 +23,8 @@ func reset() -> void:
 	shot_charge = 0.0
 	_cooldown = 0.0
 	_tackle_cooldown = 0.0
+	_queued = ""
+	_queue_timer = 0.0
 
 
 ## Stops this player from taking the ball for a while (after a kick, or when tackled).
@@ -26,32 +35,59 @@ func block_control(seconds: float) -> void:
 func update(delta: float, player: Player, ctx: MatchContext) -> void:
 	_cooldown = maxf(0.0, _cooldown - delta)
 	_tackle_cooldown = maxf(0.0, _tackle_cooldown - delta)
+	_queue_timer = maxf(0.0, _queue_timer - delta)
+	if _queue_timer <= 0.0:
+		_queued = ""
 	var ball := ctx.ball
 	var possession := ctx.possession
 	var intent := player.intent
 	if possession.holder == null and _cooldown <= 0.0 and player.stun_timer <= 0.0 and _can_take(player, ball):
 		possession.take(player, ball)
+	if intent.pass_pressed:
+		_queue("pass", 0.0)
+	elif intent.through_pressed:
+		_queue("through", 0.0)
 	var aim := _aim_direction(player, intent)
 	if intent.tackle_pressed and possession.holder != player:
 		if _tackle_cooldown <= 0.0:
 			_tackle_cooldown = _cfg("tackle_cooldown", 0.8)
 			TackleRules.attempt(player, ctx)
-	elif intent.pass_pressed and _can_kick(player, ctx):
-		_pass(player, ctx, aim)
-		is_charging = false
-		shot_charge = 0.0
+	elif not _queued.is_empty() and _can_kick(player, ctx):
+		_play_queued(player, ctx, aim)
 	elif intent.shoot_held:
 		is_charging = true
 		shot_charge = minf(1.0, shot_charge + delta / maxf(0.01, _cfg("shot_charge_time", 0.9)))
 	elif is_charging:
 		if _can_kick(player, ctx):
-			_shoot(player, ctx, aim)
+			_shoot(player, ctx, aim, shot_charge)
+		elif possession.holder == null:
+			_queue("shot", shot_charge)
 		is_charging = false
 		shot_charge = 0.0
 	if possession.holder == player:
 		_dribble(player, ctx)
 	elif possession.holder == null or possession.holder.team != player.team:
 		_bounce_off_body(player, ctx)
+
+
+func _queue(kind: String, charge: float) -> void:
+	_queued = kind
+	_queued_charge = charge
+	_queue_timer = _cfg("kick_buffer_seconds", 0.5)
+
+
+func _play_queued(player: Player, ctx: MatchContext, aim: Vector3) -> void:
+	match _queued:
+		"pass":
+			_pass(player, ctx, aim)
+		"through":
+			_through_pass(player, ctx, aim)
+		"shot":
+			_shoot(player, ctx, aim, _queued_charge)
+	_queued = ""
+	_queue_timer = 0.0
+	is_charging = false
+	shot_charge = 0.0
 
 
 func _pass(player: Player, ctx: MatchContext, aim: Vector3) -> void:
@@ -64,9 +100,18 @@ func _pass(player: Player, ctx: MatchContext, aim: Vector3) -> void:
 	_kick(player, ctx, kick_velocity, 0.0, target)
 
 
-func _shoot(player: Player, ctx: MatchContext, aim: Vector3) -> void:
-	var speed := lerpf(_cfg("shot_speed_min", 12.0), _cfg("shot_speed_max", 26.0), shot_charge)
-	var lift := lerpf(_cfg("shot_lift_min", 0.5), _cfg("shot_lift_max", 5.5), shot_charge)
+## Ground pass into the space in front of the receiver, toward the opponent's goal.
+func _through_pass(player: Player, ctx: MatchContext, aim: Vector3) -> void:
+	var target := PassTargeting.choose(player, aim, ctx)
+	if target == null:
+		_kick(player, ctx, aim * _cfg("through_space_speed", 10.0), 0.0, null)
+		return
+	_kick(player, ctx, PassTargeting.through_velocity(player, target, ctx), 0.0, target)
+
+
+func _shoot(player: Player, ctx: MatchContext, aim: Vector3, charge: float) -> void:
+	var speed := lerpf(_cfg("shot_speed_min", 12.0), _cfg("shot_speed_max", 26.0), charge)
+	var lift := lerpf(_cfg("shot_lift_min", 0.5), _cfg("shot_lift_max", 5.5), charge)
 	# Turning while shooting curls the ball the same way.
 	var spin := player.motion.turn_rate * _cfg("shot_curve_from_turn", 0.35)
 	_kick(player, ctx, aim * speed + Vector3.UP * lift, spin, null)
@@ -134,7 +179,11 @@ func _can_kick(player: Player, ctx: MatchContext) -> bool:
 	return player.flat_distance_to(ball.position) <= _cfg("kick_reach", 1.1)
 
 
+## Kick direction: the intent's aim if set, else its move direction, else where the player faces.
 func _aim_direction(player: Player, intent: PlayerIntent) -> Vector3:
+	var aim := Vector3(intent.aim.x, 0.0, intent.aim.z)
+	if aim.length() > 0.3:
+		return aim.normalized()
 	var flat := Vector3(intent.move.x, 0.0, intent.move.z)
 	if flat.length() > 0.3:
 		return flat.normalized()

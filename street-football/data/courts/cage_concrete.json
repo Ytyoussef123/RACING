@@ -1,7 +1,7 @@
 {
 	"name_key": "COURT_CAGE",
-	"length": 30.0,
-	"width": 18.0,
+	"length": 36.0,
+	"width": 22.0,
 	"goal_width": 3.0,
 	"goal_height": 2.0,
 	"goal_depth": 1.0,
@@ -9,9 +9,9 @@
 	"walls": true,
 	"wall_height": 0.7,
 	"fence_height": 3.0,
-	"center_circle_radius": 2.5,
-	"goal_area_depth": 3.0,
-	"goal_area_width": 7.0,
+	"center_circle_radius": 3.0,
+	"goal_area_depth": 3.5,
+	"goal_area_width": 8.0,
 	"line_width": 0.1,
 	"apron": 6.0,
 	"colors": {

@@ -10,23 +10,24 @@
 	"joystick_dead_zone": 0.12,
 	"button_hit_scale": 1.25,
 	"shoot_position": [
-		0.885,
-		0.74
+		0.925,
+		0.5
 	],
-	"shoot_radius": 0.11,
+	"shoot_radius": 0.095,
 	"pass_position": [
-		0.735,
-		0.84
+		0.765,
+		0.83
 	],
-	"pass_radius": 0.085,
+	"pass_radius": 0.095,
 	"sprint_position": [
-		0.76,
+		0.915,
+		0.8
+	],
+	"sprint_radius": 0.105,
+	"_layout": "eFootball-style diamond: through/match-up top-left, shoot/tackle top-right, pass/switch bottom-left, sprint/press bottom-right.",
+	"through_position": [
+		0.79,
 		0.56
 	],
-	"sprint_radius": 0.08,
-	"switch_position": [
-		0.93,
-		0.47
-	],
-	"switch_radius": 0.07
+	"through_radius": 0.085
 }

@@ -1,19 +1,58 @@
 class_name HumanInput
 extends RefCounted
 ## Turns the touch controls (and the keyboard, for testing on a PC) into a PlayerIntent.
-## Keyboard: WASD / arrows move, Shift sprint, Space shoot (hold), E pass / tackle, Q switch.
+## The four buttons change meaning with possession, like eFootball:
+##   with the ball:     THROUGH (tap)    SHOOT (hold)   PASS (tap)     SPRINT (hold)
+##   without the ball:  MATCH-UP (hold)  TACKLE (tap)   SWITCH (tap)   PRESS (hold)
+## Keyboard, same order: R, Space, E, Shift; WASD / arrows move; Q always switches.
 
 var _touch: TouchControls
-var _pass_key_was_down: bool = false
-var _switch_key_was_down: bool = false
+var _keys_down: Dictionary = {}
+## Set when the layout turns to attack while SHOOT/TACKLE is still held: that finger must be
+## lifted before it can start a shot (no accidental shot after winning the ball).
+var _shoot_locked: bool = false
+var _was_attacking: bool = true
 
 
 func _init(touch: TouchControls) -> void:
 	_touch = touch
 
 
-func read() -> PlayerIntent:
+func read(attacking: bool) -> PlayerIntent:
 	var intent := PlayerIntent.new()
+	intent.move = _move_vector()
+	# Key edges first, then the touch buttons (taps are always consumed so none fires later).
+	var space_tap := _key_tapped(KEY_SPACE)
+	var e_tap := _key_tapped(KEY_E)
+	var r_tap := _key_tapped(KEY_R)
+	var q_tap := _key_tapped(KEY_Q)
+	var shoot_tap := _touch.consume_press("shoot") or space_tap
+	var pass_tap := _touch.consume_press("pass") or e_tap
+	var through_tap := _touch.consume_press("through") or r_tap
+	_touch.consume_press("sprint")
+	var shoot_hold := _touch.is_held("shoot") or Input.is_physical_key_pressed(KEY_SPACE)
+	var through_hold := _touch.is_held("through") or Input.is_physical_key_pressed(KEY_R)
+	var sprint_hold := _touch.is_held("sprint") or Input.is_physical_key_pressed(KEY_SHIFT)
+	if attacking and not _was_attacking and shoot_hold:
+		_shoot_locked = true
+	if not shoot_hold:
+		_shoot_locked = false
+	_was_attacking = attacking
+	intent.switch_pressed = q_tap
+	if attacking:
+		intent.shoot_held = (shoot_hold or shoot_tap) and not _shoot_locked
+		intent.pass_pressed = pass_tap
+		intent.through_pressed = through_tap
+		intent.sprint = sprint_hold
+	else:
+		intent.tackle_pressed = shoot_tap
+		intent.switch_pressed = intent.switch_pressed or pass_tap
+		intent.press_held = sprint_hold
+		intent.match_up_held = through_hold
+	return intent
+
+
+func _move_vector() -> Vector3:
 	var stick: Vector2 = _touch.get_move_vector()
 	var keys := Vector2(
 		_axis(KEY_A, KEY_LEFT, KEY_D, KEY_RIGHT),
@@ -21,17 +60,14 @@ func read() -> PlayerIntent:
 	var v: Vector2 = stick if stick.length() >= keys.length() else keys
 	v = v.limit_length(1.0)
 	# Screen right = world +x, screen down = world +z (toward the camera).
-	intent.move = Vector3(v.x, 0.0, v.y)
-	intent.sprint = _touch.is_held("sprint") or Input.is_physical_key_pressed(KEY_SHIFT)
-	intent.shoot_held = _touch.consume_press("shoot") or _touch.is_held("shoot") \
-		or Input.is_physical_key_pressed(KEY_SPACE)
-	var pass_key := Input.is_physical_key_pressed(KEY_E)
-	intent.pass_pressed = _touch.consume_press("pass") or (pass_key and not _pass_key_was_down)
-	_pass_key_was_down = pass_key
-	var switch_key := Input.is_physical_key_pressed(KEY_Q)
-	intent.switch_pressed = _touch.consume_press("switch") or (switch_key and not _switch_key_was_down)
-	_switch_key_was_down = switch_key
-	return intent
+	return Vector3(v.x, 0.0, v.y)
+
+
+func _key_tapped(key: Key) -> bool:
+	var down := Input.is_physical_key_pressed(key)
+	var was: bool = _keys_down.get(key, false)
+	_keys_down[key] = down
+	return down and not was
 
 
 func _axis(neg_a: Key, neg_b: Key, pos_a: Key, pos_b: Key) -> float:

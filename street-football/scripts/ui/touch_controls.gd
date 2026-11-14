@@ -1,16 +1,19 @@
 class_name TouchControls
 extends Control
-## On-screen controls: floating joystick on the left, action buttons on the right.
+## On-screen controls: floating joystick on the left, four action buttons on the right
+## (eFootball-style diamond; their meaning changes with possession, see HumanInput).
 ## Handles every finger itself (multi-touch) and draws everything in one pass.
 ## Layout numbers: data/config/controls.json.
 
-const BUTTON_IDS: Array[String] = ["shoot", "pass", "sprint", "switch"]
-const BUTTON_LABELS := {"shoot": "BTN_SHOOT", "pass": "BTN_PASS", "sprint": "BTN_SPRINT", "switch": "BTN_SWITCH"}
+const BUTTON_IDS: Array[String] = ["shoot", "pass", "sprint", "through"]
+## Labels with the ball (attack) and without it (defense), like eFootball.
+const ATTACK_LABELS := {"shoot": "BTN_SHOOT", "pass": "BTN_PASS", "sprint": "BTN_SPRINT", "through": "BTN_THROUGH"}
+const DEFENSE_LABELS := {"shoot": "BTN_TACKLE", "pass": "BTN_SWITCH", "sprint": "BTN_PRESS", "through": "BTN_MATCH_UP"}
 const BUTTON_COLORS := {
 	"shoot": Color(1.0, 0.36, 0.1),
 	"pass": Color(0.13, 0.77, 0.85),
 	"sprint": Color(1.0, 0.84, 0.1),
-	"switch": Color(0.55, 0.55, 0.6),
+	"through": Color(0.55, 0.42, 0.95),
 }
 
 var _joystick := FloatingStick.new()
@@ -22,7 +25,7 @@ func _ready() -> void:
 	mouse_filter = MOUSE_FILTER_IGNORE
 	for id in BUTTON_IDS:
 		var button := ActionButton.new()
-		button.label_key = BUTTON_LABELS[id]
+		button.label_key = ATTACK_LABELS[id]
 		button.color = BUTTON_COLORS[id]
 		_buttons[id] = button
 	resized.connect(_layout)
@@ -43,11 +46,11 @@ func consume_press(id: String) -> bool:
 	return button != null and button.consume_press()
 
 
-## Changes a button's text (a translation key), e.g. PASS becomes TACKLE on defense.
-func set_button_label(id: String, label_key: String) -> void:
-	var button: ActionButton = _buttons.get(id)
-	if button != null:
-		button.label_key = label_key
+## Shows the defense labels (TACKLE, SWITCH, PRESS, MATCH-UP) or the attack labels.
+func set_defense_layout(defense: bool) -> void:
+	var labels: Dictionary = DEFENSE_LABELS if defense else ATTACK_LABELS
+	for id in BUTTON_IDS:
+		(_buttons[id] as ActionButton).label_key = str(labels[id])
 
 
 func release_all() -> void:

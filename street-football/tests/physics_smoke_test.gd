@@ -20,6 +20,8 @@ func _ready() -> void:
 	_test_open_court_out()
 	_test_dribble_and_shoot_scores()
 	_test_pass_assist_finds_teammate()
+	_test_receive_assist_meets_ball()
+	_test_through_pass_leads_receiver()
 	print("TESTS DONE: %d failure(s)" % _failures)
 	get_tree().quit(1 if _failures > 0 else 0)
 
@@ -196,6 +198,64 @@ func _test_pass_assist_finds_teammate() -> void:
 	_check("pass assist: no pass backwards past the limit", PassTargeting.choose(passer, Vector3.RIGHT, ctx) == null)
 	passer.queue_free()
 	mate.queue_free()
+
+
+## Receive assist: a pass rolling past the receiver (not at him) is met and controlled, even
+## with the joystick still pushed along the pass direction.
+func _test_receive_assist_meets_ball() -> void:
+	var team := Team.new()
+	team.tuning = AiTuning.for_difficulty("normal")
+	var receiver: Player = PLAYER_SCENE.instantiate()
+	add_child(receiver)
+	receiver.team = team
+	team.players.append(receiver)
+	receiver.reset_to(Vector3(6.0, 0.0, 3.0), Vector3.LEFT)
+	var ctx := MatchContext.new()
+	ctx.court = CourtData.load_court("cage_concrete")
+	ctx.ball = _new_ball(Vector3(0.0, ball_radius(), 0.0), Vector3(10.0, 0.0, 0.0))
+	ctx.possession.pass_target = receiver
+	var meet := ReceiveAssist.intercept_point(receiver, ctx)
+	_check("receive assist: meeting point is on the ball's path", absf(meet.z) < 0.2 and meet.x > 0.0 and meet.x < 15.0,
+		"meet=%s" % meet)
+	var got_it := false
+	for i in range(180):
+		var stick := PlayerIntent.new()
+		stick.move = Vector3.RIGHT
+		receiver.intent = ReceiveAssist.apply(receiver, stick, ctx)
+		receiver.move(DT, ctx.court, false)
+		receiver.handling.update(DT, receiver, ctx)
+		if ctx.possession.holder == receiver:
+			got_it = true
+			break
+		ctx.ball.step(DT)
+		CourtBounds.resolve(ctx.ball, ctx.court)
+	receiver.queue_free()
+	_check("receive assist: receiver controls the pass", got_it, "ball=%s" % ctx.ball.position)
+
+
+## Through pass: aimed at the space in front of the receiver (toward the opponent's goal).
+func _test_through_pass_leads_receiver() -> void:
+	var team := Team.new()
+	team.tuning = AiTuning.for_difficulty("normal")
+	var passer: Player = PLAYER_SCENE.instantiate()
+	var receiver: Player = PLAYER_SCENE.instantiate()
+	for p: Player in [passer, receiver]:
+		add_child(p)
+		p.team = team
+		team.players.append(p)
+	passer.reset_to(Vector3.ZERO, Vector3.RIGHT)
+	receiver.reset_to(Vector3(5.0, 0.0, 3.0), Vector3.RIGHT)
+	var ctx := MatchContext.new()
+	ctx.court = CourtData.load_court("cage_concrete")
+	var v := PassTargeting.through_velocity(passer, receiver, ctx)
+	var dir_pass := Vector2(v.x, v.z).normalized()
+	var dir_receiver := Vector2(5.0, 3.0).normalized()
+	var speed := Vector2(v.x, v.z).length()
+	_check("through pass: aimed ahead of the receiver", dir_pass.x > dir_receiver.x + 0.05 and dir_pass.y > 0.0,
+		"pass=%s receiver=%s" % [dir_pass, dir_receiver])
+	_check("through pass: speed within limits", speed >= 7.0 - 0.01 and speed <= 15.0 + 0.01, "speed=%.2f" % speed)
+	passer.queue_free()
+	receiver.queue_free()
 
 
 func ball_radius() -> float:

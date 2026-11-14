@@ -37,7 +37,13 @@
 			"keeper_save_chance": 0.75
 		}
 	},
-	"role_shift": {"GK": 0.0, "DEF": 0.35, "MID": 0.45, "WING": 0.5, "ATT": 0.5},
+	"role_shift": {
+		"GK": 0.0,
+		"DEF": 0.35,
+		"MID": 0.45,
+		"WING": 0.5,
+		"ATT": 0.5
+	},
 	"attack_push": 0.08,
 	"defend_drop": 0.06,
 	"z_ball_follow": 0.25,
@@ -46,7 +52,6 @@
 	"slot_frac_max": 0.9,
 	"arrive_distance": 1.5,
 	"sprint_distance": 6.0,
-	"intercept_lead_seconds": 0.35,
 	"mark_distance": 1.5,
 	"mark_zone_frac": 0.62,
 	"get_open_distance": 2.5,

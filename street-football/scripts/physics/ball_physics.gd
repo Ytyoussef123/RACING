@@ -52,6 +52,15 @@ func place(new_position: Vector3) -> void:
 	controlled = false
 
 
+## Independent copy of the ball's state, used to predict where it is going.
+func copy() -> BallPhysics:
+	var twin := BallPhysics.new()
+	twin.position = position
+	twin.velocity = velocity
+	twin.spin = spin
+	return twin
+
+
 func kick(new_velocity: Vector3, new_spin: float) -> void:
 	controlled = false
 	velocity = new_velocity
