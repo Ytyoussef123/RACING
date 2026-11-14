@@ -1,0 +1,19 @@
+{
+	"_units": "meters, seconds, m/s, m/s2. Drag values are fractions of speed lost per second.",
+	"radius": 0.11,
+	"gravity": 9.81,
+	"air_drag": 0.12,
+	"rolling_friction": 1.6,
+	"rolling_drag": 0.25,
+	"stop_speed": 0.05,
+	"ground_restitution": 0.55,
+	"ground_bounce_friction": 0.92,
+	"min_bounce_speed": 0.6,
+	"wall_restitution": 0.7,
+	"post_restitution": 0.6,
+	"net_restitution": 0.15,
+	"curve_accel": 9.0,
+	"curve_ground_factor": 0.25,
+	"spin_decay": 0.8,
+	"max_spin": 1.0
+}

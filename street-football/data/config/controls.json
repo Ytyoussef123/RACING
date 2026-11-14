@@ -1,0 +1,15 @@
+{
+	"_units": "positions are fractions of the screen (x, y); radii are fractions of the screen's short side.",
+	"joystick_zone_width": 0.45,
+	"joystick_zone_top": 0.18,
+	"joystick_rest_position": [0.15, 0.72],
+	"joystick_radius": 0.13,
+	"joystick_dead_zone": 0.12,
+	"button_hit_scale": 1.25,
+	"shoot_position": [0.885, 0.74],
+	"shoot_radius": 0.11,
+	"pass_position": [0.735, 0.84],
+	"pass_radius": 0.085,
+	"sprint_position": [0.76, 0.56],
+	"sprint_radius": 0.08
+}

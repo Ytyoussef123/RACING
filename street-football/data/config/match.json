@@ -1,0 +1,6 @@
+{
+	"default_court": "cage_concrete",
+	"goal_message_seconds": 2.0,
+	"out_message_seconds": 1.5,
+	"kickoff_player_offset": 3.0
+}

@@ -1,0 +1,9 @@
+{
+	"pitch_degrees": 55.0,
+	"distance": 19.0,
+	"fov": 45.0,
+	"follow_speed": 4.0,
+	"look_ahead_seconds": 0.25,
+	"z_follow_factor": 0.4,
+	"x_limit_margin": 6.0
+}
