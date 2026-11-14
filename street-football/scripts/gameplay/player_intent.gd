@@ -28,3 +28,6 @@ var skill: Vector3 = Vector3.ZERO
 var shoulder_pressed: bool = false
 ## Set by DribbleAssist: the dribbler goes to stop the ball (no touch forward).
 var trap: bool = false
+## Set by DribbleAssist while the dribbler first goes to a ball he is turning away from: where he
+## wants to take it (the next touch turns the ball that way). ZERO means: use `move`.
+var dribble_dir: Vector3 = Vector3.ZERO

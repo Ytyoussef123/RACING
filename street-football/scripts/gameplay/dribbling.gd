@@ -28,7 +28,9 @@ func update(player: Player, ctx: MatchContext, delta: float, kick_waiting: bool,
 	if dist > (_cfg("dribble_leash_sprint", 3.6) if sprint else _cfg("dribble_leash", 2.4)):
 		return false
 	var reach := _cfg("dribble_touch_reach", 0.75)
-	var move := Steering.flat(player.intent.move)
+	# Where he wants to take the ball (DribbleAssist may be walking him to it first).
+	var wanted := player.intent.dribble_dir if player.intent.dribble_dir != Vector3.ZERO else player.intent.move
+	var move := Steering.flat(wanted)
 	if player.intent.trap or move.length() < 0.2:
 		_windup = 0.0
 		if dist <= reach:
@@ -55,10 +57,10 @@ func update(player: Player, ctx: MatchContext, delta: float, kick_waiting: bool,
 	var off_course := ball_vel.length() > 0.5 and ball_vel.normalized().dot(dir) < redirect
 	var behind := to_ball.dot(dir) < 0.15
 	if off_course or behind:
-		# Turning with the ball: touched at once, with the foot on its side.
-		if dist <= reach:
+		# Turning with the ball: touched at once, with the foot on its side, toward where he goes.
+		if dist <= _cfg("dribble_turn_reach", 0.85):
 			player.animate_touch(_foot(player, to_ball), 0.0)
-			_touch(player, ctx, to_ball, dir, player_along, sprint, charging)
+			_turn_touch(player, ctx, to_ball, move, sprint)
 		return true
 	if ball_vel.dot(dir) > player_along + 0.3:
 		return true
@@ -104,6 +106,29 @@ func _touch(player: Player, ctx: MatchContext, to_ball: Vector3, dir: Vector3, p
 	var v := dir * (player_along + extra) - lateral * _cfg("dribble_touch_centering", 2.5)
 	ball.velocity.x = v.x
 	ball.velocity.z = v.z
+	_touch_timer = _cfg("dribble_touch_interval", 0.2)
+	ctx.possession.touched(player)
+
+
+## Turning with the ball: the touch sends it to a point just ahead of where the player will be
+## once he has turned (his speed builds up toward the new direction while he still slides the old
+## way), so the ball turns with him instead of being left at his side.
+func _turn_touch(player: Player, ctx: MatchContext, to_ball: Vector3, move: Vector3, sprint: bool) -> void:
+	var ball := ctx.ball
+	var time := _cfg("dribble_turn_touch_time", 0.3)
+	var dir := move.normalized()
+	var player_vel := Steering.flat(player.motion.velocity)
+	var target_vel := move.limit_length(1.0) * player.motion.top_speed(sprint, true)
+	var player_moves := (player_vel + target_vel) * 0.5 * time
+	var lead := _cfg("dribble_turn_touch_lead", 0.6) * player.stat("dribble_touch_extra_mult", 1.0)
+	var travel := player_moves + dir * lead - to_ball
+	var distance := travel.length()
+	if distance > 0.001:
+		# Average speed over the time, plus what friction takes off on the way.
+		var friction := _cfg("dribble_ball_friction", 3.0) + float(Config.get_value("ball", "rolling_friction", 1.6))
+		var speed := minf(distance / time + friction * time * 0.5, _cfg("dribble_turn_touch_max_speed", 9.0))
+		ball.velocity.x = travel.x / distance * speed
+		ball.velocity.z = travel.z / distance * speed
 	_touch_timer = _cfg("dribble_touch_interval", 0.2)
 	ctx.possession.touched(player)
 

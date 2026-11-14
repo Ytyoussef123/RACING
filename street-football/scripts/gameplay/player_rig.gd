@@ -174,9 +174,11 @@ func _build_head() -> ArrayMesh:
 	var skin: Color = _colors["skin"]
 	var hair: Color = _colors["hair"]
 	var neck_h := neck_len + 0.06
+	# Head and hair share a finer mesh so the head never pokes through the hair.
+	var segments := int(_cfg("head_segments", 12))
 	var parts := [
 		[RigMeshBuilder.cylinder(neck_r * 0.95, neck_r * 1.08, neck_h, false), RigMeshBuilder.at(Vector3(0.0, neck_h * 0.5 - 0.04, 0.0)), skin],
-		[RigMeshBuilder.sphere(head_r, head_h), RigMeshBuilder.at(Vector3(0.0, center, 0.0)), skin],
+		[RigMeshBuilder.sphere(head_r, head_h, segments), RigMeshBuilder.at(Vector3(0.0, center, 0.0)), skin],
 	]
 	parts.append_array(_face_parts(center, head_r, head_h))
 	# Hair: a cap following the head's shape, a little bigger (thickness) and taller on top,
@@ -188,8 +190,8 @@ func _build_head() -> ArrayMesh:
 		var cap_r := head_r + float(style[1])
 		var drop := _n("hair_base_drop", 0.012)
 		var cap_h := head_h * 0.5 + drop + float(style[2])
-		var tilt := deg_to_rad(_n("hair_tilt_degrees", -25.0))
-		parts.append([RigMeshBuilder.dome(cap_r, cap_h), RigMeshBuilder.at(Vector3(0.0, center - drop, 0.0), Vector3(width, 1.0, 1.0), tilt), hair])
+		var tilt := deg_to_rad(_n("hair_tilt_degrees", -35.0))
+		parts.append([RigMeshBuilder.dome(cap_r, cap_h, segments), RigMeshBuilder.at(Vector3(0.0, center - drop, 0.0), Vector3(width, 1.0, 1.0), tilt), hair])
 		if _hair_style == "long":
 			var fall := _n("long_hair_drop", 0.15)
 			var back := RigMeshBuilder.cylinder(cap_r * 0.92, cap_r * 0.78, fall)

@@ -49,14 +49,15 @@
 	"_hair_styles": "Per style: [width (1 = full, 0 = no hair), thickness over the head, extra height on top].",
 	"hair_styles": {
 		"bald": [0.0, 0.0, 0.0],
-		"buzz": [1.0, 0.005, 0.016],
-		"short": [1.0, 0.012, 0.032],
-		"afro": [1.0, 0.045, 0.085],
-		"long": [1.0, 0.014, 0.034],
-		"mohawk": [0.28, 0.012, 0.075]
+		"buzz": [1.0, 0.016, 0.042],
+		"short": [1.0, 0.02, 0.05],
+		"afro": [1.0, 0.05, 0.09],
+		"long": [1.0, 0.022, 0.055],
+		"mohawk": [0.28, 0.02, 0.085]
 	},
 	"hair_base_drop": 0.012,
-	"hair_tilt_degrees": -25.0,
+	"hair_tilt_degrees": -35.0,
+	"head_segments": 12,
 	"long_hair_drop": 0.15,
 	"feature_segments": 6,
 	"eye_radius": 0.016,

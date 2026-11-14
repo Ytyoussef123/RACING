@@ -83,8 +83,8 @@ static func sphere(radius: float, height: float = -1.0, segments: int = 0) -> Sp
 
 
 ## A dome from y = 0 (flat side) up to y = height.
-static func dome(radius: float, height: float) -> SphereMesh:
-	var m := sphere(radius, height)
+static func dome(radius: float, height: float, segments: int = 0) -> SphereMesh:
+	var m := sphere(radius, height, segments)
 	m.is_hemisphere = true
 	return m
 
