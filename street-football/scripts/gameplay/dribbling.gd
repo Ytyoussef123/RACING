@@ -12,11 +12,15 @@ extends RefCounted
 var _touch_timer: float = 0.0
 ## Seconds until a started touch lands (the foot is on its way to the ball); 0 = none.
 var _windup: float = 0.0
+## The last touch was a long sprint knock: the ball stays his (sprint leash) until he catches it,
+## even if he stops sprinting.
+var _long_touch: bool = false
 
 
 func reset() -> void:
 	_touch_timer = 0.0
 	_windup = 0.0
+	_long_touch = false
 
 
 ## Runs every frame for the player who has the ball. Returns false when the ball got too far.
@@ -25,9 +29,11 @@ func update(player: Player, ctx: MatchContext, delta: float, kick_waiting: bool,
 	var to_ball := Steering.flat(ball.position - player.position)
 	var dist := to_ball.length()
 	var sprint := player.intent.sprint
-	if dist > (_cfg("dribble_leash_sprint", 3.6) if sprint else _cfg("dribble_leash", 2.4)):
+	if dist > (_cfg("dribble_leash_sprint", 3.6) if sprint or _long_touch else _cfg("dribble_leash", 2.4)):
 		return false
 	var reach := _cfg("dribble_touch_reach", 0.75)
+	if dist <= reach:
+		_long_touch = false
 	# Where he wants to take the ball (DribbleAssist may be walking him to it first).
 	var wanted := player.intent.dribble_dir if player.intent.dribble_dir != Vector3.ZERO else player.intent.move
 	var move := Steering.flat(wanted)
@@ -107,6 +113,7 @@ func _touch(player: Player, ctx: MatchContext, to_ball: Vector3, dir: Vector3, p
 	ball.velocity.x = v.x
 	ball.velocity.z = v.z
 	_touch_timer = _cfg("dribble_touch_interval", 0.2)
+	_long_touch = sprint and not charging
 	ctx.possession.touched(player)
 
 
