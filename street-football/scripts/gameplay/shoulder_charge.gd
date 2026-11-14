@@ -26,6 +26,7 @@ static func attempt(charger: Player, ctx: MatchContext) -> bool:
 		ctx.possession.touched(charger)
 		var carried := Steering.flat(ctx.ball.velocity) * _cfg("shoulder_ball_keep", 0.5)
 		ctx.ball.kick(carried + dir * _cfg("shoulder_ball_push", 1.0), 0.0)
+		ctx.stats.balls_won[charger.team.index] += 1
 		return true
 	charger.motion.velocity = -dir * _cfg("shoulder_bounce_speed", 2.0)
 	charger.stun_timer = _cfg("shoulder_fail_stun", 0.5)

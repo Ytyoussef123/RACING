@@ -5,9 +5,14 @@ extends RefCounted
 var court: CourtData
 var ball: BallPhysics
 var possession: Possession = Possession.new()
+var stats: MatchStats = MatchStats.new()
 var teams: Array[Team] = []
 var all_players: Array[Player] = []
 var rng: RandomNumberGenerator = RandomNumberGenerator.new()
+
+
+func _init() -> void:
+	possession.stats = stats
 
 
 func add_team(team: Team) -> void:

@@ -104,6 +104,7 @@ func _try_take(player: Player, ctx: MatchContext) -> void:
 		holder.handling.block_control(_cfg("dribble_steal_cooldown", 0.4))
 		holder.handling.dribbling.reset()
 		ctx.possession.take(player, ctx.ball)
+		ctx.stats.balls_won[player.team.index] += 1
 
 
 func _queue(kind: String, charge: float, aim: Vector3, dribbling_now: bool) -> void:
@@ -136,7 +137,8 @@ func _pass(player: Player, ctx: MatchContext, aim: Vector3) -> void:
 		kick_velocity = aim * _cfg("pass_speed", 11.0) + Vector3.UP * _cfg("pass_lift", 0.0)
 	var error := player.stat("keeper_kick_error_degrees" if player.is_keeper else "pass_error_degrees", 0.0)
 	kick_velocity = _with_error(kick_velocity, error * _weak_foot_mult(player, aim), ctx)
-	_kick(player, ctx, kick_velocity, 0.0, target)
+	ctx.stats.passes[player.team.index] += 1
+	_kick(player, ctx, kick_velocity, 0.0, target, "pass")
 
 
 ## Ground pass into the space in front of the receiver, toward the opponent's goal.
@@ -144,10 +146,11 @@ func _through_pass(player: Player, ctx: MatchContext, aim: Vector3) -> void:
 	var target := PassTargeting.choose(player, aim, ctx)
 	var error := player.stat("keeper_kick_error_degrees" if player.is_keeper else "through_error_degrees", 0.0)
 	error *= _weak_foot_mult(player, aim)
+	ctx.stats.passes[player.team.index] += 1
 	if target == null:
-		_kick(player, ctx, _with_error(aim * _cfg("through_space_speed", 10.0), error, ctx), 0.0, null)
+		_kick(player, ctx, _with_error(aim * _cfg("through_space_speed", 10.0), error, ctx), 0.0, null, "pass")
 		return
-	_kick(player, ctx, _with_error(PassTargeting.through_velocity(player, target, ctx), error, ctx), 0.0, target)
+	_kick(player, ctx, _with_error(PassTargeting.through_velocity(player, target, ctx), error, ctx), 0.0, target, "pass")
 
 
 func _shoot(player: Player, ctx: MatchContext, aim: Vector3, charge: float) -> void:
@@ -161,7 +164,8 @@ func _shoot(player: Player, ctx: MatchContext, aim: Vector3, charge: float) -> v
 	var beyond := maxf(0.0, player.flat_distance_to(goal) - StatEffects.num("long_shot_distance", 12.0))
 	var error := player.stat("shot_error_degrees", 0.0) + beyond * player.stat("long_shot_error_per_meter", 0.0)
 	error *= _weak_foot_mult(player, aim)
-	_kick(player, ctx, _with_error(aim * speed + Vector3.UP * lift, error, ctx), spin, null)
+	ctx.stats.shots[player.team.index] += 1
+	_kick(player, ctx, _with_error(aim * speed + Vector3.UP * lift, error, ctx), spin, null, "shot")
 
 
 ## Turns a kick sideways by a random angle up to `degrees` (most kicks land near the aim).
@@ -187,8 +191,9 @@ func _weak_foot_mult(player: Player, aim: Vector3) -> float:
 	return float(mults[clampi(player.weak_foot, 1, mults.size()) - 1])
 
 
-func _kick(player: Player, ctx: MatchContext, kick_velocity: Vector3, spin: float, target: Player) -> void:
-	ctx.possession.kicked(player, target, ctx.ball)
+func _kick(player: Player, ctx: MatchContext, kick_velocity: Vector3, spin: float, target: Player,
+		kind: String) -> void:
+	ctx.possession.kicked(player, target, ctx.ball, kind)
 	ctx.ball.kick(kick_velocity, spin)
 	dribbling.reset()
 	_cooldown = _cfg("kick_cooldown", 0.35)

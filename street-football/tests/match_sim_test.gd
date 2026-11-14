@@ -28,6 +28,8 @@ var _max_stuck := 0.0
 var _out_of_bounds := false
 var _score_mismatch := false
 var _failures := 0
+var _total_shots := 0
+var _total_saves := 0
 
 
 func _ready() -> void:
@@ -84,6 +86,11 @@ func _on_full_time(home: int, away: int) -> void:
 func _end_match() -> void:
 	var line := "MATCH RESULT seed %d: %d - %d, goals counted %d" % [SEEDS[_index], _final.x, _final.y, _goals]
 	print(line)
+	var stats: MatchStats = _match.ctx.stats
+	print("MATCH STATS seed %d home: %s" % [SEEDS[_index], stats.summary(0)])
+	print("MATCH STATS seed %d away: %s" % [SEEDS[_index], stats.summary(1)])
+	_total_shots += stats.shots[0] + stats.shots[1]
+	_total_saves += stats.saves[0] + stats.saves[1]
 	_results.append(line)
 	_all_finished = _all_finished and _finished
 	_score_mismatch = _score_mismatch or (_final.x + _final.y != _goals)
@@ -95,8 +102,9 @@ func _end_match() -> void:
 
 func _report() -> void:
 	set_physics_process(false)
-	print("MATCH BALANCE: %.2f goals per %d-second match, longest stuck ball %.1f s"
-		% [float(_total_goals) / SEEDS.size(), int(MATCH_SECONDS), _max_stuck])
+	var n := float(SEEDS.size())
+	print("MATCH BALANCE: %.2f goals, %.1f shots, %.1f saves per %d-second match, longest stuck ball %.1f s"
+		% [_total_goals / n, _total_shots / n, _total_saves / n, int(MATCH_SECONDS), _max_stuck])
 	_check("every match reaches full time", _all_finished)
 	_check("goals are scored", _total_goals >= MIN_TOTAL_GOALS, "total=%d" % _total_goals)
 	_check("score matches goals", not _score_mismatch)

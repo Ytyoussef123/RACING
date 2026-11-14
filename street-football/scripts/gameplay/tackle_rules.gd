@@ -22,6 +22,7 @@ static func attempt(tackler: Player, ctx: MatchContext) -> bool:
 	carrier.handling.block_control(_cfg("tackle_victim_cooldown", 0.6))
 	ball.kick(tackler.motion.facing * _cfg("tackle_ball_speed", 2.5), 0.0)
 	possession.touched(tackler)
+	ctx.stats.balls_won[tackler.team.index] += 1
 	return true
 
 

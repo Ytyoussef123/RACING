@@ -11,13 +11,21 @@ var kick_count: int = 0
 var last_kicker: Player = null
 ## Teammate a pass was aimed at, until someone controls the ball.
 var pass_target: Player = null
+## Kind of the last kick: "pass" (passes and through passes), "shot" or "" (anything else).
+var last_kick_kind: String = ""
+## Match counters (passes completed are counted here); may be null in tests.
+var stats: MatchStats = null
 
 
 func take(player: Player, ball: BallPhysics) -> void:
+	if stats != null and last_kick_kind == "pass" and last_kicker != null and last_kicker != player \
+			and last_kicker.team == player.team:
+		stats.passes_completed[player.team.index] += 1
 	holder = player
 	ball.controlled = true
 	last_touch_team = player.team.index
 	pass_target = null
+	last_kick_kind = ""
 
 
 func release(ball: BallPhysics) -> void:
@@ -25,11 +33,12 @@ func release(ball: BallPhysics) -> void:
 	ball.controlled = false
 
 
-func kicked(player: Player, target: Player, ball: BallPhysics) -> void:
+func kicked(player: Player, target: Player, ball: BallPhysics, kind: String = "") -> void:
 	release(ball)
 	last_touch_team = player.team.index
 	last_kicker = player
 	pass_target = target
+	last_kick_kind = kind
 	kick_count += 1
 
 
@@ -45,3 +54,4 @@ func reset(ball: BallPhysics) -> void:
 	last_touch_team = -1
 	last_kicker = null
 	pass_target = null
+	last_kick_kind = ""

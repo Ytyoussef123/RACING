@@ -62,6 +62,7 @@ static func try_save(keeper: Player, ctx: MatchContext) -> void:
 	var save_chance := minf(0.97, keeper.team.tuning.keeper_save_chance * keeper.stat("keeper_save_mult", 1.0))
 	if ctx.rng.randf() >= save_chance:
 		return
+	ctx.stats.saves[keeper.team.index] += 1
 	if speed <= keeper.stat("keeper_catch_speed", Steering.num("keeper_catch_speed", 18.0)):
 		ball.place(keeper.position + keeper.motion.facing * 0.5 + Vector3.UP * ball.radius)
 		possession.take(keeper, ball)

@@ -91,6 +91,8 @@ func _physics_process(delta: float) -> void:
 			KeeperAI.try_save(team.keeper, ctx)
 		_update_ball_handling(delta)
 	var event := _ball.simulate(delta, ctx.court)
+	if playing and ctx.possession.holder != null:
+		ctx.stats.possession_time[ctx.possession.holder.team.index] += delta
 	if playing:
 		_check_play(event, delta)
 	else:
