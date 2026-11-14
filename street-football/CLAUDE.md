@@ -37,7 +37,11 @@ street-football/
   locale/        strings.csv (en, fr)
   assets/        art/, audio/, fonts/ (free/original only)
   docs/          design notes, Android export guide
+  tests/         headless checks run by CI (excluded from the APK)
 ```
+
+`scripts/physics/` is pure simulation (RefCounted, no nodes): testable headless and ready for online sync.
+Every controller (human now, AI later) produces a `PlayerIntent`; players never read input directly.
 
 `core/` holds the autoloads; `data/config/` is the single home for numbers (rule 2).
 
