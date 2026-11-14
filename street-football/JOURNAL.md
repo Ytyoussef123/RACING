@@ -15,9 +15,30 @@ A dated log, newest entry first: what was done, what was decided and why, and wh
 | 7 | Progression: coins, unlocks, upgrades, save system | Done, waiting for phone test |
 | 8 | Release build: optimized APK, full file review | Not started |
 
-The player-motion work is an extra feature branch between Phase 7 and Phase 8 (`feature/player-motion`, created from `feature/progression`), waiting for the phone test.
+The player-motion work is an extra feature branch between Phase 7 and Phase 8 (`feature/player-motion`, created from `feature/progression`), waiting for the phone test. `feature/broadcast-camera` (created from `feature/player-motion`) adds camera views and also waits for the phone test.
 
 ## Log
+
+### 2026-11-14 — Camera views: Close, Normal, Wide
+
+#### Why
+
+- In the reference video the camera is lower and closer than ours, so the players' bodies and running are seen from the side. Our Phase 2 camera looked steeply down (55 degrees, 19 m), which hides the new bodies.
+
+#### Done
+
+- Three views in `data/config/camera.json` -> `presets` (pitch, distance, field of view, how much the camera follows the ball across the court): Close (38 degrees, 13.5 m), Normal, the new default (44 degrees, 17 m), Wide = the original view (55 degrees, 19 m).
+- New Camera row in Settings (English/French), saved on the phone with the other settings.
+- `MatchCamera.apply_preset()`; the screenshot tour renders the match with each view; the menu flow test presses the camera chips.
+
+#### Checked
+
+- CI green (all tests, no script errors, APK built). Screenshots of the three views and of the settings screen reviewed (the new row fits).
+- Balance unchanged (the camera is look only): 5.00 goals, 28.3 shots, 11.0 saves.
+
+#### Next
+
+- The user picks the view he likes on the phone; the default can be changed in `camera.json` -> `default_preset`.
 
 ### 2026-11-14 — Player motion: body, running animation, ball at the feet
 

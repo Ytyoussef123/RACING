@@ -25,7 +25,7 @@ Main menu (`scenes/menus/main_menu.tscn`, the start scene): QUICK MATCH, MY CREW
   2. Formation: 2-1-1, 1-2-1, 1-1-2, 2-2 or 1-1-1-1, with a mini court showing your crew in place.
   3. Court and rules: Concrete Cage (walls, the ball bounces off the boards), Open Lot (no walls; after the ball goes out: KICK-IN, CORNER or GOAL KICK for the team that did not touch it last), or the unlocked Rooftop Cage and Beach Court (locked courts are greyed with their price), difficulty Easy / Normal / Hard, match length 3 / 4 / 5 minutes, then PLAY.
 - **My crew:** your own squad (see Progression below). The player card shows name, overall, nationality, age, height, foot, positions, playstyle, weak foot, skill moves, special skills and all 25 attributes as colored bars (cyan 85+, green 75+, yellow 60+, red below).
-- **Settings** (saved on the phone): language English / Français, show FPS, touch button size (small / normal / large), Sound on/off, Music on/off. Music plays in the menus, not in the match by default.
+- **Settings** (saved on the phone): language English / Français, show FPS, touch button size (small / normal / large), Sound on/off, Music on/off, camera view Close / Normal / Wide (Normal by default). Music plays in the menus, not in the match by default.
 - **Results** after the final whistle: YOU WIN / DRAW / YOU LOSE, score, goals (time, crew, scorer, own goals marked) and match stats (shots, saves, passes completed, balls won, possession). REMATCH or MAIN MENU.
 - **Android back button:** quits on the main menu, goes back on other screens, pauses or resumes in a match.
 
