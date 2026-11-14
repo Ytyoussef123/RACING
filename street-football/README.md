@@ -7,7 +7,7 @@ Street / neighborhood football for your phone: **5v5 (1 goalkeeper + 4 outfield 
 
 ## Status
 
-**Phase 5 (menus and UI) is built** (branch `feature/menus`, created from `feature/player-stats`, Phase 4, which comes from `feature/five-v-five`, Phase 3). Phases 3, 4 and 5 are waiting for the phone test; nothing is merged into `main` yet. Phase 2 (core match) is done and tested on the phone. The match is a 3D low-poly court (36 x 22 m, small goals), 5v5 with AI opponents, a score and a 3:00 clock. See [JOURNAL.md](JOURNAL.md) for the phases and the log.
+**Phase 6 (skills and polish) is built** (branch `feature/polish`, created from `feature/menus`, Phase 5, which comes from `feature/player-stats`, Phase 4, which comes from `feature/five-v-five`, Phase 3). Phases 3 to 6 are waiting for the phone test; nothing is merged into `main` yet. Phase 2 (core match) is done and tested on the phone. The match is a 3D low-poly court (36 x 22 m, small goals), 5v5 with AI opponents, a score and a 3:00 clock. See [JOURNAL.md](JOURNAL.md) for the phases and the log.
 
 ## Players and crews
 
@@ -25,7 +25,7 @@ Main menu (`scenes/menus/main_menu.tscn`, the start scene): QUICK MATCH, MY CREW
   2. Formation: 2-1-1, 1-2-1, 1-1-2, 2-2 or 1-1-1-1, with a mini court showing your crew in place.
   3. Court and rules: Concrete Cage (walls, the ball bounces off the boards) or Open Lot (no walls; after the ball goes out: KICK-IN, CORNER or GOAL KICK for the team that did not touch it last), difficulty Easy / Normal / Hard, match length 3 / 4 / 5 minutes, then PLAY.
 - **My crew:** the 5 players of your crew. The player card shows name, overall, nationality, age, height, foot, positions, playstyle, weak foot, skill moves, special skills and all 25 attributes as colored bars (cyan 85+, green 75+, yellow 60+, red below).
-- **Settings** (saved on the phone): language English / Français, show FPS, touch button size (small / normal / large).
+- **Settings** (saved on the phone): language English / Français, show FPS, touch button size (small / normal / large), Sound on/off, Music on/off. Music plays in the menus, not in the match by default.
 - **Results** after the final whistle: YOU WIN / DRAW / YOU LOSE, score, goals (time, crew, scorer, own goals marked) and match stats (shots, saves, passes completed, balls won, possession). REMATCH or MAIN MENU.
 - **Android back button:** quits on the main menu, goes back on other screens, pauses or resumes in a match.
 
@@ -62,7 +62,14 @@ Four buttons in a diamond (eFootball style). Labels and meaning switch with poss
 - **First-time kicks:** PASS, THROUGH or a shot pressed up to 0.5 s before the ball arrives is kept and played when the ball comes within reach.
 - **Shoulder charge:** when your side does not have the ball, double-tap the joystick (F on keyboard) near the ball carrier to push him with the shoulder. Within 1.4 m you win or lose the duel (about 50 % at equal strength); too far, you only lunge and are slowed briefly.
 - **Touch dribbling:** the player taps the ball ahead and catches it, further when sprinting (about 0.9 m running, 1.8 m sprinting). A ball knocked far ahead can be stolen, and is lost if it gets too far. Release the joystick to stop the ball at the feet. A pass or shot asked while the ball is ahead waits until the player reaches the ball.
-- Goalkeepers are always AI.
+- **Skill moves:** with the ball, flick the joystick (quick swipe and release, under 0.22 s; C on keyboard). The direction compared to where the player faces picks the move:
+  - Forward: knock-on (big touch to run onto), rainbow flick over a defender within 3 m, nutmeg through a defender within 1.6 m.
+  - Side: elastico or step-over.
+  - Back: heel-flick pass to a teammate behind, roulette or drag-back.
+  - Each move needs a minimum of skill-move stars. Success chance = 0.45 + 0.1 per star + a dribbling bonus (max 0.97); a miss is a bad touch and the ball is lost. A good move can freeze defenders within 2.6 m. The move name pops up above the player.
+  - Special skills: flip_flap, rainbow, nutmeg, roulette and heel_flick unlock their moves; first_time_shot makes one-touch shots more accurate; rabona removes the weak-foot penalty.
+  - Numbers: `data/config/skills.json`; code: `scripts/gameplay/skill_moves.gd`.
+- Goalkeepers are always AI. The AI also uses skill moves when a defender is within 2 m.
 
 Keyboard (PC):
 
@@ -73,6 +80,7 @@ Keyboard (PC):
 - Shift: sprint / press
 - Q: switch player (any time)
 - F: shoulder charge
+- C: skill move
 
 ## Tech
 
@@ -101,6 +109,7 @@ scripts/   core (autoloads), gameplay, physics, ai, data, ui
 data/      config, players, courts, formations (JSON)
 locale/    strings.csv (en, fr)
 assets/    art, audio, fonts (free/original only)
+tools/     helper scripts, e.g. generate_audio.py (Python + numpy) that generates assets/audio/*.wav
 tests/     run by CI, excluded from the APK: physics_smoke_test, stats_test, ui_flow_test, match_sim_test (headless) and screenshot_tour (rendered screenshots)
 docs/      design notes, Android export guide
 ```
@@ -113,6 +122,7 @@ More detail and the project rules are in [CLAUDE.md](CLAUDE.md).
 |---|---|---|
 | `icon.svg` | Original, made for this project | Same as the project |
 | Default Godot font | Godot Engine | MIT (Godot Engine is MIT-licensed) |
+| `assets/audio/*.wav` | Generated by `tools/generate_audio.py` (original, no samples) | Same as the project (original work) |
 
 All future assets must be free or original and listed in this table before they are committed.
 
