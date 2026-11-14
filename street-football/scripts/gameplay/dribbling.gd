@@ -4,13 +4,19 @@ extends RefCounted
 ## catches up with it; sprinting knocks it further (faster, but riskier). Standing still or with
 ## the joystick released, the ball is stopped and kept at the feet. A ball knocked ahead of its
 ## dribbler can be stolen by an opponent who gets to it first.
+## Each touch is done by a foot (Player.animate_touch): running onto the ball, the foot starts its
+## swing a little before the ball is in reach (dribble_touch_windup) and the touch lands when the
+## foot gets there; turning with the ball, it is touched at once with the foot on its side.
 ## Numbers: data/config/player.json (dribble_*).
 
 var _touch_timer: float = 0.0
+## Seconds until a started touch lands (the foot is on its way to the ball); 0 = none.
+var _windup: float = 0.0
 
 
 func reset() -> void:
 	_touch_timer = 0.0
+	_windup = 0.0
 
 
 ## Runs every frame for the player who has the ball. Returns false when the ball got too far.
@@ -24,6 +30,7 @@ func update(player: Player, ctx: MatchContext, delta: float, kick_waiting: bool,
 	var reach := _cfg("dribble_touch_reach", 0.75)
 	var move := Steering.flat(player.intent.move)
 	if player.intent.trap or move.length() < 0.2:
+		_windup = 0.0
 		if dist <= reach:
 			_hold_at_feet(player, ball)
 		else:
@@ -33,17 +40,38 @@ func update(player: Player, ctx: MatchContext, delta: float, kick_waiting: bool,
 	ball.controlled = false
 	_slow_ball(ball, delta, _cfg("dribble_ball_friction", 3.0))
 	_touch_timer = maxf(0.0, _touch_timer - delta)
-	if kick_waiting or _touch_timer > 0.0 or dist > reach:
-		return true
 	var dir := move.normalized()
 	var ball_vel := Steering.flat(ball.velocity)
 	var player_along := maxf(0.0, Steering.flat(player.motion.velocity).dot(dir))
-	var catching_up := ball_vel.dot(dir) <= player_along + 0.3
+	if _windup > 0.0:
+		_windup -= delta
+		# The foot reaches the ball now (unless a kick takes over or the ball got away).
+		if _windup <= 0.0 and not kick_waiting and dist <= reach * _cfg("dribble_windup_reach_margin", 1.3):
+			_touch(player, ctx, to_ball, dir, player_along, sprint, charging)
+		return true
+	if kick_waiting or _touch_timer > 0.0:
+		return true
 	var redirect := cos(deg_to_rad(_cfg("dribble_touch_redirect_degrees", 35.0)))
 	var off_course := ball_vel.length() > 0.5 and ball_vel.normalized().dot(dir) < redirect
 	var behind := to_ball.dot(dir) < 0.15
-	if catching_up or off_course or behind:
+	if off_course or behind:
+		# Turning with the ball: touched at once, with the foot on its side.
+		if dist <= reach:
+			player.animate_touch(_foot(player, to_ball), 0.0)
+			_touch(player, ctx, to_ball, dir, player_along, sprint, charging)
+		return true
+	if ball_vel.dot(dir) > player_along + 0.3:
+		return true
+	# Running onto the ball: the swing starts when the ball will be in reach at the end of it.
+	var lead := _cfg("dribble_touch_windup", 0.1)
+	var closing := maxf(0.0, player_along - ball_vel.dot(dir))
+	if dist - closing * lead > reach:
+		return true
+	player.animate_touch(_foot(player, to_ball), lead)
+	if lead <= 0.0:
 		_touch(player, ctx, to_ball, dir, player_along, sprint, charging)
+	else:
+		_windup = lead
 	return true
 
 
@@ -78,6 +106,15 @@ func _touch(player: Player, ctx: MatchContext, to_ball: Vector3, dir: Vector3, p
 	ball.velocity.z = v.z
 	_touch_timer = _cfg("dribble_touch_interval", 0.2)
 	ctx.possession.touched(player)
+
+
+## Foot for a touch: +1 right / -1 left, the one on the ball's side, else the preferred foot.
+static func _foot(player: Player, to_ball: Vector3) -> float:
+	var facing := player.motion.facing
+	var side := to_ball.dot(Vector3(-facing.z, 0.0, facing.x))
+	if absf(side) > _cfg("dribble_foot_side_offset", 0.12):
+		return signf(side)
+	return -1.0 if player.preferred_foot == "left" else 1.0
 
 
 ## Ball stopped under the sole: it follows the feet closely.

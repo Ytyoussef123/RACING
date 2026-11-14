@@ -39,7 +39,8 @@ func _update_visual(delta: float) -> void:
 	var dist := travelled.length()
 	if dist > 0.0001:
 		var axis := Vector3.UP.cross(travelled / dist)
-		_visual.rotate(axis, dist / physics.radius)
+		# Rolls without slipping at the size it is drawn.
+		_visual.rotate(axis, dist / (physics.radius * _visual_scale))
 		_visual.basis = _visual.basis.orthonormalized()
 	_trail.emitting = physics.horizontal_speed() > float(Config.get_value("animation", "ball_trail_min_speed", 14.0))
 	var height := physics.position.y - physics.radius

@@ -4,20 +4,6 @@ extends Node3D
 ## stamina, and links to its team, ball handling and AI memory.
 ## Controllers write `intent`; the match calls move() then handling.
 
-## Size of the body in player.tscn (capsule radius, total height with the head);
-## the body is scaled to the configured or real height.
-const MESH_RADIUS := 0.35
-const MESH_HEIGHT := 1.75
-## Hair shapes by style (scale of the hair cap; ZERO hides it). Visual only.
-const HAIR_STYLES := {
-	"bald": Vector3.ZERO,
-	"buzz": Vector3(1.0, 0.75, 1.0),
-	"short": Vector3(1.03, 1.0, 1.03),
-	"afro": Vector3(1.45, 1.35, 1.45),
-	"long": Vector3(1.08, 1.15, 1.08),
-	"mohawk": Vector3(0.45, 1.5, 1.1),
-}
-
 var motion: PlayerMotion
 var radius: float
 var height: float
@@ -48,40 +34,52 @@ var sheet: Dictionary = {}
 var energy: float = 1.0
 
 var _stun_move_factor: float
+## Jointed body (look only): joints and meshes built under Body/Pose.
+var _rig: PlayerRig
 var _animator: PlayerAnimator
 
 @onready var _body: Node3D = $Body
-@onready var _torso: MeshInstance3D = $Body/Pose/Torso
-@onready var _head: MeshInstance3D = $Body/Pose/Head
-@onready var _hair: MeshInstance3D = $Body/Pose/Hair
-@onready var _left_leg_mesh: MeshInstance3D = $Body/Pose/LeftLeg/Mesh
-@onready var _right_leg_mesh: MeshInstance3D = $Body/Pose/RightLeg/Mesh
 @onready var _ring: Node3D = $SelectionRing
 
 
 func _ready() -> void:
 	motion = PlayerMotion.new()
-	radius = float(Config.get_value("player", "radius", MESH_RADIUS))
-	height = float(Config.get_value("player", "height", MESH_HEIGHT))
+	radius = float(Config.get_value("player", "radius", 0.35))
+	height = float(Config.get_value("player", "height", 1.75))
 	_stun_move_factor = float(Config.get_value("player", "stun_move_factor", 0.25))
 	strength = float(Config.get_value("player", "default_strength", 50.0))
 	balance = strength
-	_animator = PlayerAnimator.new($Body/Pose, $Body/Pose/LeftLeg, $Body/Pose/RightLeg)
+	_rig = PlayerRig.new()
+	_rig.build($Body/Pose)
+	_animator = PlayerAnimator.new(_rig)
 	_scale_body()
 	set_selected(false)
 
 
 func _process(delta: float) -> void:
-	var speed := Vector2(motion.velocity.x, motion.velocity.z).length()
-	_animator.update(delta, speed, motion.top_speed(true))
+	update_look(delta)
 
 
-## Plays a short animation: "kick", "tackle", "shoulder", "dive", "celebrate".
+## Builds the body meshes if needed and animates the body for `delta` seconds (look only).
+## Called every frame; tests that step the match by hand call it themselves.
+func update_look(delta: float) -> void:
+	_rig.refresh()
+	_animator.keeper = is_keeper
+	_animator.update(delta, motion.velocity, motion.facing, motion.turn_rate, motion.top_speed(true))
+
+
+## Plays a short animation: "kick", "tackle", "shoulder", "dive", "skill", "celebrate".
 ## side: +1 right / -1 left (dive and shoulder direction); kicks use the preferred foot.
-func animate(action: String, side: float = 1.0) -> void:
+## reach: for a kick, how far the ball is (the body lunges toward a far ball).
+func animate(action: String, side: float = 1.0, reach: float = 0.0) -> void:
 	if action == "kick":
 		side = -1.0 if preferred_foot == "left" else 1.0
-	_animator.play(action, side)
+	_animator.play(action, side, reach)
+
+
+## Dribble touch with the right (+1) or left (-1) foot: the foot reaches the ball in `lead` seconds.
+func animate_touch(side: float, lead: float) -> void:
+	_animator.play_touch(side, lead)
 
 
 ## Keeper dive toward a point: rolls to the side where it is.
@@ -118,16 +116,9 @@ func stat(effect: String, fallback: float) -> float:
 	return float(sheet.get(effect, fallback))
 
 
+## Dresses the player: shirt in the kit color, darker shorts, socks; keepers wear gloves.
 func set_kit(kit_color: Color) -> void:
-	var mat := StandardMaterial3D.new()
-	mat.albedo_color = kit_color
-	mat.roughness = 0.8
-	_torso.material_override = mat
-	var legs := StandardMaterial3D.new()
-	legs.albedo_color = kit_color.darkened(0.55)
-	legs.roughness = 0.85
-	_left_leg_mesh.material_override = legs
-	_right_leg_mesh.material_override = legs
+	_rig.set_kit(kit_color, is_keeper)
 
 
 func reset_to(ground_position: Vector3, facing: Vector3) -> void:
@@ -188,23 +179,16 @@ func _update_energy(delta: float, sprinting: bool) -> void:
 	motion.energy_mult = lerpf(StatEffects.num("low_energy_speed_mult", 0.85), 1.0, clampf(energy / threshold, 0.0, 1.0))
 
 
+## The body is built for reference_height (data/config/body.json) and scaled to the player's height.
 func _scale_body() -> void:
-	_body.scale = Vector3(radius / MESH_RADIUS, height / MESH_HEIGHT, radius / MESH_RADIUS)
+	_body.scale = Vector3.ONE * height / float(Config.get_value("body", "reference_height", 1.75))
 
 
 func _apply_look() -> void:
-	var skin := StandardMaterial3D.new()
-	skin.albedo_color = profile.look_color("skin", Color(0.78, 0.54, 0.37))
-	skin.roughness = 0.7
-	_head.material_override = skin
-	var hair := StandardMaterial3D.new()
-	hair.albedo_color = profile.look_color("hair", Color(0.1, 0.08, 0.06))
-	hair.roughness = 0.9
-	_hair.material_override = hair
-	var shape: Vector3 = HAIR_STYLES.get(str(profile.look.get("hair_style", "short")), Vector3.ONE)
-	_hair.visible = shape != Vector3.ZERO
-	if _hair.visible:
-		_hair.scale = shape
+	var skin := profile.look_color("skin", Color.html(str(Config.get_value("body", "default_skin", "#c68a5e"))))
+	var hair := profile.look_color("hair", Color.html(str(Config.get_value("body", "default_hair", "#1e1610"))))
+	var style := str(profile.look.get("hair_style", "short"))
+	_rig.set_look(skin, hair, style, PlayerRig.boot_color_for(profile.id))
 
 
 func _update_visual() -> void:

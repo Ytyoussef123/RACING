@@ -4,6 +4,7 @@ extends Node
 ##   xvfb-run godot --path street-football --rendering-driver opengl3 --resolution 2400x1080 \
 ##     res://tests/screenshot_tour.tscn
 ## Output per shot: "SHOT_BEGIN <name>", "SHOT_DATA <base64 chunk>" lines, "SHOT_END <name>".
+## Ends with the motion study (tests/motion_study.gd): frame grids of a player running with the ball.
 
 const SHOT_WIDTH := 1200
 const CHUNK := 2000
@@ -55,6 +56,13 @@ func _tour() -> void:
 	await _settle(SETTLE_FRAMES)
 	await _shot("match_pause")
 	get_tree().paused = false
+	match_node.queue_free()
+	await _settle(2)
+	var study: Node = load("res://tests/motion_study.gd").new()
+	add_child(study)
+	var images: Dictionary = await study.run()
+	for shot_name in images:
+		_print_image(str(shot_name), images[shot_name])
 	print("SHOTS DONE")
 	get_tree().quit()
 
@@ -81,7 +89,10 @@ func _settle(frames: int) -> void:
 
 func _shot(shot_name: String) -> void:
 	await RenderingServer.frame_post_draw
-	var image := get_viewport().get_texture().get_image()
+	_print_image(shot_name, get_viewport().get_texture().get_image())
+
+
+func _print_image(shot_name: String, image: Image) -> void:
 	var height := int(round(float(image.get_height()) * SHOT_WIDTH / float(image.get_width())))
 	image.resize(SHOT_WIDTH, height, Image.INTERPOLATE_BILINEAR)
 	var data := Marshalls.raw_to_base64(image.save_jpg_to_buffer(0.82))
