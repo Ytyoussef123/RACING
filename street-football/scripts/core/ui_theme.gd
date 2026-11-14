@@ -2,12 +2,19 @@ extends Node
 ## Autoload "UiTheme": builds the street-style theme from data/config/ui.json and applies it to
 ## every screen. Type variations: "AccentButton" (filled orange), "ChipButton" (toggle chip),
 ## "CardPanel" (rounded card).
+## The theme is merged into Godot's default theme so it also reaches controls that are not under
+## another control (the match HUD and pause menu live in CanvasLayers, which stop theme
+## inheritance).
 
 var theme: Theme
 
 
 func _ready() -> void:
 	theme = _build()
+	var base := ThemeDB.get_default_theme()
+	if base != null:
+		base.merge_with(theme)
+		base.default_font_size = font_size("body")
 	get_tree().root.theme = theme
 
 
