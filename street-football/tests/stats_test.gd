@@ -43,7 +43,9 @@ func _test_roster_data() -> void:
 	var skills: Array = Config.get_value("ratings", "special_skills", [])
 	var positions: Array = Config.get_value("ratings", "positions", [])
 	var ids := Roster.player_ids()
-	_check("roster: 30 players", ids.size() == 30, "found %d" % ids.size())
+	var free_agents := Roster.free_agent_ids()
+	_check("roster: 30 crew players and 17 free agents", ids.size() == 47 and free_agents.size() == 17,
+		"players %d, free agents %d" % [ids.size(), free_agents.size()])
 	_check("roster: 6 teams", Roster.team_ids().size() == 6, "found %d" % Roster.team_ids().size())
 	var problems: Array[String] = []
 	var names := {}
