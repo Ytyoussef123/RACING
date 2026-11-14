@@ -8,7 +8,7 @@ A dated log, newest entry first: what was done, what was decided and why, and wh
 |---|---|---|
 | 1 | Setup | Done, tested on phone (2026-11-14) |
 | 2 | Core match: court, ball physics, one controllable player, touch controls, shooting | Done, tested on phone (2026-11-14) |
-| 3 | 5v5: teams, goalkeepers, formations, basic AI, score, timer | Next |
+| 3 | 5v5: teams, goalkeepers, formations, basic AI, score, timer | Done, waiting for phone test |
 | 4 | Player stats: data files, attributes affect gameplay, 30 fictional players | Not started |
 | 5 | Menus and UI: main menu, team/formation, court selection, results, translations | Not started |
 | 6 | Skills and polish: skill moves, animations, sounds, music, effects, wall bounces | Not started |
@@ -16,6 +16,40 @@ A dated log, newest entry first: what was done, what was decided and why, and wh
 | 8 | Release build: optimized APK, full file review | Not started |
 
 ## Log
+
+### 2026-11-14 — Phase 3: 5v5
+
+#### Done
+
+- Branch `feature/five-v-five`. CI green on the first run: physics tests all pass, and the new headless AI-vs-AI match test (`tests/match_sim_test.tscn`, 150 s match at fixed 60 fps) ended 4–2 with 6 goals counted, the ball never stuck and everyone staying in the court. Not yet tested on the phone.
+- Start screen: Formation button (cycles 2-1-1, 1-2-1, 1-1-2, 2-2, 1-1-1-1), Difficulty button (Easy / Normal / Hard), "Play — Concrete Cage", "Play — Open Lot", language button.
+- Match: your team orange (keeper yellow) attacks to the right; AI team cyan (keeper purple), formation 1-2-1. Score and 3:00 clock at the top, court name under it, MENU top-left, formation button top-right (changes your formation during the match). Kick-off by the team that conceded. FULL TIME message with the score, then back to the start screen after 4 s. Open Lot: KICK-IN, CORNER or GOAL KICK after the ball goes out (team that did not touch it last).
+- Controls: joystick, SHOOT (hold), PASS (goes to the best teammate in the joystick direction; becomes TACKLE when an opponent has the ball), SPRINT, SWITCH (jump to the teammate nearest the ball). Automatic switch: when a pass leaves for a teammate, when a teammate gets the ball, and when defending if a teammate is clearly closer. Goalkeepers are always AI. Keyboard: E pass/tackle, Q switch (plus the earlier keys).
+- Rules: one player controls the ball at a time; a tackle in reach has a chance to knock the ball loose, a miss slows the tackler briefly; a keeper holding the ball in his goal area can't be tackled; players push each other apart.
+- AI: the team brain picks a chaser (closest outfield player) and does greedy marking in its half. The ball carrier shoots in range (aims at the corner away from the keeper, with a difficulty-based error), passes when pressed or when a teammate is open further up with a clear lane, else dribbles around defenders. Off-ball players hold formation slots that shift with the ball and step away from defenders to get open. The keeper stays between ball and goal, moves across for shots, rushes loose balls near goal, saves (catch or parry) once per shot with a difficulty-based chance, then passes to the most open teammate. Your teammates use "normal".
+- Data: `data/formations/*.json` (slot role + x 0..1 from own goal + z −1..1); `data/config/ai.json` (difficulties + positioning/decision numbers); new `player.json` keys (`tackle_*`, pass targeting); `match.json` (match length, colors, switching, restarts, formation and difficulty lists).
+- New code: `scripts/ai/` (`team_brain`, `carrier_ai`, `support_ai`, `keeper_ai`, `formation_positions`, `steering`, `ai_tuning`, `ai_player_state`), `scripts/gameplay/` (`team`, `team_factory`, `possession`, `match_context`, `match_flow`, `restart_placer`, `human_control`, `pass_targeting`, `tackle_rules`), `scripts/physics/player_collisions.gd`, `scripts/data/formation_data.gd`.
+
+#### Decisions (and why)
+
+- **Every player (human or AI) is driven by the same `PlayerIntent`:** the AI obeys the same rules as the human.
+- **AI decisions run at a difficulty-based interval (reaction time), movement runs every frame:** difficulty is tunable and movement stays smooth.
+- **One shared `Possession` object:** only one player can control the ball at a time.
+- **Keepers always AI:** usual in street football games, and it keeps the controls simple.
+- **A full AI match runs in CI:** it catches stuck balls and broken rules before the phone test.
+
+Known: at the start of the CI import Godot logs "Cannot open file strings.en.translation" once, because the translation files are generated during that import. Harmless.
+
+#### How to test
+
+- Download the `feature/five-v-five` branch ZIP, import `street-football/project.godot` in Godot on the phone and run, or install the APK from the GitHub Actions run.
+- Try the formations and the three difficulties on both courts: score, concede (kick-off by the team that conceded), tackle, pass, SWITCH and automatic switching, change formation with the top-right button, play to FULL TIME, send the ball out on Open Lot.
+
+#### Next
+
+- Phone test and feedback (tuning goes in `data/config/ai.json`).
+- Then merge `feature/five-v-five` into `main`.
+- Then the Phase 4 plan (player stats), to be agreed before starting.
 
 ### 2026-11-14 — Phase 2 tested on the phone
 
