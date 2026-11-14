@@ -8,6 +8,8 @@ var velocity: Vector3 = Vector3.ZERO
 var facing: Vector3 = Vector3.RIGHT
 ## Turning speed measured on the last step, rad/s. Positive = counter-clockwise seen from above.
 var turn_rate: float = 0.0
+## Multiplies the top speed (AI difficulty now, player stats in Phase 4).
+var speed_factor: float = 1.0
 
 var _run_speed: float
 var _sprint_speed: float
@@ -37,7 +39,7 @@ func reset(new_facing: Vector3) -> void:
 
 ## move: wanted direction on the ground, length 0..1 (joystick strength).
 func step(delta: float, move: Vector3, sprint: bool, dribbling: bool) -> void:
-	var max_speed := _sprint_speed if sprint else _run_speed
+	var max_speed := (_sprint_speed if sprint else _run_speed) * speed_factor
 	if dribbling:
 		max_speed *= _dribble_factor
 	var wanted := Vector3(move.x, 0.0, move.z).limit_length(1.0)

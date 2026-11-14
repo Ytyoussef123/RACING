@@ -1,6 +1,6 @@
 keys,en,fr
 TITLE,STREET FOOTBALL 5v5,STREET FOOTBALL 5v5
-BOOT_SUBTITLE,Phase 2 — core match test,Phase 2 — test du match
+BOOT_SUBTITLE,Phase 3 — 5v5 test,Phase 3 — test du 5 contre 5
 PLAY_CAGE,Play — Concrete Cage,Jouer — Cage en béton
 PLAY_OPEN,Play — Open Lot,Jouer — Terrain ouvert
 LANGUAGE,Language: English,Langue : Français
@@ -14,3 +14,14 @@ BTN_SPRINT,SPRINT,SPRINT
 MSG_GOAL,GOAL!,BUT !
 MSG_OUT,OUT,SORTIE
 MENU,MENU,MENU
+BTN_TACKLE,TACKLE,TACLE
+BTN_SWITCH,SWITCH,CHANGER
+MSG_FULL_TIME,FULL TIME,FIN DU MATCH
+MSG_KICK_IN,KICK-IN,RENTRÉE
+MSG_CORNER,CORNER,CORNER
+MSG_GOAL_KICK,GOAL KICK,SIX MÈTRES
+FORMATION_LABEL,Formation: %s,Formation : %s
+DIFFICULTY_LABEL,Difficulty: %s,Difficulté : %s
+DIFF_EASY,Easy,Facile
+DIFF_NORMAL,Normal,Normal
+DIFF_HARD,Hard,Difficile

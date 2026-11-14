@@ -1,10 +1,11 @@
 class_name HumanInput
 extends RefCounted
 ## Turns the touch controls (and the keyboard, for testing on a PC) into a PlayerIntent.
-## Keyboard: WASD / arrows move, Shift sprint, Space shoot (hold), E pass.
+## Keyboard: WASD / arrows move, Shift sprint, Space shoot (hold), E pass / tackle, Q switch.
 
 var _touch: TouchControls
 var _pass_key_was_down: bool = false
+var _switch_key_was_down: bool = false
 
 
 func _init(touch: TouchControls) -> void:
@@ -27,6 +28,9 @@ func read() -> PlayerIntent:
 	var pass_key := Input.is_physical_key_pressed(KEY_E)
 	intent.pass_pressed = _touch.consume_press("pass") or (pass_key and not _pass_key_was_down)
 	_pass_key_was_down = pass_key
+	var switch_key := Input.is_physical_key_pressed(KEY_Q)
+	intent.switch_pressed = _touch.consume_press("switch") or (switch_key and not _switch_key_was_down)
+	_switch_key_was_down = switch_key
 	return intent
 
 

@@ -2,5 +2,32 @@
 	"default_court": "cage_concrete",
 	"goal_message_seconds": 2.0,
 	"out_message_seconds": 1.5,
-	"kickoff_player_offset": 3.0
+	"kickoff_player_offset": 3.0,
+	"match_seconds": 180.0,
+	"full_time_message_seconds": 4.0,
+	"restart_message_seconds": 1.5,
+	"default_formation": "2-1-1",
+	"default_difficulty": "normal",
+	"formations": [
+		"2-1-1",
+		"1-2-1",
+		"1-1-2",
+		"2-2",
+		"1-1-1-1"
+	],
+	"difficulties": [
+		"easy",
+		"normal",
+		"hard"
+	],
+	"auto_switch": true,
+	"auto_switch_margin": 2.5,
+	"switch_cooldown": 0.8,
+	"restart_clear_distance": 3.0,
+	"restart_inset": 0.4,
+	"kickoff_taker_offset": 0.6,
+	"home_color": "#ff5c1a",
+	"away_color": "#20c4d8",
+	"home_keeper_color": "#ffd61a",
+	"away_keeper_color": "#7a5cff"
 }

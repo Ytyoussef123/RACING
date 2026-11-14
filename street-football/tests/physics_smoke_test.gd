@@ -133,9 +133,14 @@ func _test_dribble_and_shoot_scores() -> void:
 	var court := CourtData.load_court("cage_concrete")
 	var player: Player = PLAYER_SCENE.instantiate()
 	add_child(player)
+	var team := Team.new()
+	team.tuning = AiTuning.for_difficulty("normal")
+	team.players.append(player)
+	player.team = team
 	player.reset_to(Vector3(-3.0, 0.0, 0.0), Vector3.RIGHT)
-	var ball := _new_ball(Vector3(0.0, ball_radius(), 0.0), Vector3.ZERO)
-	var handling := BallHandling.new()
+	var ctx := MatchContext.new()
+	ctx.court = court
+	ctx.ball = _new_ball(Vector3(0.0, ball_radius(), 0.0), Vector3.ZERO)
 	var had_ball := false
 	var shot_done := false
 	var charge_frames := 0
@@ -143,23 +148,25 @@ func _test_dribble_and_shoot_scores() -> void:
 	for i in range(900):
 		var intent := PlayerIntent.new()
 		intent.move = Vector3.RIGHT
-		if handling.has_ball and player.position.x > court.half_length - 8.0 and charge_frames < 20:
+		var has_ball := ctx.possession.holder == player
+		if has_ball and player.position.x > court.half_length - 8.0 and charge_frames < 20:
 			intent.shoot_held = true
 			charge_frames += 1
-		player.move(DT, intent.move, intent.sprint, handling.has_ball, court)
-		handling.update(DT, player, ball, intent)
-		had_ball = had_ball or handling.has_ball
-		if charge_frames >= 20 and not handling.has_ball:
+		player.intent = intent
+		player.move(DT, court, has_ball)
+		player.handling.update(DT, player, ctx)
+		had_ball = had_ball or ctx.possession.holder == player
+		if charge_frames >= 20 and ctx.possession.holder != player:
 			shot_done = true
-		ball.step(DT)
-		CourtBounds.resolve(ball, court)
-		goal = GoalDetector.check(ball, court)
+		ctx.ball.step(DT)
+		CourtBounds.resolve(ctx.ball, court)
+		goal = GoalDetector.check(ctx.ball, court)
 		if goal != 0:
 			break
 	player.queue_free()
 	_check("player takes the ball", had_ball)
 	_check("player shoots", shot_done)
-	_check("dribble and shot score at +x", goal == 1, "goal=%d ball=%s" % [goal, ball.position])
+	_check("dribble and shot score at +x", goal == 1, "goal=%d ball=%s" % [goal, ctx.ball.position])
 
 
 func ball_radius() -> float:

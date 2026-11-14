@@ -1,0 +1,10 @@
+{
+	"_coords": "x: 0 = own goal line, 1 = opponent goal line. z: -1..1 across the court width.",
+	"slots": [
+		{"role": "GK", "x": 0.03, "z": 0.0},
+		{"role": "DEF", "x": 0.22, "z": 0.0},
+		{"role": "MID", "x": 0.42, "z": 0.0},
+		{"role": "ATT", "x": 0.66, "z": -0.45},
+		{"role": "ATT", "x": 0.66, "z": 0.45}
+	]
+}

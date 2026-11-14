@@ -1,70 +1,90 @@
 class_name BallHandling
 extends RefCounted
 ## What one player does with the ball: take control, dribble, shoot (hold to charge), pass,
-## and bounce the ball off the body when not in control. Numbers: data/config/player.json.
+## tackle, and bounce the ball off the body. Numbers: data/config/player.json.
 
-var has_ball: bool = false
 var is_charging: bool = false
 ## 0..1 while the shoot button is held.
 var shot_charge: float = 0.0
 
 var _cooldown: float = 0.0
+var _tackle_cooldown: float = 0.0
 
 
-## Drops control of the ball (kick-off, goal...). The ball keeps its speed.
-func reset(ball: BallPhysics) -> void:
-	has_ball = false
+func reset() -> void:
 	is_charging = false
 	shot_charge = 0.0
 	_cooldown = 0.0
-	ball.controlled = false
+	_tackle_cooldown = 0.0
 
 
-func update(delta: float, player: Player, ball: BallPhysics, intent: PlayerIntent) -> void:
+## Stops this player from taking the ball for a while (after a kick, or when tackled).
+func block_control(seconds: float) -> void:
+	_cooldown = maxf(_cooldown, seconds)
+
+
+func update(delta: float, player: Player, ctx: MatchContext) -> void:
 	_cooldown = maxf(0.0, _cooldown - delta)
-	if not has_ball and _cooldown <= 0.0 and _can_take(player, ball):
-		has_ball = true
-		ball.controlled = true
+	_tackle_cooldown = maxf(0.0, _tackle_cooldown - delta)
+	var ball := ctx.ball
+	var possession := ctx.possession
+	var intent := player.intent
+	if possession.holder == null and _cooldown <= 0.0 and player.stun_timer <= 0.0 and _can_take(player, ball):
+		possession.take(player, ball)
 	var aim := _aim_direction(player, intent)
-	if intent.pass_pressed and _in_kick_reach(player, ball):
-		_kick(ball, aim * _cfg("pass_speed", 11.0) + Vector3.UP * _cfg("pass_lift", 0.0), 0.0)
+	if intent.tackle_pressed and possession.holder != player:
+		if _tackle_cooldown <= 0.0:
+			_tackle_cooldown = _cfg("tackle_cooldown", 0.8)
+			TackleRules.attempt(player, ctx)
+	elif intent.pass_pressed and _can_kick(player, ctx):
+		_pass(player, ctx, aim)
 		is_charging = false
 		shot_charge = 0.0
 	elif intent.shoot_held:
 		is_charging = true
 		shot_charge = minf(1.0, shot_charge + delta / maxf(0.01, _cfg("shot_charge_time", 0.9)))
 	elif is_charging:
-		if _in_kick_reach(player, ball):
-			_shoot(player, ball, aim)
+		if _can_kick(player, ctx):
+			_shoot(player, ctx, aim)
 		is_charging = false
 		shot_charge = 0.0
-	if has_ball:
-		_dribble(player, ball, intent.sprint)
+	if possession.holder == player:
+		_dribble(player, ctx)
+	elif possession.holder == null or possession.holder.team != player.team:
+		_bounce_off_body(player, ctx)
+
+
+func _pass(player: Player, ctx: MatchContext, aim: Vector3) -> void:
+	var target := PassTargeting.choose(player, aim, ctx)
+	var kick_velocity: Vector3
+	if target != null:
+		kick_velocity = PassTargeting.pass_velocity(player, target)
 	else:
-		_bounce_off_body(player, ball)
+		kick_velocity = aim * _cfg("pass_speed", 11.0) + Vector3.UP * _cfg("pass_lift", 0.0)
+	_kick(player, ctx, kick_velocity, 0.0, target)
 
 
-func _shoot(player: Player, ball: BallPhysics, aim: Vector3) -> void:
+func _shoot(player: Player, ctx: MatchContext, aim: Vector3) -> void:
 	var speed := lerpf(_cfg("shot_speed_min", 12.0), _cfg("shot_speed_max", 26.0), shot_charge)
 	var lift := lerpf(_cfg("shot_lift_min", 0.5), _cfg("shot_lift_max", 5.5), shot_charge)
 	# Turning while shooting curls the ball the same way.
 	var spin := player.motion.turn_rate * _cfg("shot_curve_from_turn", 0.35)
-	_kick(ball, aim * speed + Vector3.UP * lift, spin)
+	_kick(player, ctx, aim * speed + Vector3.UP * lift, spin, null)
 
 
-func _kick(ball: BallPhysics, kick_velocity: Vector3, spin: float) -> void:
-	has_ball = false
+func _kick(player: Player, ctx: MatchContext, kick_velocity: Vector3, spin: float, target: Player) -> void:
+	ctx.possession.kicked(player, target, ctx.ball)
+	ctx.ball.kick(kick_velocity, spin)
 	_cooldown = _cfg("kick_cooldown", 0.35)
-	ball.kick(kick_velocity, spin)
 
 
-func _dribble(player: Player, ball: BallPhysics, sprint: bool) -> void:
-	var dist := _cfg("dribble_sprint_distance", 0.9) if sprint else _cfg("dribble_distance", 0.55)
+func _dribble(player: Player, ctx: MatchContext) -> void:
+	var ball := ctx.ball
+	var dist := _cfg("dribble_sprint_distance", 0.9) if player.intent.sprint else _cfg("dribble_distance", 0.55)
 	var target := player.position + player.motion.facing * dist
 	var to_target := Vector3(target.x - ball.position.x, 0.0, target.z - ball.position.z)
 	if to_target.length() > _cfg("lose_ball_distance", 1.4):
-		has_ball = false
-		ball.controlled = false
+		ctx.possession.release(ball)
 		_cooldown = _cfg("kick_cooldown", 0.35)
 		return
 	var v := player.motion.velocity + to_target * _cfg("dribble_stiffness", 14.0)
@@ -72,7 +92,8 @@ func _dribble(player: Player, ball: BallPhysics, sprint: bool) -> void:
 	ball.velocity.z = v.z
 
 
-func _bounce_off_body(player: Player, ball: BallPhysics) -> void:
+func _bounce_off_body(player: Player, ctx: MatchContext) -> void:
+	var ball := ctx.ball
 	if ball.position.y > player.height:
 		return
 	var d := Vector2(ball.position.x - player.position.x, ball.position.z - player.position.z)
@@ -89,25 +110,28 @@ func _bounce_off_body(player: Player, ball: BallPhysics) -> void:
 		var e := _cfg("body_restitution", 0.3)
 		ball.velocity.x -= (1.0 + e) * vn * n.x
 		ball.velocity.z -= (1.0 + e) * vn * n.y
+		ctx.possession.touched(player)
 
 
 func _can_take(player: Player, ball: BallPhysics) -> bool:
 	if ball.position.y > _cfg("control_max_ball_height", 0.6):
 		return false
-	var d := Vector2(ball.position.x - player.position.x, ball.position.z - player.position.z)
-	if d.length() > _cfg("control_radius", 0.9):
+	if player.flat_distance_to(ball.position) > _cfg("control_radius", 0.9):
 		return false
 	var rel := Vector2(ball.velocity.x - player.motion.velocity.x, ball.velocity.z - player.motion.velocity.z)
-	return rel.length() <= _cfg("control_max_relative_speed", 12.0)
+	return rel.length() <= _cfg("control_max_relative_speed", 17.0)
 
 
-func _in_kick_reach(player: Player, ball: BallPhysics) -> bool:
-	if has_ball:
+## True when this player can kick now: it has the ball, or the loose ball is within reach.
+func _can_kick(player: Player, ctx: MatchContext) -> bool:
+	if ctx.possession.holder == player:
 		return true
+	if ctx.possession.holder != null:
+		return false
+	var ball := ctx.ball
 	if ball.position.y > _cfg("kick_max_ball_height", 1.0):
 		return false
-	var d := Vector2(ball.position.x - player.position.x, ball.position.z - player.position.z)
-	return d.length() <= _cfg("kick_reach", 1.1)
+	return player.flat_distance_to(ball.position) <= _cfg("kick_reach", 1.1)
 
 
 func _aim_direction(player: Player, intent: PlayerIntent) -> Vector3:

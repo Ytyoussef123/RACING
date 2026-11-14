@@ -4,12 +4,13 @@ extends Control
 ## Handles every finger itself (multi-touch) and draws everything in one pass.
 ## Layout numbers: data/config/controls.json.
 
-const BUTTON_IDS: Array[String] = ["shoot", "pass", "sprint"]
-const BUTTON_LABELS := {"shoot": "BTN_SHOOT", "pass": "BTN_PASS", "sprint": "BTN_SPRINT"}
+const BUTTON_IDS: Array[String] = ["shoot", "pass", "sprint", "switch"]
+const BUTTON_LABELS := {"shoot": "BTN_SHOOT", "pass": "BTN_PASS", "sprint": "BTN_SPRINT", "switch": "BTN_SWITCH"}
 const BUTTON_COLORS := {
 	"shoot": Color(1.0, 0.36, 0.1),
 	"pass": Color(0.13, 0.77, 0.85),
 	"sprint": Color(1.0, 0.84, 0.1),
+	"switch": Color(0.55, 0.55, 0.6),
 }
 
 var _joystick := FloatingStick.new()
@@ -40,6 +41,13 @@ func is_held(id: String) -> bool:
 func consume_press(id: String) -> bool:
 	var button: ActionButton = _buttons.get(id)
 	return button != null and button.consume_press()
+
+
+## Changes a button's text (a translation key), e.g. PASS becomes TACKLE on defense.
+func set_button_label(id: String, label_key: String) -> void:
+	var button: ActionButton = _buttons.get(id)
+	if button != null:
+		button.label_key = label_key
 
 
 func release_all() -> void:

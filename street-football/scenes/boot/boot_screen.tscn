@@ -43,12 +43,12 @@ grow_vertical = 2
 
 [node name="Column" type="VBoxContainer" parent="Center"]
 layout_mode = 2
-theme_override_constants/separation = 24
+theme_override_constants/separation = 18
 
 [node name="Title" type="Label" parent="Center/Column"]
 layout_mode = 2
 theme_override_colors/font_color = Color(1, 0.84, 0.1, 1)
-theme_override_font_sizes/font_size = 100
+theme_override_font_sizes/font_size = 86
 text = "TITLE"
 horizontal_alignment = 1
 
@@ -60,18 +60,33 @@ text = "BOOT_SUBTITLE"
 horizontal_alignment = 1
 
 [node name="PlayCageButton" type="Button" parent="Center/Column"]
-custom_minimum_size = Vector2(760, 130)
+custom_minimum_size = Vector2(760, 110)
 layout_mode = 2
 size_flags_horizontal = 4
 theme_override_font_sizes/font_size = 52
 text = "PLAY_CAGE"
 
 [node name="PlayOpenButton" type="Button" parent="Center/Column"]
-custom_minimum_size = Vector2(760, 130)
+custom_minimum_size = Vector2(760, 110)
 layout_mode = 2
 size_flags_horizontal = 4
 theme_override_font_sizes/font_size = 52
 text = "PLAY_OPEN"
+
+[node name="SetupRow" type="HBoxContainer" parent="Center/Column"]
+layout_mode = 2
+size_flags_horizontal = 4
+theme_override_constants/separation = 20
+
+[node name="FormationButton" type="Button" parent="Center/Column/SetupRow"]
+custom_minimum_size = Vector2(370, 100)
+layout_mode = 2
+theme_override_font_sizes/font_size = 36
+
+[node name="DifficultyButton" type="Button" parent="Center/Column/SetupRow"]
+custom_minimum_size = Vector2(370, 100)
+layout_mode = 2
+theme_override_font_sizes/font_size = 36
 
 [node name="LanguageButton" type="Button" parent="Center/Column"]
 custom_minimum_size = Vector2(760, 110)
