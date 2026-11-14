@@ -1,1 +1,8 @@
 node_modules/
+
+# Android: the game copied into the app at build time (android/prepare_assets.py), and Gradle output
+android/app/src/main/assets/
+android/.gradle/
+android/app/build/
+android/build/
+android/local.properties
