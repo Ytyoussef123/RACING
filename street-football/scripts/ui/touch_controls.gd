@@ -36,6 +36,11 @@ func get_move_vector() -> Vector2:
 	return _joystick.value()
 
 
+## True once after a double tap on the joystick.
+func consume_stick_double_tap() -> bool:
+	return _joystick.consume_double_tap()
+
+
 func is_held(id: String) -> bool:
 	var button: ActionButton = _buttons.get(id)
 	return button != null and button.is_held()
@@ -54,7 +59,7 @@ func set_defense_layout(defense: bool) -> void:
 
 
 func release_all() -> void:
-	_joystick.end()
+	_joystick.cancel()
 	for id in BUTTON_IDS:
 		(_buttons[id] as ActionButton).release()
 
@@ -83,7 +88,7 @@ func _input(event: InputEvent) -> void:
 
 func _finger_down(index: int, pos: Vector2) -> void:
 	if _joystick.finger < 0 and _joystick.zone.has_point(pos):
-		_joystick.begin(index, pos)
+		_joystick.begin(index, pos, _now())
 		return
 	for id in BUTTON_IDS:
 		var button: ActionButton = _buttons[id]
@@ -94,7 +99,7 @@ func _finger_down(index: int, pos: Vector2) -> void:
 
 func _finger_up(index: int) -> void:
 	if index == _joystick.finger:
-		_joystick.end()
+		_joystick.end(_now())
 	for id in BUTTON_IDS:
 		var button: ActionButton = _buttons[id]
 		if button.finger == index:
@@ -109,6 +114,9 @@ func _layout() -> void:
 	_joystick.radius = short_side * _num("joystick_radius", 0.13)
 	_joystick.dead_zone = _num("joystick_dead_zone", 0.12)
 	_joystick.rest_position = _screen_point("joystick_rest_position", Vector2(0.15, 0.72), s)
+	_joystick.double_tap_seconds = _num("double_tap_seconds", 0.3)
+	_joystick.tap_max_seconds = _num("tap_max_seconds", 0.25)
+	_joystick.double_tap_distance = short_side * _num("double_tap_distance", 0.15)
 	_hit_scale = _num("button_hit_scale", 1.25)
 	for id in BUTTON_IDS:
 		var button: ActionButton = _buttons[id]
@@ -123,6 +131,10 @@ func _draw() -> void:
 		var button: ActionButton = _buttons[id]
 		var font_size := int(button.radius * 0.38)
 		button.render(self, font, tr(button.label_key), font_size)
+
+
+func _now() -> float:
+	return Time.get_ticks_msec() / 1000.0
 
 
 func _num(key: String, fallback: float) -> float:

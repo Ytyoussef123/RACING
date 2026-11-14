@@ -78,6 +78,7 @@ func _physics_process(delta: float) -> void:
 		team.brain.update(delta, ctx, human_player)
 	var playing := flow.state == MatchFlow.State.PLAYING
 	for p in ctx.all_players:
+		DribbleAssist.adjust(p, ctx)
 		p.move(delta, ctx.court, ctx.possession.holder == p)
 	PlayerCollisions.resolve(ctx.all_players, ctx.court)
 	if playing:

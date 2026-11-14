@@ -22,6 +22,9 @@ func _ready() -> void:
 	_test_pass_assist_finds_teammate()
 	_test_receive_assist_meets_ball()
 	_test_through_pass_leads_receiver()
+	_test_touch_dribbling()
+	_test_steal_ball_knocked_ahead()
+	_test_shoulder_charge()
 	print("TESTS DONE: %d failure(s)" % _failures)
 	get_tree().quit(1 if _failures > 0 else 0)
 
@@ -256,6 +259,130 @@ func _test_through_pass_leads_receiver() -> void:
 	_check("through pass: speed within limits", speed >= 7.0 - 0.01 and speed <= 15.0 + 0.01, "speed=%.2f" % speed)
 	passer.queue_free()
 	receiver.queue_free()
+
+
+func _make_team(index: int, attack_sign: float) -> Team:
+	var team := Team.new()
+	team.index = index
+	team.attack_sign = attack_sign
+	team.tuning = AiTuning.for_difficulty("normal")
+	return team
+
+
+func _spawn(team: Team, pos: Vector3, facing: Vector3) -> Player:
+	var p: Player = PLAYER_SCENE.instantiate()
+	add_child(p)
+	p.team = team
+	team.players.append(p)
+	p.reset_to(pos, facing)
+	return p
+
+
+## Runs with the ball for 3 s; returns [kept the ball all along, max lead of the ball, touches].
+func _run_with_ball(sprint: bool) -> Array:
+	var team := _make_team(0, 1.0)
+	var player := _spawn(team, Vector3(-12.0, 0.0, 0.0), Vector3.RIGHT)
+	var ctx := MatchContext.new()
+	ctx.court = CourtData.load_court("cage_concrete")
+	ctx.ball = _new_ball(Vector3(-11.45, ball_radius(), 0.0), Vector3.ZERO)
+	ctx.possession.take(player, ctx.ball)
+	var kept := true
+	var max_lead := 0.0
+	var touches := 0
+	var last_speed := 0.0
+	for i in range(180):
+		var intent := PlayerIntent.new()
+		intent.move = Vector3.RIGHT
+		intent.sprint = sprint
+		player.intent = intent
+		DribbleAssist.adjust(player, ctx)
+		player.move(DT, ctx.court, ctx.possession.holder == player)
+		player.handling.update(DT, player, ctx)
+		ctx.ball.step(DT)
+		CourtBounds.resolve(ctx.ball, ctx.court)
+		if ctx.possession.holder != player:
+			kept = false
+			break
+		var speed := ctx.ball.horizontal_speed()
+		if speed > last_speed + 1.0:
+			touches += 1
+		last_speed = speed
+		max_lead = maxf(max_lead, ctx.ball.position.x - player.position.x)
+	player.queue_free()
+	return [kept, max_lead, touches]
+
+
+## Touch dribbling: the ball is knocked ahead and caught again; sprinting knocks it further.
+func _test_touch_dribbling() -> void:
+	var run := _run_with_ball(false)
+	var sprint := _run_with_ball(true)
+	_check("touch dribble: keeps the ball when running", bool(run[0]))
+	_check("touch dribble: several touches, ball goes ahead", int(run[2]) >= 2 and float(run[1]) > 0.6,
+		"touches=%d lead=%.2f" % [run[2], run[1]])
+	_check("touch dribble: keeps the ball when sprinting", bool(sprint[0]))
+	_check("touch dribble: sprint touches push the ball further", float(sprint[1]) > float(run[1]) + 0.3,
+		"run lead=%.2f sprint lead=%.2f" % [run[1], sprint[1]])
+
+
+## A ball knocked ahead of its dribbler can be stolen; a ball at his feet cannot.
+func _test_steal_ball_knocked_ahead() -> void:
+	var home := _make_team(0, 1.0)
+	var away := _make_team(1, -1.0)
+	var holder := _spawn(home, Vector3.ZERO, Vector3.RIGHT)
+	var defender := _spawn(away, Vector3(2.0, 0.0, 0.3), Vector3.LEFT)
+	var ctx := MatchContext.new()
+	ctx.court = CourtData.load_court("cage_concrete")
+	ctx.ball = _new_ball(Vector3(1.5, ball_radius(), 0.0), Vector3(1.0, 0.0, 0.0))
+	ctx.possession.take(holder, ctx.ball)
+	defender.intent = PlayerIntent.new()
+	defender.handling.update(DT, defender, ctx)
+	_check("steal: ball knocked ahead is taken by the closer opponent", ctx.possession.holder == defender)
+	ctx.ball.place(Vector3(0.5, ball_radius(), 0.0))
+	holder.handling.reset()
+	defender.handling.reset()
+	ctx.possession.take(holder, ctx.ball)
+	defender.reset_to(Vector3(1.0, 0.0, 0.3), Vector3.LEFT)
+	defender.handling.update(DT, defender, ctx)
+	_check("steal: ball at the dribbler's feet is safe", ctx.possession.holder == holder)
+	holder.queue_free()
+	defender.queue_free()
+
+
+## Shoulder charge: about 50 % wins with equal strength; out of reach does nothing to the ball.
+func _test_shoulder_charge() -> void:
+	var home := _make_team(0, 1.0)
+	var away := _make_team(1, -1.0)
+	var carrier := _spawn(away, Vector3.ZERO, Vector3.LEFT)
+	var charger := _spawn(home, Vector3(0.0, 0.0, 1.0), Vector3.LEFT)
+	var ctx := MatchContext.new()
+	ctx.court = CourtData.load_court("cage_concrete")
+	ctx.ball = _new_ball(Vector3(-0.55, ball_radius(), 0.0), Vector3.ZERO)
+	ctx.rng.seed = 7
+	var wins := 0
+	var trials := 200
+	for i in range(trials):
+		carrier.reset_to(Vector3.ZERO, Vector3.LEFT)
+		charger.reset_to(Vector3(0.0, 0.0, 1.0), Vector3.LEFT)
+		ctx.ball.place(Vector3(-0.55, ball_radius(), 0.0))
+		ctx.possession.reset(ctx.ball)
+		ctx.possession.take(carrier, ctx.ball)
+		ShoulderCharge.attempt(charger, ctx)
+		if ctx.possession.holder == null:
+			wins += 1
+	var rate := float(wins) / float(trials)
+	_check("shoulder charge: about half the duels won at equal strength", rate > 0.35 and rate < 0.65, "rate=%.2f" % rate)
+	carrier.reset_to(Vector3.ZERO, Vector3.LEFT)
+	charger.reset_to(Vector3(0.0, 0.0, 3.0), Vector3.LEFT)
+	ctx.possession.reset(ctx.ball)
+	ctx.possession.take(carrier, ctx.ball)
+	ShoulderCharge.attempt(charger, ctx)
+	_check("shoulder charge: out of reach keeps the ball with the carrier", ctx.possession.holder == carrier)
+	charger.strength = 80.0
+	carrier.strength = 40.0
+	_check("shoulder charge: the stronger player has more chance",
+		ShoulderCharge.success_chance(charger, carrier) > ShoulderCharge.success_chance(carrier, charger))
+	carrier.queue_free()
+	charger.queue_free()
 
 
 func ball_radius() -> float:

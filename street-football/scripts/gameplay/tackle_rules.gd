@@ -12,7 +12,7 @@ static func attempt(tackler: Player, ctx: MatchContext) -> bool:
 	if carrier == null or carrier.team == tackler.team:
 		return false
 	var in_reach := tackler.flat_distance_to(ball.position) <= _cfg("tackle_reach", 1.3)
-	if not in_reach or _is_protected(carrier, ctx):
+	if not in_reach or is_protected(carrier, ctx):
 		tackler.stun_timer = _cfg("tackle_whiff_stun", 0.35)
 		return false
 	var chance := _cfg("tackle_success", 0.55) + tackler.team.tuning.tackle_success_bonus
@@ -27,7 +27,7 @@ static func attempt(tackler: Player, ctx: MatchContext) -> bool:
 
 
 ## A keeper holding the ball inside his own goal area cannot be tackled.
-static func _is_protected(carrier: Player, ctx: MatchContext) -> bool:
+static func is_protected(carrier: Player, ctx: MatchContext) -> bool:
 	if not carrier.is_keeper:
 		return false
 	var court := ctx.court

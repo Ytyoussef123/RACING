@@ -4,7 +4,8 @@ extends RefCounted
 ## The four buttons change meaning with possession, like eFootball:
 ##   with the ball:     THROUGH (tap)    SHOOT (hold)   PASS (tap)     SPRINT (hold)
 ##   without the ball:  MATCH-UP (hold)  TACKLE (tap)   SWITCH (tap)   PRESS (hold)
-## Keyboard, same order: R, Space, E, Shift; WASD / arrows move; Q always switches.
+## Double-tap the joystick without the ball: shoulder charge.
+## Keyboard, same order: R, Space, E, Shift; WASD / arrows move; Q always switches; F shoulder.
 
 var _touch: TouchControls
 var _keys_down: Dictionary = {}
@@ -26,6 +27,8 @@ func read(attacking: bool) -> PlayerIntent:
 	var e_tap := _key_tapped(KEY_E)
 	var r_tap := _key_tapped(KEY_R)
 	var q_tap := _key_tapped(KEY_Q)
+	var f_tap := _key_tapped(KEY_F)
+	var double_tap := _touch.consume_stick_double_tap()
 	var shoot_tap := _touch.consume_press("shoot") or space_tap
 	var pass_tap := _touch.consume_press("pass") or e_tap
 	var through_tap := _touch.consume_press("through") or r_tap
@@ -49,6 +52,7 @@ func read(attacking: bool) -> PlayerIntent:
 		intent.switch_pressed = intent.switch_pressed or pass_tap
 		intent.press_held = sprint_hold
 		intent.match_up_held = through_hold
+		intent.shoulder_pressed = double_tap or f_tap
 	return intent
 
 

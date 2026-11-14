@@ -17,8 +17,10 @@ var is_keeper: bool = false
 var intent: PlayerIntent = PlayerIntent.new()
 var handling: BallHandling = BallHandling.new()
 var ai: AiPlayerState = AiPlayerState.new()
-## Seconds left slowed down after a missed tackle.
+## Seconds left slowed down after a missed tackle or a lost shoulder duel.
 var stun_timer: float = 0.0
+## Physical strength 0..99, used in shoulder duels. Same for everyone until Phase 4 player stats.
+var strength: float = 50.0
 
 var _stun_move_factor: float
 
@@ -32,6 +34,7 @@ func _ready() -> void:
 	radius = float(Config.get_value("player", "radius", MESH_RADIUS))
 	height = float(Config.get_value("player", "height", MESH_HEIGHT))
 	_stun_move_factor = float(Config.get_value("player", "stun_move_factor", 0.25))
+	strength = float(Config.get_value("player", "default_strength", 50.0))
 	_torso.scale = Vector3(radius / MESH_RADIUS, height / MESH_HEIGHT, radius / MESH_RADIUS)
 	_torso.position.y = height * 0.5
 	set_selected(false)

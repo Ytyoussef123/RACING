@@ -1,20 +1,24 @@
 class_name BallHandling
 extends RefCounted
-## What one player does with the ball: take control, dribble, shoot (hold to charge), pass,
-## through pass, tackle, and bounce the ball off the body.
-## A pass, through pass or shot asked a moment before the ball arrives is kept for
-## kick_buffer_seconds and played first-time when the ball comes within reach.
-## Numbers: data/config/player.json.
+## What one player does with the ball: take control (or steal a ball knocked too far ahead),
+## dribble (see Dribbling), shoot (hold to charge), pass, through pass, tackle, shoulder charge,
+## and bounce the ball off the body.
+## Kicks only happen with the ball within reach: a pass, through pass or shot asked when the ball
+## is a little away is kept (with its aim) and played as soon as the ball is reached: first-time
+## on an incoming ball, or at the next touch when dribbling. Numbers: data/config/player.json.
 
 var is_charging: bool = false
 ## 0..1 while the shoot button is held.
 var shot_charge: float = 0.0
+var dribbling: Dribbling = Dribbling.new()
 
 var _cooldown: float = 0.0
 var _tackle_cooldown: float = 0.0
+var _shoulder_cooldown: float = 0.0
 ## Kick waiting for the ball: "" (none), "pass", "through" or "shot".
 var _queued: String = ""
 var _queued_charge: float = 0.0
+var _queued_aim: Vector3 = Vector3.ZERO
 var _queue_timer: float = 0.0
 
 
@@ -23,67 +27,98 @@ func reset() -> void:
 	shot_charge = 0.0
 	_cooldown = 0.0
 	_tackle_cooldown = 0.0
+	_shoulder_cooldown = 0.0
 	_queued = ""
 	_queue_timer = 0.0
+	dribbling.reset()
 
 
-## Stops this player from taking the ball for a while (after a kick, or when tackled).
+## Stops this player from taking the ball for a while (after a kick, or when beaten).
 func block_control(seconds: float) -> void:
 	_cooldown = maxf(_cooldown, seconds)
 
 
+func has_queued_kick() -> bool:
+	return not _queued.is_empty()
+
+
 func update(delta: float, player: Player, ctx: MatchContext) -> void:
-	_cooldown = maxf(0.0, _cooldown - delta)
-	_tackle_cooldown = maxf(0.0, _tackle_cooldown - delta)
-	_queue_timer = maxf(0.0, _queue_timer - delta)
-	if _queue_timer <= 0.0:
-		_queued = ""
+	_tick_timers(delta)
 	var ball := ctx.ball
 	var possession := ctx.possession
 	var intent := player.intent
-	if possession.holder == null and _cooldown <= 0.0 and player.stun_timer <= 0.0 and _can_take(player, ball):
-		possession.take(player, ball)
-	if intent.pass_pressed:
-		_queue("pass", 0.0)
-	elif intent.through_pressed:
-		_queue("through", 0.0)
+	_try_take(player, ctx)
 	var aim := _aim_direction(player, intent)
-	if intent.tackle_pressed and possession.holder != player:
+	var has_ball := possession.holder == player
+	if intent.pass_pressed:
+		_queue("pass", 0.0, aim, has_ball)
+	elif intent.through_pressed:
+		_queue("through", 0.0, aim, has_ball)
+	if intent.shoulder_pressed and not has_ball:
+		if _shoulder_cooldown <= 0.0:
+			_shoulder_cooldown = _cfg("shoulder_cooldown", 1.0)
+			ShoulderCharge.attempt(player, ctx)
+	elif intent.tackle_pressed and not has_ball:
 		if _tackle_cooldown <= 0.0:
 			_tackle_cooldown = _cfg("tackle_cooldown", 0.8)
 			TackleRules.attempt(player, ctx)
 	elif not _queued.is_empty() and _can_kick(player, ctx):
-		_play_queued(player, ctx, aim)
+		_play_queued(player, ctx)
 	elif intent.shoot_held:
 		is_charging = true
 		shot_charge = minf(1.0, shot_charge + delta / maxf(0.01, _cfg("shot_charge_time", 0.9)))
 	elif is_charging:
 		if _can_kick(player, ctx):
 			_shoot(player, ctx, aim, shot_charge)
-		elif possession.holder == null:
-			_queue("shot", shot_charge)
+		elif possession.holder == null or possession.holder == player:
+			_queue("shot", shot_charge, aim, has_ball)
 		is_charging = false
 		shot_charge = 0.0
 	if possession.holder == player:
-		_dribble(player, ctx)
+		if not dribbling.update(player, ctx, delta, not _queued.is_empty(), is_charging):
+			possession.release(ball)
+			_cooldown = _cfg("kick_cooldown", 0.35)
 	elif possession.holder == null or possession.holder.team != player.team:
 		_bounce_off_body(player, ctx)
 
 
-func _queue(kind: String, charge: float) -> void:
+func _tick_timers(delta: float) -> void:
+	_cooldown = maxf(0.0, _cooldown - delta)
+	_tackle_cooldown = maxf(0.0, _tackle_cooldown - delta)
+	_shoulder_cooldown = maxf(0.0, _shoulder_cooldown - delta)
+	_queue_timer = maxf(0.0, _queue_timer - delta)
+	if _queue_timer <= 0.0:
+		_queued = ""
+
+
+## Takes a loose ball in control range, or steals one an opponent knocked too far ahead.
+func _try_take(player: Player, ctx: MatchContext) -> void:
+	if _cooldown > 0.0 or player.stun_timer > 0.0 or not _can_take(player, ctx.ball):
+		return
+	var holder := ctx.possession.holder
+	if holder == null:
+		ctx.possession.take(player, ctx.ball)
+	elif Dribbling.can_steal(player, ctx):
+		holder.handling.block_control(_cfg("dribble_steal_cooldown", 0.4))
+		holder.handling.dribbling.reset()
+		ctx.possession.take(player, ctx.ball)
+
+
+func _queue(kind: String, charge: float, aim: Vector3, dribbling_now: bool) -> void:
 	_queued = kind
 	_queued_charge = charge
-	_queue_timer = _cfg("kick_buffer_seconds", 0.5)
+	_queued_aim = aim
+	_queue_timer = _cfg("kick_buffer_dribble_seconds", 1.2) if dribbling_now else _cfg("kick_buffer_seconds", 0.5)
 
 
-func _play_queued(player: Player, ctx: MatchContext, aim: Vector3) -> void:
+func _play_queued(player: Player, ctx: MatchContext) -> void:
 	match _queued:
 		"pass":
-			_pass(player, ctx, aim)
+			_pass(player, ctx, _queued_aim)
 		"through":
-			_through_pass(player, ctx, aim)
+			_through_pass(player, ctx, _queued_aim)
 		"shot":
-			_shoot(player, ctx, aim, _queued_charge)
+			_shoot(player, ctx, _queued_aim, _queued_charge)
 	_queued = ""
 	_queue_timer = 0.0
 	is_charging = false
@@ -120,21 +155,8 @@ func _shoot(player: Player, ctx: MatchContext, aim: Vector3, charge: float) -> v
 func _kick(player: Player, ctx: MatchContext, kick_velocity: Vector3, spin: float, target: Player) -> void:
 	ctx.possession.kicked(player, target, ctx.ball)
 	ctx.ball.kick(kick_velocity, spin)
+	dribbling.reset()
 	_cooldown = _cfg("kick_cooldown", 0.35)
-
-
-func _dribble(player: Player, ctx: MatchContext) -> void:
-	var ball := ctx.ball
-	var dist := _cfg("dribble_sprint_distance", 0.9) if player.intent.sprint else _cfg("dribble_distance", 0.55)
-	var target := player.position + player.motion.facing * dist
-	var to_target := Vector3(target.x - ball.position.x, 0.0, target.z - ball.position.z)
-	if to_target.length() > _cfg("lose_ball_distance", 1.4):
-		ctx.possession.release(ball)
-		_cooldown = _cfg("kick_cooldown", 0.35)
-		return
-	var v := player.motion.velocity + to_target * _cfg("dribble_stiffness", 14.0)
-	ball.velocity.x = v.x
-	ball.velocity.z = v.z
 
 
 func _bounce_off_body(player: Player, ctx: MatchContext) -> void:
@@ -167,11 +189,10 @@ func _can_take(player: Player, ball: BallPhysics) -> bool:
 	return rel.length() <= _cfg("control_max_relative_speed", 17.0)
 
 
-## True when this player can kick now: it has the ball, or the loose ball is within reach.
+## True when this player can kick now: the ball (his own, or loose) is within reach.
 func _can_kick(player: Player, ctx: MatchContext) -> bool:
-	if ctx.possession.holder == player:
-		return true
-	if ctx.possession.holder != null:
+	var holder := ctx.possession.holder
+	if holder != null and holder != player:
 		return false
 	var ball := ctx.ball
 	if ball.position.y > _cfg("kick_max_ball_height", 1.0):

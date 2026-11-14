@@ -29,5 +29,8 @@
 		0.79,
 		0.56
 	],
-	"through_radius": 0.085
+	"through_radius": 0.085,
+	"double_tap_seconds": 0.3,
+	"tap_max_seconds": 0.25,
+	"double_tap_distance": 0.15
 }

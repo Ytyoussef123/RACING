@@ -22,3 +22,7 @@ var match_up_held: bool = false
 ## Direction for kicks when it differs from `move` (receive assist moves to the ball while the
 ## joystick keeps aiming). ZERO means: use `move`, or the facing direction.
 var aim: Vector3 = Vector3.ZERO
+## True only on the frame the human double-taps the joystick on defense: shoulder charge.
+var shoulder_pressed: bool = false
+## Set by DribbleAssist: the dribbler goes to stop the ball (no touch forward).
+var trap: bool = false

@@ -22,6 +22,7 @@ static func apply(player: Player, intent: PlayerIntent, ctx: MatchContext) -> Pl
 	assisted.match_up_held = true
 	assisted.tackle_pressed = intent.tackle_pressed
 	assisted.switch_pressed = intent.switch_pressed
+	assisted.shoulder_pressed = intent.shoulder_pressed
 	var to := Steering.flat(target - player.position)
 	var d := to.length()
 	if d > 0.1:
