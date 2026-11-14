@@ -19,6 +19,20 @@ The player-motion work is an extra feature branch between Phase 7 and Phase 8 (`
 
 ## Log
 
+### 2026-11-14 — Feature files (docs/features/)
+
+#### Why
+
+- The user asked that every change to every feature be saved in a file, so that before changing a feature the last changes are found quickly and nothing is rebuilt or broken.
+
+#### Done
+
+- `docs/features/` with one file per feature (17 files, index and template in `docs/features/README.md`): what it does now, where it lives (code, numbers, tests), history newest first (date, what, why, branch, commit), "Do not undo" (decisions and lessons), how to check after a change.
+- Written from this journal and the git history; open points checked against the code and git.
+- New rule 11 in `CLAUDE.md`: read the feature's file before changing it, add the change to its history after.
+- The `docs-writer` agent now also owns these files.
+- Branch `feature/broadcast-camera`.
+
 ### 2026-11-14 — Camera views: Close, Normal, Wide
 
 #### Why
