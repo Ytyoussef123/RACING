@@ -7,24 +7,24 @@ Street / neighborhood football for your phone: **5v5 (1 goalkeeper + 4 outfield 
 
 ## Status
 
-**Phase 6 (skills and polish) is built** (branch `feature/polish`, created from `feature/menus`, Phase 5, which comes from `feature/player-stats`, Phase 4, which comes from `feature/five-v-five`, Phase 3). Phases 3 to 6 are waiting for the phone test; nothing is merged into `main` yet. Phase 2 (core match) is done and tested on the phone. The match is a 3D low-poly court (36 x 22 m, small goals), 5v5 with AI opponents, a score and a 3:00 clock. See [JOURNAL.md](JOURNAL.md) for the phases and the log.
+**Phase 7 (progression) is built** (version 0.7.0, version code 7; branch `feature/progression`, created from `feature/polish`, Phase 6, which comes from `feature/menus`, Phase 5, then `feature/player-stats`, Phase 4, then `feature/five-v-five`, Phase 3). Phases 3 to 7 are waiting for the phone test; nothing is merged into `main` yet. Phase 2 (core match) is done and tested on the phone. The match is a 3D low-poly court (36 x 22 m, small goals), 5v5 with AI opponents, a score and a 3:00 clock. See [JOURNAL.md](JOURNAL.md) for the phases and the log.
 
 ## Players and crews
 
-- 30 fictional players (`data/players/*.json`) in 6 fictional street crews of 5 (`data/teams/*.json`): Concrete Kings (your crew for now), Rooftop Rebels, Harbor Hounds, Neon Nomads, Parking Lot Pirates, Sandstorm Strikers.
+- 47 fictional players (`data/players/*.json`): 30 in 6 fictional street crews of 5 (`data/teams/*.json`) and 17 free agents (players in no crew: your 7 rookies and the 10 shop players). Crews: Concrete Kings, Rooftop Rebels, Harbor Hounds, Neon Nomads, Parking Lot Pirates, Sandstorm Strikers.
 - Each player has a name, nationality, age, height, preferred foot, weak foot, positions, playstyle, skill-move stars, special skills, a look and 25 attributes (0-99).
 - The attributes drive gameplay: speed, dribbling, passing, shooting, tackling, strength, stamina, goalkeeper skills and more. Players are placed in the formation slots where their overall rating is best.
 - To add or edit players and crews (field names, attribute effects, ratings), see [docs/player-data.md](docs/player-data.md). No code change is needed.
 
 ## How to play
 
-Main menu (`scenes/menus/main_menu.tscn`, the start scene): QUICK MATCH, MY CREW, SETTINGS.
+Main menu (`scenes/menus/main_menu.tscn`, the start scene): QUICK MATCH, MY CREW, SHOP, SETTINGS. Your coins are shown on it.
 
 - **Quick match**, in 3 steps:
-  1. Choose the crews: yours and the opponent, changed with < and >. Team cards show kit colors, team rating and the 5 players; tap a player to open his card. The away crew wears its alternate kit when the kits clash.
+  1. Choose the crews: yours (My Crew by default; the 6 street crews are also available as exhibition teams) and the opponent (a street crew), changed with < and >. Team cards show kit colors, team rating and the 5 players; tap a player to open his card. The away crew wears its alternate kit when the kits clash.
   2. Formation: 2-1-1, 1-2-1, 1-1-2, 2-2 or 1-1-1-1, with a mini court showing your crew in place.
-  3. Court and rules: Concrete Cage (walls, the ball bounces off the boards) or Open Lot (no walls; after the ball goes out: KICK-IN, CORNER or GOAL KICK for the team that did not touch it last), difficulty Easy / Normal / Hard, match length 3 / 4 / 5 minutes, then PLAY.
-- **My crew:** the 5 players of your crew. The player card shows name, overall, nationality, age, height, foot, positions, playstyle, weak foot, skill moves, special skills and all 25 attributes as colored bars (cyan 85+, green 75+, yellow 60+, red below).
+  3. Court and rules: Concrete Cage (walls, the ball bounces off the boards), Open Lot (no walls; after the ball goes out: KICK-IN, CORNER or GOAL KICK for the team that did not touch it last), or the unlocked Rooftop Cage and Beach Court (locked courts are greyed with their price), difficulty Easy / Normal / Hard, match length 3 / 4 / 5 minutes, then PLAY.
+- **My crew:** your own squad (see Progression below). The player card shows name, overall, nationality, age, height, foot, positions, playstyle, weak foot, skill moves, special skills and all 25 attributes as colored bars (cyan 85+, green 75+, yellow 60+, red below).
 - **Settings** (saved on the phone): language English / Français, show FPS, touch button size (small / normal / large), Sound on/off, Music on/off. Music plays in the menus, not in the match by default.
 - **Results** after the final whistle: YOU WIN / DRAW / YOU LOSE, score, goals (time, crew, scorer, own goals marked) and match stats (shots, saves, passes completed, balls won, possession). REMATCH or MAIN MENU.
 - **Android back button:** quits on the main menu, goes back on other screens, pauses or resumes in a match.
@@ -82,6 +82,15 @@ Keyboard (PC):
 - F: shoulder charge
 - C: skill move
 
+## Progression
+
+- **My Crew:** your own squad, in the MY CREW screen. It starts with 7 new fictional rookies (overall 65-75, weaker than the street crews, which average about 80): 5 starters (with the keeper) and 2 on the bench. Tap two players to swap them; INFO opens the player card; the LV button upgrades a player with coins. A warning shows if no keeper starts. Coins and your match record are shown.
+- **Coins:** earned after every match: win 150, draw 80, loss 50, plus 15 per goal scored, times 0.8 on Easy, 1.0 on Normal, 1.4 on Hard (`data/config/progression.json`). The results screen shows "+N coins (total M)". You start with 500.
+- **Shop (SHOP):** 10 free agents (overall 74-89) priced 400 + 60 per overall point above 70 (640 to 1540); signed players join the bench. Two courts to unlock: Rooftop Cage (32 x 20 m, walls, neon; 600 coins) and Beach Court (34 x 20 m, no walls, sand: the ball rolls slower and bounces less; 900 coins).
+- **Upgrades:** levels 1 to 5, costing 250, 450, 700 and 1000 coins; each level adds 2 to every attribute, so it really changes play.
+- **Save on the phone:** `user://savegame.json` (coins, signed players and levels, My Crew, formation, unlocked courts, match record). It is written through a temporary file; a damaged save is kept as `savegame.bad.json` and a new save starts. Settings are in `user://settings.cfg`.
+- Street crews are never sold, so you never meet your own players in the other team.
+
 ## Tech
 
 - Godot 4.7.2, GDScript
@@ -110,7 +119,7 @@ data/      config, players, courts, formations (JSON)
 locale/    strings.csv (en, fr)
 assets/    art, audio, fonts (free/original only)
 tools/     helper scripts, e.g. generate_audio.py (Python + numpy) that generates assets/audio/*.wav
-tests/     run by CI, excluded from the APK: physics_smoke_test, stats_test, ui_flow_test, match_sim_test (headless) and screenshot_tour (rendered screenshots)
+tests/     run by CI, excluded from the APK: physics_smoke_test, stats_test, progression_test, ui_flow_test, match_sim_test (headless) and screenshot_tour (rendered screenshots)
 docs/      design notes, Android export guide
 ```
 

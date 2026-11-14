@@ -1,7 +1,7 @@
 extends MenuScreen
 ## Main menu: quick match, my crew, shop, settings, and the coins. Android back quits the app here.
 
-const VERSION_TEXT := "v0.5"
+const VERSION_TEXT := "v0.7"
 
 
 func _ready() -> void:

@@ -35,6 +35,13 @@ Attributes:
 (`kit`, `keeper`, and `alt_kit` / `alt_keeper` used when the kits clash), and `players`: five
 entries `{"id": "<player id>", "number": <shirt number>}`, exactly one of them a goalkeeper.
 
+## Free agents
+
+A player whose id is in no crew file is a free agent (`Roster.free_agent_ids`). Free agents are
+your 7 starting rookies (overall 65-75) and the shop players (overall 74-89). Add a player file and
+leave him out of every crew to make him a free agent. Shop price = 400 + 60 per overall point above
+70 (`data/config/progression.json`). Crew players are never sold, so they never appear in your squad.
+
 ## How attributes change the game: `data/config/stat_effects.json`
 
 Each effect maps one attribute linearly from `low` (at 40) to `high` (at 99), clamped.

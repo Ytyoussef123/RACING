@@ -23,7 +23,7 @@ street-football/
   project.godot, export_presets.cfg, icon.svg
   scenes/        .tscn files: menus/, match/, player/, ball/, ui/
   scripts/
-    core/        autoloads: Config, FrameRate, Roster, MatchSetup, UiTheme, Screens, Settings, Sfx
+    core/        autoloads: Config, FrameRate, Roster, SaveGame, MatchSetup, UiTheme, Screens, Settings, Sfx
     gameplay/    match rules, score, timer, kick-off
     physics/     ball and player movement
     ai/          team AI, goalkeeper AI
@@ -31,7 +31,8 @@ street-football/
     ui/          menu screens (MenuScreen base, UiBuild helpers), cards, HUD, touch controls
   data/
     config/      every tuning number (JSON), incl. stat_effects.json and ratings.json
-    players/     one JSON file per fictional player (format: docs/player-data.md)
+    players/     one JSON file per fictional player (format: docs/player-data.md); players in no crew
+                 are free agents (My Crew's rookies and the shop)
     teams/       one JSON file per fictional crew (5 players, colors)
     courts/      one JSON file per court
     formations/  one JSON file per formation
@@ -52,6 +53,10 @@ Look is checked, not guessed: CI renders every screen at 2400x1080 (tests/screen
 and prints them into the log; `../.github/scripts/decode_screenshots.py <log> <folder>` turns them
 back into images. Look at them after any UI change. Menu layouts are built in code (UiBuild) on top
 of a minimal .tscn per screen; all colors and sizes come from data/config/ui.json.
+
+Progress lives in SaveGame (user://savegame.json, versioned, written through a temporary file).
+Any change to its format must bump progression.json -> save_version and keep old saves loading.
+Opponent crews never contain players the user can own (only free agents are sold).
 
 Balance is measured, not guessed: the CI AI-match test plays fixed-seed matches and prints shots, saves
 and goals per match (`MATCH BALANCE`). Check it after any gameplay change.

@@ -12,10 +12,48 @@ A dated log, newest entry first: what was done, what was decided and why, and wh
 | 4 | Player stats: data files, attributes affect gameplay, 30 fictional players | Done, waiting for phone test |
 | 5 | Menus and UI: main menu, team/formation, court selection, results, translations | Done, waiting for phone test |
 | 6 | Skills and polish: skill moves, animations, sounds, music, effects, wall bounces | Done, waiting for phone test |
-| 7 | Progression: coins, unlocks, upgrades, save system | Not started |
+| 7 | Progression: coins, unlocks, upgrades, save system | Done, waiting for phone test |
 | 8 | Release build: optimized APK, full file review | Not started |
 
 ## Log
+
+### 2026-11-14 — Phase 7: progression
+
+#### Done
+
+- Branch `feature/progression`, created from `feature/polish` (Phase 6) → `feature/menus` (5) → `feature/player-stats` (4) → `feature/five-v-five` (3). Phases 3-7 all wait for the phone test; nothing is merged into `main` yet. Version 0.7.0 (version code 7).
+- Save (`SaveGame` autoload, `scripts/core/save_game.gd`): `user://savegame.json`, versioned (`save_version` 1). Holds coins, signed players and their levels, My Crew (5 starters, the rest on the bench, formation), unlocked courts and the match record (played, wins, draws, losses, goals). Writes go through a temporary file. A damaged save is kept as `savegame.bad.json` and a new save starts.
+- My Crew: 7 new fictional rookies (free agents, overall 65-75, weaker than the crews, which average about 80). Starters: keeper Bruno Sallestra, Ilyes Benzerrak, Arjun Malhovar, Leon Achterbosch, Moussa Kanderé. Bench: Tomás Velarrubia, Rayan Ouaddi. In Quick match My Crew is the default home side; the 6 street crews stay available as exhibition teams and as opponents. `my_crew` is a team built in code by `SaveGame` (orange kit, short name YOU) and can never be an opponent.
+- Squad builder (MY CREW screen): starters and bench lists; tap two players to swap; INFO opens the player card; the LV button upgrades with coins; a warning shows if no keeper starts. Coins and the match record are shown.
+- Coins after every match (`data/config/progression.json`): win 150, draw 80, loss 50, plus 15 per goal scored, times 0.8 Easy, 1.0 Normal, 1.4 Hard. Results screen shows "+N coins (total M)". Starting coins 500. Coins shown on the main menu.
+- Shop (new SHOP button): 10 fictional free agents (overall 74-89, e.g. Bayo Ruiz-Okun, Kaito Shimazu, Diego Fuenmayorte) priced 400 + 60 per overall point above 70 (640 to 1540). Two new courts to unlock: Rooftop Cage (32 x 20 m, walls, neon colors; 600 coins) and Beach Court (34 x 20 m, no walls, sand; 900 coins). Locked courts are greyed with their price on the court screen. Signed players join the bench.
+- Upgrades: levels 1-5, costs 250, 450, 700, 1000; +2 to every attribute per level, applied through the stat sheet, so gameplay really changes.
+- Court surfaces: courts have `ball_friction_mult` and `ball_bounce_mult` (sand 1.9 / 0.7, rooftop 0.9 / 1.05). The ball prediction copy keeps the surface.
+- Free agents are players in no crew (`Roster.free_agent_ids`). Total roster: 47 fictional players (30 in crews + 17 free agents). Documented in `docs/player-data.md`.
+
+#### Decisions (and why)
+
+- **Crew players are never sold:** you never meet your own players in the other team.
+- **My Crew starts weaker than the street crews (65-75 vs about 80):** gives a reason to earn coins, sign players and upgrade.
+- **Upgrades add to attributes through the stat sheet:** levels change real gameplay with no special-case code.
+- **Writes through a temporary file, damaged save kept as `savegame.bad.json`:** a crash or bad file never destroys progress silently.
+- **`my_crew` built in code from the save, never an opponent:** it changes as you sign and upgrade players, and you never play against yourself. The AI match test uses two fixed crews instead, so the balance numbers stay comparable.
+- **Sand slows the ball and rooftop is slightly faster:** courts feel different, and the numbers sit in court data.
+
+#### Checked
+
+- New progression suite (`tests/progression_test.tscn`) in CI: new save, rewards (3-1 win on Normal = 195), shop (too expensive, buying, no double buy, crew players not for sale, price grows with overall), upgrades (cost, attribute +2, max level, reset on new save), squad swaps, court unlock, save and load round trip with level bonuses, damaged save, sand surface (ball rolls about half as far), My Crew team (5 starters, keeper wears 1, never an opponent).
+- Menu tests: shop button, squad swap and upgrade, buying a player and a court.
+- 221 test checks pass in total.
+- AI balance unchanged: 3.33 goals per 150 s (the AI match test uses two fixed crews, not My Crew).
+- CI screenshots reviewed: main menu with coins and SHOP, My Crew screen, shop, locked courts.
+- Not yet tested on the phone.
+
+#### Next
+
+- The user's phone tests of Phases 3-7 and their remarks.
+- Then merges into `main`.
+- Then Phase 8: release build. It needs a release keystore from the user, kept as a GitHub secret. A full read-through of all released files comes before release, then an optimized APK.
 
 ### 2026-11-14 — Phase 6: skills and polish
 
