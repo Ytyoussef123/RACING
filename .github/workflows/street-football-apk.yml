@@ -81,8 +81,8 @@ jobs:
 
       - name: AI vs AI match test (headless)
         run: |
-          godot --headless --fixed-fps 60 --path "$PROJECT_DIR" res://tests/match_sim_test.tscn --quit-after 30000 2>&1 | tee match_test.log
-          grep -E "MATCH RESULT|TEST (PASS|FAIL)" match_test.log || true
+          godot --headless --fixed-fps 60 --path "$PROJECT_DIR" res://tests/match_sim_test.tscn --quit-after 90000 2>&1 | tee match_test.log
+          grep -E "MATCH RESULT|MATCH BALANCE|TEST (PASS|FAIL)" match_test.log || true
           if ! grep -q "MATCH TESTS DONE: 0 failure" match_test.log; then
             echo "::error::AI match test failed or did not finish (see above)."
             awk '/SCRIPT ERROR|ERROR:/ && !seen[$0]++' match_test.log | head -30

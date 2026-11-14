@@ -10,6 +10,8 @@ var away_team_id: String = ""
 ## Tests only: both teams are AI, the match length is overridden, and full time does not leave the scene.
 var test_mode: bool = false
 var test_match_seconds: float = 0.0
+## Tests only: fixed random seed so a test match always plays out the same way (0 = random).
+var test_seed: int = 0
 
 
 func get_court_id() -> String:

@@ -29,7 +29,10 @@ var _frame: int = 0
 
 
 func _ready() -> void:
-	ctx.rng.randomize()
+	if MatchSetup.test_mode and MatchSetup.test_seed != 0:
+		ctx.rng.seed = MatchSetup.test_seed
+	else:
+		ctx.rng.randomize()
 	ctx.court = CourtData.load_court(MatchSetup.get_court_id())
 	ctx.ball = _ball.physics
 	_builder.build(ctx.court)
