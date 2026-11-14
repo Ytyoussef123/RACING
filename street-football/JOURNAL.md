@@ -10,12 +10,46 @@ A dated log, newest entry first: what was done, what was decided and why, and wh
 | 2 | Core match: court, ball physics, one controllable player, touch controls, shooting | Done, tested on phone (2026-11-14) |
 | 3 | 5v5: teams, goalkeepers, formations, basic AI, score, timer | Done, waiting for phone test |
 | 4 | Player stats: data files, attributes affect gameplay, 30 fictional players | Done, waiting for phone test |
-| 5 | Menus and UI: main menu, team/formation, court selection, results, translations | Not started |
+| 5 | Menus and UI: main menu, team/formation, court selection, results, translations | Done, waiting for phone test |
 | 6 | Skills and polish: skill moves, animations, sounds, music, effects, wall bounces | Not started |
 | 7 | Progression: coins, unlocks, upgrades, save system | Not started |
 | 8 | Release build: optimized APK, full file review | Not started |
 
 ## Log
+
+### 2026-11-14 — Phase 5: menus and UI
+
+#### Done
+
+- Branch `feature/menus`, created from `feature/player-stats` (Phase 4), which comes from `feature/five-v-five` (Phase 3). The user asked to keep working while they cannot test; Phases 3, 4 and 5 all wait for the phone test. Nothing is merged into `main` yet.
+- Main menu (`scenes/menus/main_menu.tscn`, now the start scene; the old Phase 1-4 start screen is removed): QUICK MATCH, MY CREW, SETTINGS, a big tilted "5v5" tag, version and device info. Android back button (`quit_on_go_back` disabled): quits on the main menu, goes back on other screens, pauses/resumes in the match.
+- Quick match flow: (1) choose the crews, yours and the opponent with < and >, shown as team cards (kit colors, team rating = average overall, 5 players with number, name, position, overall); tap a player to open his card. (2) Formation: 5 formation chips and a mini court with your crew placed by `SlotAssigner`. (3) Court and rules: Concrete Cage (walls) or Open Lot (no walls) with size, difficulty Easy/Normal/Hard, match length 3/4/5 minutes, then PLAY.
+- Results screen: YOU WIN / DRAW / YOU LOSE, score with crew names and colors, goals (time, crew, scorer, own goal marked), match stats (shots, saves, passes completed, balls won, possession %), REMATCH and MAIN MENU. Goal scorers and times are now recorded in the match.
+- My crew screen and player card overlay: name, overall, nationality, age, height, foot, positions, playstyle, weak foot x/4, skill moves x/5, special skills, and the 25 attributes in 6 groups as colored bars (cyan 85+, green 75+, yellow 60+, red below).
+- Settings (saved in `user://settings.cfg`): language English/Français, show FPS (counter on every screen), touch button size small/normal/large.
+- In-match pause: PAUSE button top-left (replaces MENU) opens RESUME, FORMATION, QUIT MATCH.
+- Street-style theme from `data/config/ui.json` (`UiTheme` autoload): dark buttons with an orange tape stripe, orange main action buttons, cyan selection chips, rounded cards, drawn asphalt background with diagonal tape stripes.
+- Code: autoloads `UiTheme`, `Screens` (navigation by screen id, scene paths in `ui.json`) and `Settings`; `MenuScreen` base class and `UiBuild` helpers build layouts in code on a minimal .tscn per screen; components `TeamCard`, `PlayerCard`, `FormationPreview`, `StatBar`, `PauseMenu`.
+- About 90 new texts in English and French (menus, results, card, 25 attribute names, French positions G/DÉF/MIL/AIL/ATT) in `locale/strings.csv`.
+- New review tool: CI renders every screen with a virtual display (Xvfb + Mesa OpenGL) at 2400x1080 (a 20:9 phone) via `tests/screenshot_tour.gd` and prints them in the log; `.github/scripts/decode_screenshots.py` turns them back into images.
+
+#### Decisions (and why)
+
+- **Theme merged into Godot's default theme:** the first CI screenshots showed the theme missing (tiny default buttons) on the match HUD and pause menu, because CanvasLayers stop theme inheritance. Merging into the default theme reaches them too. Fixed.
+- **Layouts built in code on a minimal .tscn per screen, colors and sizes in `ui.json`:** keeps files small and every number tunable (project rules), and lets the shared theme and helpers serve all screens.
+- **Screenshots in CI instead of guessing the look:** Godot cannot run in the cloud session and the user cannot test right now, so the look is reviewed from images rendered in CI at phone resolution.
+
+#### Checked
+
+- New menu flow suite (`tests/ui_flow_test.tscn`) in CI: navigation of every screen, choices stored (crews never the same, formation, court, difficulty, match length), results, player card opens, settings (language, FPS, button size), every translation key has English and French. 137 test checks pass.
+- Balance unchanged: 3.67 goals per 150 s AI match.
+- Screens reviewed on the CI screenshots in English and French.
+
+#### Next
+
+- The user's phone tests of Phases 3-5 and their remarks.
+- Then merges into `main`.
+- Then Phase 6 (skills and polish).
 
 ### 2026-11-14 — Phase 4: player stats
 

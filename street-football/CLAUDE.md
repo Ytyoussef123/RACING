@@ -21,14 +21,14 @@ This project lives in `street-football/`. The rest of the repository is another 
 ```
 street-football/
   project.godot, export_presets.cfg, icon.svg
-  scenes/        .tscn files: boot/, match/, menus/, court/, player/, ball/, ui/
+  scenes/        .tscn files: menus/, match/, player/, ball/, ui/
   scripts/
-    core/        autoloads: Config, FrameRate, Roster, MatchSetup (later: SaveSystem)
+    core/        autoloads: Config, FrameRate, Roster, MatchSetup, UiTheme, Screens, Settings
     gameplay/    match rules, score, timer, kick-off
     physics/     ball and player movement
     ai/          team AI, goalkeeper AI
     data/        loaders for players, teams, courts, formations; Ratings, StatEffects
-    ui/          screens, HUD, touch controls
+    ui/          menu screens (MenuScreen base, UiBuild helpers), cards, HUD, touch controls
   data/
     config/      every tuning number (JSON), incl. stat_effects.json and ratings.json
     players/     one JSON file per fictional player (format: docs/player-data.md)
@@ -46,6 +46,11 @@ Every controller (human now, AI later) produces a `PlayerIntent`; players never 
 
 Player attributes only reach gameplay through the stat sheet: `Player.stat(effect, fallback)` with the
 effect defined in `data/config/stat_effects.json` (the fallback is the neutral value for test players).
+
+Look is checked, not guessed: CI renders every screen at 2400x1080 (tests/screenshot_tour.gd)
+and prints them into the log; `../.github/scripts/decode_screenshots.py <log> <folder>` turns them
+back into images. Look at them after any UI change. Menu layouts are built in code (UiBuild) on top
+of a minimal .tscn per screen; all colors and sizes come from data/config/ui.json.
 
 Balance is measured, not guessed: the CI AI-match test plays fixed-seed matches and prints shots, saves
 and goals per match (`MATCH BALANCE`). Check it after any gameplay change.

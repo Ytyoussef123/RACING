@@ -7,7 +7,7 @@ Street / neighborhood football for your phone: **5v5 (1 goalkeeper + 4 outfield 
 
 ## Status
 
-**Phase 4 (player stats) is built** (branch `feature/player-stats`, created from `feature/five-v-five`). It waits for the phone test together with Phase 3 (5v5); nothing is merged into `main` yet. Phase 2 (core match) is done and tested on the phone. The match is a 3D low-poly court (36 x 22 m, small goals), 5v5 with AI opponents, a score and a 3:00 clock. See [JOURNAL.md](JOURNAL.md) for the phases and the log.
+**Phase 5 (menus and UI) is built** (branch `feature/menus`, created from `feature/player-stats`, Phase 4, which comes from `feature/five-v-five`, Phase 3). Phases 3, 4 and 5 are waiting for the phone test; nothing is merged into `main` yet. Phase 2 (core match) is done and tested on the phone. The match is a 3D low-poly court (36 x 22 m, small goals), 5v5 with AI opponents, a score and a 3:00 clock. See [JOURNAL.md](JOURNAL.md) for the phases and the log.
 
 ## Players and crews
 
@@ -18,22 +18,24 @@ Street / neighborhood football for your phone: **5v5 (1 goalkeeper + 4 outfield 
 
 ## How to play
 
-Start screen:
+Main menu (`scenes/menus/main_menu.tscn`, the start scene): QUICK MATCH, MY CREW, SETTINGS.
 
-- **Formation:** cycles 2-1-1, 1-2-1, 1-1-2, 2-2, 1-1-1-1.
-- **Difficulty:** Easy / Normal / Hard.
-- **Play — Concrete Cage:** walls on, the ball bounces off the boards.
-- **Play — Open Lot:** no walls. After the ball goes out: KICK-IN, CORNER or GOAL KICK for the team that did not touch it last.
-- **Opponent:** cycles the 5 other crews. The away crew wears its alternate kit when the kits clash.
-- Language button (English / French).
+- **Quick match**, in 3 steps:
+  1. Choose the crews: yours and the opponent, changed with < and >. Team cards show kit colors, team rating and the 5 players; tap a player to open his card. The away crew wears its alternate kit when the kits clash.
+  2. Formation: 2-1-1, 1-2-1, 1-1-2, 2-2 or 1-1-1-1, with a mini court showing your crew in place.
+  3. Court and rules: Concrete Cage (walls, the ball bounces off the boards) or Open Lot (no walls; after the ball goes out: KICK-IN, CORNER or GOAL KICK for the team that did not touch it last), difficulty Easy / Normal / Hard, match length 3 / 4 / 5 minutes, then PLAY.
+- **My crew:** the 5 players of your crew. The player card shows name, overall, nationality, age, height, foot, positions, playstyle, weak foot, skill moves, special skills and all 25 attributes as colored bars (cyan 85+, green 75+, yellow 60+, red below).
+- **Settings** (saved on the phone): language English / Français, show FPS, touch button size (small / normal / large).
+- **Results** after the final whistle: YOU WIN / DRAW / YOU LOSE, score, goals (time, crew, scorer, own goals marked) and match stats (shots, saves, passes completed, balls won, possession). REMATCH or MAIN MENU.
+- **Android back button:** quits on the main menu, goes back on other screens, pauses or resumes in a match.
 
 Match:
 
 - Crew short names are shown next to the score. A name tag above your player shows "number  name  overall" with a stamina bar (green, orange, red). Sprinting drains stamina; when it is low, top speed drops.
 
 - Your team is orange (keeper yellow) and attacks to the right. The AI team is cyan (keeper purple, formation 1-2-1).
-- Top: score and 3:00 clock, court name under it. MENU (top-left) returns to the start screen. The formation button (top-right) changes your formation during the match.
-- The team that conceded kicks off. At FULL TIME the score is shown, then the start screen returns after 4 s.
+- Top: score and clock, court name under it. PAUSE (top-left) opens the pause menu: RESUME, FORMATION (changes your formation) or QUIT MATCH.
+- The team that conceded kicks off. At FULL TIME the results screen opens.
 - Rules: one player controls the ball at a time. A tackle in reach has a chance to knock the ball loose; a miss slows the tackler briefly. A keeper holding the ball in his goal area can't be tackled. Players push each other apart.
 
 Touch (phone):
@@ -88,6 +90,7 @@ Godot Project Manager → **Import** → select `street-football/project.godot`.
 Full step-by-step guide: [docs/android-export.md](docs/android-export.md).
 
 - **Way A, GitHub Actions artifact (recommended, nothing needed on your PC):** every push that changes `street-football/` builds a debug APK. Open the repository's **Actions** tab, open the latest run of "Street Football - Android debug APK", download the artifact zip, extract `street-football-debug.apk` and install it on your phone (allow "Install unknown apps" the first time).
+- The CI also renders every screen at 2400x1080 (virtual display) and prints the screenshots in the log; `.github/scripts/decode_screenshots.py` turns them back into images.
 - **Way B, export from Godot:** install Godot 4.7.2, export templates, JDK 17 and the Android SDK, set them in Editor Settings, then *Project → Export…* with the **Android** preset and install the APK on your phone.
 
 ## Folder structure
@@ -98,7 +101,7 @@ scripts/   core (autoloads), gameplay, physics, ai, data, ui
 data/      config, players, courts, formations (JSON)
 locale/    strings.csv (en, fr)
 assets/    art, audio, fonts (free/original only)
-tests/     headless tests run by CI: physics_smoke_test, stats_test, match_sim_test (excluded from the APK)
+tests/     run by CI, excluded from the APK: physics_smoke_test, stats_test, ui_flow_test, match_sim_test (headless) and screenshot_tour (rendered screenshots)
 docs/      design notes, Android export guide
 ```
 
