@@ -23,15 +23,16 @@ street-football/
   project.godot, export_presets.cfg, icon.svg
   scenes/        .tscn files: boot/, match/, menus/, court/, player/, ball/, ui/
   scripts/
-    core/        autoloads: Config, FrameRate (later: GameState, SaveSystem)
+    core/        autoloads: Config, FrameRate, Roster, MatchSetup (later: SaveSystem)
     gameplay/    match rules, score, timer, kick-off
     physics/     ball and player movement
     ai/          team AI, goalkeeper AI
-    data/        loaders for players, courts, formations
+    data/        loaders for players, teams, courts, formations; Ratings, StatEffects
     ui/          screens, HUD, touch controls
   data/
-    config/      every tuning number (JSON)
-    players/     one JSON file per fictional player
+    config/      every tuning number (JSON), incl. stat_effects.json and ratings.json
+    players/     one JSON file per fictional player (format: docs/player-data.md)
+    teams/       one JSON file per fictional crew (5 players, colors)
     courts/      one JSON file per court
     formations/  one JSON file per formation
   locale/        strings.csv (en, fr)
@@ -42,6 +43,12 @@ street-football/
 
 `scripts/physics/` is pure simulation (RefCounted, no nodes): testable headless and ready for online sync.
 Every controller (human now, AI later) produces a `PlayerIntent`; players never read input directly.
+
+Player attributes only reach gameplay through the stat sheet: `Player.stat(effect, fallback)` with the
+effect defined in `data/config/stat_effects.json` (the fallback is the neutral value for test players).
+
+Balance is measured, not guessed: the CI AI-match test plays fixed-seed matches and prints shots, saves
+and goals per match (`MATCH BALANCE`). Check it after any gameplay change.
 
 **GDScript naming traps (learned the hard way):** never give a `class_name` the name of a Godot built-in class (Godot 4.7 has `VirtualJoystick`, for example), and never name a method like a built-in signal or method of the base class (`draw` is a `CanvasItem` signal). Check the Godot class list before naming.
 
