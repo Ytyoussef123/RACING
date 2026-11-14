@@ -6,8 +6,8 @@ A dated log, newest entry first: what was done, what was decided and why, and wh
 
 | # | Phase | Status |
 |---|---|---|
-| 1 | Setup | Done, waiting for phone test |
-| 2 | Core match: court, ball physics, one controllable player, touch controls, shooting | Not started |
+| 1 | Setup | Done, tested on phone (2026-11-14) |
+| 2 | Core match: court, ball physics, one controllable player, touch controls, shooting | Next |
 | 3 | 5v5: teams, goalkeepers, formations, basic AI, score, timer | Not started |
 | 4 | Player stats: data files, attributes affect gameplay, 30 fictional players | Not started |
 | 5 | Menus and UI: main menu, team/formation, court selection, results, translations | Not started |
@@ -16,6 +16,23 @@ A dated log, newest entry first: what was done, what was decided and why, and wh
 | 8 | Release build: optimized APK, full file review | Not started |
 
 ## Log
+
+### 2026-11-14 — Phase 1 tested on the phone
+
+#### Done
+
+- The user downloaded the branch ZIP, imported `street-football/project.godot` in the Godot 4.7 Android editor and ran it directly on the phone (the editor's run button).
+- Result: landscape OK, title and orange stripe shown, tap counter works, French translation works ("Touches : 17", "Langue : Français"), FPS counter shows 60, device info shows Android and Godot 4.7-stable.
+
+#### Decisions (and why)
+
+- **Running the project inside the Godot Android editor is an accepted quick way to test each phase on the phone.**
+- The APK built by GitHub Actions is still to be verified: no workflow run has appeared yet.
+
+#### Next
+
+- Merge `feature/phase1-setup` into `main`.
+- Propose the Phase 2 plan (core match) and wait for the user's OK.
 
 ### 2026-11-14 — Phase 1: project setup
 
