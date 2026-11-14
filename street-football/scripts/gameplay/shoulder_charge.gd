@@ -15,6 +15,8 @@ static func attempt(charger: Player, ctx: MatchContext) -> bool:
 	var dir := to / d if d > 0.01 else charger.motion.facing
 	# Lunge at the carrier either way: the effort is visible.
 	charger.motion.velocity += dir * _cfg("shoulder_lunge_speed", 2.5)
+	var right_dir := Vector3(-charger.motion.facing.z, 0.0, charger.motion.facing.x)
+	charger.animate("shoulder", 1.0 if dir.dot(right_dir) >= 0.0 else -1.0)
 	if d > _cfg("shoulder_reach", 1.4) or TackleRules.is_protected(carrier, ctx):
 		charger.stun_timer = _cfg("shoulder_whiff_stun", 0.3)
 		return false
@@ -27,6 +29,7 @@ static func attempt(charger: Player, ctx: MatchContext) -> bool:
 		var carried := Steering.flat(ctx.ball.velocity) * _cfg("shoulder_ball_keep", 0.5)
 		ctx.ball.kick(carried + dir * _cfg("shoulder_ball_push", 1.0), 0.0)
 		ctx.stats.balls_won[charger.team.index] += 1
+		ctx.emit_event("shoulder_won", carrier.position)
 		return true
 	charger.motion.velocity = -dir * _cfg("shoulder_bounce_speed", 2.0)
 	charger.stun_timer = _cfg("shoulder_fail_stun", 0.5)

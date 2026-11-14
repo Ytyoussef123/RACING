@@ -9,6 +9,14 @@ var stats: MatchStats = MatchStats.new()
 var teams: Array[Team] = []
 var all_players: Array[Player] = []
 var rng: RandomNumberGenerator = RandomNumberGenerator.new()
+## Things that happened this frame, for sounds and effects: {"kind", "position", "strength"}.
+## Kinds: "pass", "shot", "tackle_won", "shoulder_won", "save", and the ball hits "ground",
+## "wall", "post", "net". The match plays them and clears the list every frame.
+var events: Array[Dictionary] = []
+
+
+func emit_event(kind: String, at: Vector3, strength: float = 1.0) -> void:
+	events.append({"kind": kind, "position": at, "strength": strength})
 
 
 func _init() -> void:

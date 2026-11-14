@@ -11,6 +11,7 @@ static func attempt(tackler: Player, ctx: MatchContext) -> bool:
 	var ball := ctx.ball
 	if carrier == null or carrier.team == tackler.team:
 		return false
+	tackler.animate("tackle")
 	var in_reach := tackler.flat_distance_to(ball.position) <= _cfg("tackle_reach", 1.3)
 	if not in_reach or is_protected(carrier, ctx):
 		tackler.stun_timer = _cfg("tackle_whiff_stun", 0.35)
@@ -23,6 +24,7 @@ static func attempt(tackler: Player, ctx: MatchContext) -> bool:
 	ball.kick(tackler.motion.facing * _cfg("tackle_ball_speed", 2.5), 0.0)
 	possession.touched(tackler)
 	ctx.stats.balls_won[tackler.team.index] += 1
+	ctx.emit_event("tackle_won", ball.position)
 	return true
 
 

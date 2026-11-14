@@ -45,6 +45,7 @@ static func _bounce_off_walls(ball: BallPhysics, court: CourtData, e: float) -> 
 		var sz := signf(p.z)
 		p.z = sz * max_z
 		if v.z * sz > 0.0:
+			ball.report_hit("wall", absf(v.z))
 			v.z = -v.z * e
 			ball.spin *= 0.5
 	var max_x := court.half_length - ball.radius
@@ -52,6 +53,7 @@ static func _bounce_off_walls(ball: BallPhysics, court: CourtData, e: float) -> 
 		var sx := signf(p.x)
 		p.x = sx * max_x
 		if v.x * sx > 0.0:
+			ball.report_hit("wall", absf(v.x))
 			v.x = -v.x * e
 			ball.spin *= 0.5
 	ball.position = p
@@ -72,6 +74,7 @@ static func _keep_in_net(ball: BallPhysics, court: CourtData, e: float) -> void:
 		var sx := signf(p.x)
 		p.x = sx * back_limit
 		if v.x * sx > 0.0:
+			ball.report_hit("net", absf(v.x))
 			v.x = -v.x * e
 	var roof := court.goal_height - ball.radius
 	if p.y > roof:
@@ -97,6 +100,7 @@ static func _collide_posts(ball: BallPhysics, court: CourtData, side: float, e: 
 		ball.position.z = post_z + n.y * min_dist
 		var vn := ball.velocity.x * n.x + ball.velocity.z * n.y
 		if vn < 0.0:
+			ball.report_hit("post", -vn)
 			ball.velocity.x -= (1.0 + e) * vn * n.x
 			ball.velocity.z -= (1.0 + e) * vn * n.y
 			ball.spin = 0.0
@@ -115,6 +119,7 @@ static func _collide_crossbar(ball: BallPhysics, court: CourtData, side: float, 
 	ball.position.y = court.goal_height + n.y * min_dist
 	var vn := ball.velocity.x * n.x + ball.velocity.y * n.y
 	if vn < 0.0:
+		ball.report_hit("post", -vn)
 		ball.velocity.x -= (1.0 + e) * vn * n.x
 		ball.velocity.y -= (1.0 + e) * vn * n.y
 		ball.spin = 0.0

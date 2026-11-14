@@ -46,11 +46,14 @@ var sheet: Dictionary = {}
 var energy: float = 1.0
 
 var _stun_move_factor: float
+var _animator: PlayerAnimator
 
 @onready var _body: Node3D = $Body
-@onready var _torso: MeshInstance3D = $Body/Torso
-@onready var _head: MeshInstance3D = $Body/Head
-@onready var _hair: MeshInstance3D = $Body/Hair
+@onready var _torso: MeshInstance3D = $Body/Pose/Torso
+@onready var _head: MeshInstance3D = $Body/Pose/Head
+@onready var _hair: MeshInstance3D = $Body/Pose/Hair
+@onready var _left_leg_mesh: MeshInstance3D = $Body/Pose/LeftLeg/Mesh
+@onready var _right_leg_mesh: MeshInstance3D = $Body/Pose/RightLeg/Mesh
 @onready var _ring: Node3D = $SelectionRing
 
 
@@ -61,8 +64,28 @@ func _ready() -> void:
 	_stun_move_factor = float(Config.get_value("player", "stun_move_factor", 0.25))
 	strength = float(Config.get_value("player", "default_strength", 50.0))
 	balance = strength
+	_animator = PlayerAnimator.new($Body/Pose, $Body/Pose/LeftLeg, $Body/Pose/RightLeg)
 	_scale_body()
 	set_selected(false)
+
+
+func _process(delta: float) -> void:
+	var speed := Vector2(motion.velocity.x, motion.velocity.z).length()
+	_animator.update(delta, speed, motion.top_speed(true))
+
+
+## Plays a short animation: "kick", "tackle", "shoulder", "dive", "celebrate".
+## side: +1 right / -1 left (dive and shoulder direction); kicks use the preferred foot.
+func animate(action: String, side: float = 1.0) -> void:
+	if action == "kick":
+		side = -1.0 if preferred_foot == "left" else 1.0
+	_animator.play(action, side)
+
+
+## Keeper dive toward a point: rolls to the side where it is.
+func animate_dive(toward: Vector3) -> void:
+	var right_dir := Vector3(-motion.facing.z, 0.0, motion.facing.x)
+	animate("dive", 1.0 if (toward - position).dot(right_dir) >= 0.0 else -1.0)
 
 
 ## Gives this player an identity and the stats for his role.
@@ -98,6 +121,11 @@ func set_kit(kit_color: Color) -> void:
 	mat.albedo_color = kit_color
 	mat.roughness = 0.8
 	_torso.material_override = mat
+	var legs := StandardMaterial3D.new()
+	legs.albedo_color = kit_color.darkened(0.55)
+	legs.roughness = 0.85
+	_left_leg_mesh.material_override = legs
+	_right_leg_mesh.material_override = legs
 
 
 func reset_to(ground_position: Vector3, facing: Vector3) -> void:

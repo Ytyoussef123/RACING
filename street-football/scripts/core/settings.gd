@@ -1,5 +1,5 @@
 extends Node
-## Autoload "Settings": the player's preferences (language, FPS counter, touch button size),
+## Autoload "Settings": the player's preferences (language, FPS counter, touch button size, sound),
 ## saved on the device in user://settings.cfg. Adds the FPS overlay on top of every screen.
 
 const SAVE_PATH := "user://settings.cfg"
@@ -10,6 +10,8 @@ var language: String = ""
 var show_fps: bool = false
 ## Key in ui.json -> controls_scales: "small", "normal" or "large".
 var controls_size: String = "normal"
+var sound_on: bool = true
+var music_on: bool = true
 
 var _fps_overlay: CanvasLayer
 
@@ -45,11 +47,24 @@ func set_controls_size(size_key: String) -> void:
 	save()
 
 
+func set_sound_on(on: bool) -> void:
+	sound_on = on
+	save()
+
+
+func set_music_on(on: bool) -> void:
+	music_on = on
+	Sfx.refresh_music()
+	save()
+
+
 func save() -> void:
 	var file := ConfigFile.new()
 	file.set_value("display", "language", language)
 	file.set_value("display", "show_fps", show_fps)
 	file.set_value("controls", "size", controls_size)
+	file.set_value("audio", "sound_on", sound_on)
+	file.set_value("audio", "music_on", music_on)
 	file.save(SAVE_PATH)
 
 
@@ -60,3 +75,5 @@ func _load() -> void:
 	language = str(file.get_value("display", "language", ""))
 	show_fps = bool(file.get_value("display", "show_fps", false))
 	controls_size = str(file.get_value("controls", "size", "normal"))
+	sound_on = bool(file.get_value("audio", "sound_on", true))
+	music_on = bool(file.get_value("audio", "music_on", true))

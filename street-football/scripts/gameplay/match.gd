@@ -25,12 +25,14 @@ var _pause_menu: PauseMenu
 @onready var _builder: CourtBuilder = $Court
 @onready var _ball: Ball = $Ball
 @onready var _players_root: Node3D = $Players
+@onready var _effects: Effects = $Effects
 @onready var _camera: MatchCamera = $Camera
 @onready var _hud: MatchHud = $UI/Hud
 @onready var _touch: TouchControls = $UI/TouchControls
 
 
 func _ready() -> void:
+	Sfx.want_music(bool(Config.get_value("audio", "music_in_match", false)))
 	if MatchSetup.test_mode and MatchSetup.test_seed != 0:
 		ctx.rng.seed = MatchSetup.test_seed
 	else:
@@ -98,6 +100,8 @@ func _physics_process(delta: float) -> void:
 			KeeperAI.try_save(team.keeper, ctx)
 		_update_ball_handling(delta)
 	var event := _ball.simulate(delta, ctx.court)
+	if not ctx.ball.last_hit.is_empty():
+		ctx.emit_event(ctx.ball.last_hit, ctx.ball.position, ctx.ball.last_hit_speed)
 	if playing and ctx.possession.holder != null:
 		ctx.stats.possession_time[ctx.possession.holder.team.index] += delta
 	if playing:
@@ -105,7 +109,30 @@ func _physics_process(delta: float) -> void:
 	else:
 		_run_pending(flow.tick_stop(delta))
 	_camera.follow(delta, ctx.ball.position, ctx.ball.velocity, ctx.court)
+	_play_events()
 	_update_hud(human_player)
+
+
+## Turns this frame's match events into effects (and, with Sfx, sounds), then clears them.
+func _play_events() -> void:
+	for e in ctx.events:
+		var kind := str(e["kind"])
+		var at: Vector3 = e["position"]
+		var strength := float(e["strength"])
+		Sfx.play_event(kind, strength)
+		match kind:
+			"tackle_won", "shoulder_won":
+				_effects.dust(at)
+			"post":
+				_camera.shake(_anim("hit_shake_strength", 0.12), _anim("hit_shake_seconds", 0.2))
+			"wall":
+				if strength > 8.0:
+					_camera.shake(_anim("hit_shake_strength", 0.12) * 0.6, _anim("hit_shake_seconds", 0.2))
+	ctx.events.clear()
+
+
+func _anim(key: String, fallback: float) -> float:
+	return float(Config.get_value("animation", key, fallback))
 
 
 ## Assists for the human's player: receive assist while a pass comes to him; PRESS and
@@ -139,6 +166,7 @@ func _check_play(event: CourtBounds.Event, delta: float) -> void:
 		goal_scored.emit(scorer.index)
 		ctx.possession.release(ctx.ball)
 		_hud.show_message(tr("MSG_GOAL"))
+		Sfx.play("goal_horn")
 		flow.stop(float(Config.get_value("match", "goal_message_seconds", 2.0)),
 			{"type": "kickoff", "team": scorer.opponent})
 		return
@@ -146,12 +174,14 @@ func _check_play(event: CourtBounds.Event, delta: float) -> void:
 		var plan := RestartPlacer.plan_out(ctx)
 		ctx.possession.release(ctx.ball)
 		_hud.show_message(tr(str(plan["key"])))
+		Sfx.play("whistle_short")
 		flow.stop(float(Config.get_value("match", "restart_message_seconds", 1.5)),
 			{"type": "restart", "plan": plan})
 		return
 	if flow.tick_clock(delta):
 		ctx.possession.release(ctx.ball)
 		_hud.show_message("%s  %d – %d" % [tr("MSG_FULL_TIME"), flow.scores[0], flow.scores[1]])
+		Sfx.play("whistle_end")
 		flow.finish(float(Config.get_value("match", "full_time_message_seconds", 4.0)))
 		full_time.emit(flow.scores[0], flow.scores[1])
 
@@ -173,6 +203,7 @@ func _run_pending(action: Dictionary) -> void:
 
 func _kick_off(kicking: Team) -> void:
 	_hud.hide_message()
+	Sfx.play("whistle_short")
 	RestartPlacer.kickoff(ctx, kicking)
 	if _human != null:
 		_human.select(RestartPlacer.most_attacking(ctx.teams[0]))
@@ -234,6 +265,12 @@ func _notification(what: int) -> void:
 ## The scorer is the last player who kicked the ball: from the scoring team, or an own goal.
 func _record_goal(scorer_team: Team) -> void:
 	var kicker := ctx.possession.last_kicker
+	if kicker != null and kicker.team == scorer_team:
+		kicker.animate("celebrate")
+	var goal_x := scorer_team.target_goal_x(ctx.court)
+	var colors: Array[Color] = [scorer_team.color, scorer_team.keeper_color, Color.WHITE]
+	_effects.confetti(Vector3(goal_x, 0.0, 0.0), colors)
+	_camera.shake(_anim("goal_shake_strength", 0.35), _anim("goal_shake_seconds", 0.5))
 	var elapsed := MatchSetup.get_match_seconds() - flow.time_left
 	var seconds := int(elapsed)
 	_goals.append({

@@ -36,6 +36,22 @@ height = 0.002
 radial_segments = 16
 rings = 1
 
+[sub_resource type="StandardMaterial3D" id="mat_trail"]
+transparency = 1
+shading_mode = 0
+vertex_color_use_as_albedo = true
+
+[sub_resource type="SphereMesh" id="mesh_trail"]
+material = SubResource("mat_trail")
+radius = 0.07
+height = 0.14
+radial_segments = 6
+rings = 3
+
+[sub_resource type="Gradient" id="trail_gradient"]
+offsets = PackedFloat32Array(0, 1)
+colors = PackedColorArray(1, 1, 1, 0.55, 1, 1, 1, 0)
+
 [node name="Ball" type="Node3D"]
 script = ExtResource("1_ball")
 
@@ -59,3 +75,16 @@ cast_shadow = 0
 [node name="Shadow" type="MeshInstance3D" parent="."]
 mesh = SubResource("mesh_shadow")
 cast_shadow = 0
+
+[node name="Trail" type="CPUParticles3D" parent="."]
+emitting = false
+amount = 24
+lifetime = 0.3
+local_coords = false
+mesh = SubResource("mesh_trail")
+direction = Vector3(0, 0, 0)
+spread = 0.0
+gravity = Vector3(0, 0, 0)
+initial_velocity_min = 0.0
+initial_velocity_max = 0.0
+color_ramp = SubResource("trail_gradient")

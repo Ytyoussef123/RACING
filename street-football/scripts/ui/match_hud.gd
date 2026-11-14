@@ -36,6 +36,12 @@ func _ready() -> void:
 func show_message(text: String) -> void:
 	_message.text = text
 	_message.visible = true
+	# Pop: the text starts big and settles (look only).
+	_message.pivot_offset = _message.size * 0.5
+	_message.scale = Vector2.ONE * float(Config.get_value("animation", "message_pop_scale", 1.6))
+	var tween := create_tween()
+	tween.tween_property(_message, "scale", Vector2.ONE, float(Config.get_value("animation", "message_pop_seconds", 0.35))) \
+		.set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
 
 
 func hide_message() -> void:

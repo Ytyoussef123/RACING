@@ -27,6 +27,7 @@ MatchSetup="*res://scripts/core/match_setup.gd"
 UiTheme="*res://scripts/core/ui_theme.gd"
 Screens="*res://scripts/core/screens.gd"
 Settings="*res://scripts/core/settings.gd"
+Sfx="*res://scripts/core/sfx.gd"
 
 [display]
 

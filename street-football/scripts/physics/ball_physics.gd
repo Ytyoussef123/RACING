@@ -12,6 +12,10 @@ var velocity: Vector3 = Vector3.ZERO
 var spin: float = 0.0
 ## True while a player dribbles the ball: no friction or curve, the player drives its speed.
 var controlled: bool = false
+## Last thing the ball hit this step ("ground", "wall", "post", "net", or ""), and how hard (m/s).
+## Read by the ball node for sounds and effects, then cleared.
+var last_hit: String = ""
+var last_hit_speed: float = 0.0
 
 var radius: float
 var _gravity: float
@@ -61,6 +65,13 @@ func copy() -> BallPhysics:
 	return twin
 
 
+## Keeps the strongest hit of the step.
+func report_hit(kind: String, speed: float) -> void:
+	if speed > last_hit_speed:
+		last_hit = kind
+		last_hit_speed = speed
+
+
 func kick(new_velocity: Vector3, new_spin: float) -> void:
 	controlled = false
 	velocity = new_velocity
@@ -93,6 +104,7 @@ func _resolve_ground() -> void:
 		return
 	position.y = radius
 	if velocity.y < -_min_bounce_speed:
+		report_hit("ground", -velocity.y)
 		velocity.y = -velocity.y * _ground_restitution
 		velocity.x *= _bounce_friction
 		velocity.z *= _bounce_friction

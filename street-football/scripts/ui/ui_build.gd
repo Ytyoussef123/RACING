@@ -21,6 +21,7 @@ static func button(text: String, variation: String = "", min_width: float = 0.0)
 	b.theme_type_variation = variation
 	b.custom_minimum_size = Vector2(min_width, float(Config.get_value("ui", "button_min_height", 104)))
 	b.focus_mode = Control.FOCUS_NONE
+	b.pressed.connect(func() -> void: Sfx.play("ui_click"))
 	return b
 
 

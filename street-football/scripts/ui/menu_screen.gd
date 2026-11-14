@@ -9,6 +9,7 @@ var title_label: Label
 
 
 func build_frame(title_key: String) -> void:
+	Sfx.want_music(true)
 	set_anchors_and_offsets_preset(PRESET_FULL_RECT)
 	add_child(ScreenBackground.new())
 	var margin := MarginContainer.new()

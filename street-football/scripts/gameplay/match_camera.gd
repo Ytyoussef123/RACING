@@ -1,9 +1,12 @@
 class_name MatchCamera
 extends Camera3D
-## Fixed-angle camera above the near long side, following the ball smoothly.
-## Numbers: data/config/camera.json.
+## Fixed-angle camera above the near long side, following the ball smoothly, with a short shake
+## on big moments (goal, post). Numbers: data/config/camera.json and animation.json.
 
 var _focus: Vector3 = Vector3.ZERO
+var _shake_strength: float = 0.0
+var _shake_left: float = 0.0
+var _shake_duration: float = 0.0
 var _pitch: float
 var _distance: float
 var _follow_speed: float
@@ -39,9 +42,22 @@ func _target_for(ball_position: Vector3, ball_velocity: Vector3, court: CourtDat
 	return Vector3(clampf(target.x, -max_x, max_x), 0.0, target.z * _z_follow)
 
 
+## Shakes the camera for `seconds`, fading out (look only).
+func shake(strength: float, seconds: float) -> void:
+	if strength >= _shake_strength * (_shake_left / maxf(0.01, _shake_duration)):
+		_shake_strength = strength
+		_shake_left = seconds
+		_shake_duration = seconds
+
+
 func _place() -> void:
 	var offset := Vector3(0.0, sin(_pitch), cos(_pitch)) * _distance
-	look_at_from_position(_focus + offset, _focus, Vector3.UP)
+	var jitter := Vector3.ZERO
+	if _shake_left > 0.0:
+		_shake_left = maxf(0.0, _shake_left - get_physics_process_delta_time())
+		var amount := _shake_strength * (_shake_left / maxf(0.01, _shake_duration))
+		jitter = Vector3(randf_range(-amount, amount), randf_range(-amount, amount), 0.0)
+	look_at_from_position(_focus + offset + jitter, _focus + jitter, Vector3.UP)
 
 
 func _cfg(key: String, fallback: float) -> float:

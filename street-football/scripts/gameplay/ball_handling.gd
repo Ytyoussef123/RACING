@@ -194,6 +194,8 @@ func _weak_foot_mult(player: Player, aim: Vector3) -> float:
 func _kick(player: Player, ctx: MatchContext, kick_velocity: Vector3, spin: float, target: Player,
 		kind: String) -> void:
 	ctx.possession.kicked(player, target, ctx.ball, kind)
+	player.animate("kick")
+	ctx.emit_event("shot" if kind == "shot" else "pass", ctx.ball.position, kick_velocity.length())
 	ctx.ball.kick(kick_velocity, spin)
 	dribbling.reset()
 	_cooldown = _cfg("kick_cooldown", 0.35)

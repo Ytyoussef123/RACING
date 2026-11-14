@@ -6,6 +6,7 @@
 [ext_resource type="Script" path="res://scripts/gameplay/match_camera.gd" id="5_camera"]
 [ext_resource type="Script" path="res://scripts/ui/touch_controls.gd" id="6_touch"]
 [ext_resource type="PackedScene" path="res://scenes/ui/match_hud.tscn" id="7_hud"]
+[ext_resource type="Script" path="res://scripts/gameplay/effects.gd" id="8_effects"]
 
 [sub_resource type="Environment" id="env"]
 background_mode = 1
@@ -30,6 +31,9 @@ script = ExtResource("2_court")
 [node name="Ball" parent="." instance=ExtResource("3_ball")]
 
 [node name="Players" type="Node3D" parent="."]
+
+[node name="Effects" type="Node3D" parent="."]
+script = ExtResource("8_effects")
 
 [node name="Camera" type="Camera3D" parent="."]
 current = true

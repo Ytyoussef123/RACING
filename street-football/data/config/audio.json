@@ -1,0 +1,34 @@
+{
+	"_note": "Sounds (made by tools/generate_audio.py). volume_db: base volume; pitch_jitter: random pitch change so repeats don't sound identical; full_at: event strength (ball speed, m/s) that plays at full volume, weaker events play softer.",
+	"sounds": {
+		"kick_soft": {"file": "res://assets/audio/kick_soft.wav", "volume_db": -4.0, "pitch_jitter": 0.08, "full_at": 15.0},
+		"kick_hard": {"file": "res://assets/audio/kick_hard.wav", "volume_db": 0.0, "pitch_jitter": 0.06, "full_at": 25.0},
+		"bounce": {"file": "res://assets/audio/bounce.wav", "volume_db": -8.0, "pitch_jitter": 0.1, "full_at": 8.0},
+		"wall": {"file": "res://assets/audio/wall.wav", "volume_db": -3.0, "pitch_jitter": 0.08, "full_at": 14.0},
+		"post": {"file": "res://assets/audio/post.wav", "volume_db": -2.0, "pitch_jitter": 0.03, "full_at": 12.0},
+		"net": {"file": "res://assets/audio/net.wav", "volume_db": -3.0, "pitch_jitter": 0.05, "full_at": 10.0},
+		"whistle_short": {"file": "res://assets/audio/whistle_short.wav", "volume_db": -6.0, "pitch_jitter": 0.0, "full_at": 1.0},
+		"whistle_end": {"file": "res://assets/audio/whistle_end.wav", "volume_db": -6.0, "pitch_jitter": 0.0, "full_at": 1.0},
+		"goal_horn": {"file": "res://assets/audio/goal_horn.wav", "volume_db": -4.0, "pitch_jitter": 0.02, "full_at": 1.0},
+		"tackle": {"file": "res://assets/audio/tackle.wav", "volume_db": -4.0, "pitch_jitter": 0.1, "full_at": 1.0},
+		"save": {"file": "res://assets/audio/save.wav", "volume_db": -3.0, "pitch_jitter": 0.06, "full_at": 15.0},
+		"ui_click": {"file": "res://assets/audio/ui_click.wav", "volume_db": -10.0, "pitch_jitter": 0.04, "full_at": 1.0}
+	},
+	"event_sounds": {
+		"pass": "kick_soft",
+		"shot": "kick_hard",
+		"ground": "bounce",
+		"wall": "wall",
+		"post": "post",
+		"net": "net",
+		"tackle_won": "tackle",
+		"shoulder_won": "tackle",
+		"save": "save"
+	},
+	"min_ground_bounce_speed": 2.0,
+	"min_volume": 0.15,
+	"music_file": "res://assets/audio/music_loop.wav",
+	"music_volume_db": -12.0,
+	"music_in_match": false,
+	"pool_size": 8
+}

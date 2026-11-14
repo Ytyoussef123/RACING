@@ -27,6 +27,8 @@ func _ready() -> void:
 		chip.button_pressed = on == Settings.show_fps
 		chip.pressed.connect(func() -> void: Settings.set_show_fps(on))
 		fps_row.add_child(chip)
+	_on_off_row("SETTING_SOUND", "Sound", Settings.sound_on, func(on: bool) -> void: Settings.set_sound_on(on))
+	_on_off_row("SETTING_MUSIC", "Music", Settings.music_on, func(on: bool) -> void: Settings.set_music_on(on))
 	var size_row := _row("SETTING_CONTROLS_SIZE")
 	var size_group := ButtonGroup.new()
 	for size_option in SIZES:
@@ -41,6 +43,18 @@ func _ready() -> void:
 
 func go_back() -> void:
 	Screens.go("main_menu")
+
+
+func _on_off_row(title_key: String, prefix: String, current: bool, apply: Callable) -> void:
+	var row := _row(title_key)
+	var group := ButtonGroup.new()
+	for option in [[true, "ON"], [false, "OFF"]]:
+		var on := bool(option[0])
+		var chip := UiBuild.chip(str(option[1]), group, 220.0)
+		chip.name = prefix + ("_on" if on else "_off")
+		chip.button_pressed = on == current
+		chip.pressed.connect(func() -> void: apply.call(on))
+		row.add_child(chip)
 
 
 func _row(title_key: String) -> HBoxContainer:
