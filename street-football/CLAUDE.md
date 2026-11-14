@@ -53,6 +53,11 @@ Look is checked, not guessed: CI renders every screen at 2400x1080 (tests/screen
 and prints them into the log; `../.github/scripts/decode_screenshots.py <log> <folder>` turns them
 back into images. Look at them after any UI change. Menu layouts are built in code (UiBuild) on top
 of a minimal .tscn per screen; all colors and sizes come from data/config/ui.json.
+The tour ends with a motion study (tests/motion_study.gd): frame grids of a player running, sprinting
+and turning with the ball, a line-up of bodies in poses and a close-up of heads, plus one "MOTION" log
+line per frame (ball distance ahead of the player). Look at them after any change to the body
+(PlayerRig, data/config/body.json), the animation (PlayerAnimator, PlayerActions, animation.json) or
+dribbling.
 
 Progress lives in SaveGame (user://savegame.json, versioned, written through a temporary file).
 Any change to its format must bump progression.json -> save_version and keep old saves loading.

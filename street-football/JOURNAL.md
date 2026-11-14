@@ -15,7 +15,43 @@ A dated log, newest entry first: what was done, what was decided and why, and wh
 | 7 | Progression: coins, unlocks, upgrades, save system | Done, waiting for phone test |
 | 8 | Release build: optimized APK, full file review | Not started |
 
+The player-motion work is an extra feature branch between Phase 7 and Phase 8 (`feature/player-motion`, created from `feature/progression`), waiting for the phone test.
+
 ## Log
+
+### 2026-11-14 — Player motion: body, running animation, ball at the feet
+
+#### Why
+
+- The user compared the game with an eFootball video and pointed out three things that were missing: how the players move, the 3D quality of the players, and how the ball reacts at the player's feet while he runs.
+
+#### Done
+
+- New jointed body built in code, original (no third-party model): hips, spine, neck and head, arms with shoulder and elbow, legs with hip and knee. Shirt with sleeves, shorts, knee-high socks, boots (color picked per player from a palette), hands, gloves for keepers. Face with eyes, nose and ears; hair styles (bald, buzz, short, afro, long, mohawk) as a cap that follows the head shape, tilted back so the hairline is above the forehead. Each limb is a few low-poly shapes merged into one mesh and colored per vertex, so all players share one material (about ten draw calls per player). Files: `scripts/gameplay/player_rig.gd` (PlayerRig), `scripts/gameplay/rig_mesh_builder.gd` (RigMeshBuilder), sizes in the new `data/config/body.json`. The old capsule body is removed from `scenes/player/player.tscn`.
+- New procedural animation: `scripts/gameplay/player_animator.gd` (PlayerAnimator) writes a `RigPose` (`scripts/gameplay/rig_pose.gd`) every frame: running cycle driven by the distance covered (longer strides when faster), knees that fold during the swing, opposite arms with bent elbows, hips and shoulders twisting, bob, forward lean; lean with acceleration and into turns; idle stance with breathing; keeper ready stance; when the player moves at an angle to where he faces, the hips turn toward the way he goes and the legs step that way so the feet don't slide. Short actions (kick with follow-through and arms open, tackle, shoulder charge, keeper dive, skill move, goal celebration) in `scripts/gameplay/player_actions.gd` (PlayerActions). Numbers in `data/config/animation.json`.
+- Ball at the feet (`scripts/gameplay/dribbling.gd`, `scripts/gameplay/dribble_assist.gd`):
+  - Every dribble touch is now done by a foot. Running onto the ball, the foot starts its swing 0.1 s before the ball is in reach, so it meets the ball exactly when the touch lands. The foot on the ball's side is used, otherwise the preferred foot.
+  - Jog dribbling is closer: the ball stays about 0.3 to 1.0 m ahead with a touch about every 0.3 s; sprinting still knocks it 1.5 to 3 m ahead.
+  - Turning with the ball: the touch sends the ball to just ahead of where the player will be once turned. If the ball is out of reach when the stick turns, the player first goes to it, then turns with it (new `PlayerIntent.dribble_dir`).
+  - After a long sprint knock-on, the ball stays his until he catches it, even if he lets go of SPRINT.
+  - The ball is held a little closer at the feet when standing. The ball's rolling now matches its drawn size.
+- Look is checked on CI: the screenshot tour ends with a motion study (`tests/motion_study.gd`): frame grids of a jog with the ball and a sprint seen from the side, a turn and a shot seen from the match camera, a line-up of bodies in poses (idle, keeper ready, jog, sprint, kick, touch, tackle, dive) and a close-up of heads. It also prints the ball's distance ahead of the player for every frame ("MOTION" lines in the log).
+
+#### Numbers
+
+- New `data/config/body.json` (all body sizes, hair styles, colors).
+- `data/config/animation.json` rewritten for the jointed body (gait, lean, idle, actions; effects numbers unchanged).
+- `data/config/player.json`: `dribble_touch_extra_min` 1.6 -> 1.2, `dribble_touch_extra_run` 2.6 -> 1.7, `dribble_distance` 0.55 -> 0.48; new `dribble_touch_windup` 0.1, `dribble_windup_reach_margin` 1.3, `dribble_foot_side_offset` 0.12, `dribble_turn_reach` 0.85, `dribble_turn_assist_degrees` 50, `dribble_turn_touch_time` 0.3, `dribble_turn_touch_lead` 0.6, `dribble_turn_touch_max_speed` 9.0.
+
+#### Checked
+
+- CI: all headless test suites pass (physics, stats, progression, menus, AI match), no script errors, APK built. The motion study images were reviewed after each change; they led to fixing the hair (the head showed through), adding a face, closer jog touches, and the turn touch (the ball was left at the player's side in turns).
+- Balance (3 fixed-seed AI matches): 4.00 goals, 26.3 shots, 11.7 saves per 150-second match (before: 3.33 goals, 24.3 shots, 9.0 saves). With only 3 matches the goal count moves a lot between runs (1.67 to 4.00 during this work), so it will be watched.
+
+#### Next
+
+- Phone test of the new bodies, running and dribbling.
+- Possible next steps proposed to the user: a lower, wider match camera with a Close / Normal / Wide setting (shows the bodies better, as in the reference video); the HUD items seen in the video (mini-map, name tags, next-player marker, CLEAR in our own half); optionally more weight in the movement (slower turns at full speed), which changes how the controls feel and is left for the user to decide.
 
 ### 2026-11-14 — Phase 7: progression
 

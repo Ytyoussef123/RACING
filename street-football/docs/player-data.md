@@ -17,7 +17,7 @@ The file name (without `.json`) is the player id, for example `teo_varmanetti`.
 | `playstyle` | One of the ids in `data/config/ratings.json` → `playstyles`. |
 | `skill_moves` | 1–5 stars (used by skill moves in Phase 6). |
 | `special_skills` | Ids from `ratings.json` → `special_skills` (`flip_flap`, `rainbow`, `nutmeg`, `rabona`, `first_time_shot`, `roulette`, `heel_flick`). |
-| `look` | `skin` and `hair` colors (`#rrggbb`), `hair_style`: `bald`, `buzz`, `short`, `afro`, `long`, `mohawk`. |
+| `look` | `skin` and `hair` colors (`#rrggbb`), `hair_style`: `bald`, `buzz`, `short`, `afro`, `long`, `mohawk` (shapes in `data/config/body.json`). Boot colors are picked from a palette by player id. |
 | `attributes` | The 25 attributes below, 0–99. |
 
 Attributes:
@@ -52,7 +52,7 @@ Names ending in `_mult` multiply the base number from `player.json`; the others 
 | `run_speed_mult`, `sprint_speed_mult` | speed | Top speed (keepers: `gk_positioning`) |
 | `acceleration_mult` | acceleration | How fast top speed is reached |
 | `turn_speed_mult` | balance | Turning without the ball |
-| `dribble_turn_speed_mult`, `dribble_speed_factor`, `dribble_touch_extra_mult` | dribbling | Turning and speed with the ball, how far touches go |
+| `dribble_turn_speed_mult`, `dribble_speed_factor`, `dribble_touch_extra_mult` | dribbling | Turning and speed with the ball, how far touches go (also how far ahead the ball is put when turning with it) |
 | `dribble_exposed_distance` | tight_possession | How far ahead the ball can be before it can be stolen |
 | `control_radius`, `control_max_relative_speed` | ball_control | Receiving the ball |
 | `intercept_radius` | interception | Cutting out the opponent's passes |

@@ -12,8 +12,8 @@ extends RefCounted
 var _touch_timer: float = 0.0
 ## Seconds until a started touch lands (the foot is on its way to the ball); 0 = none.
 var _windup: float = 0.0
-## The last touch was a long sprint knock: the ball stays his (sprint leash) until he catches it,
-## even if he stops sprinting.
+## The last touch was a long sprint knock: the ball stays his (sprint leash) until his next touch,
+## even if he stops sprinting while he chases it.
 var _long_touch: bool = false
 
 
@@ -32,8 +32,6 @@ func update(player: Player, ctx: MatchContext, delta: float, kick_waiting: bool,
 	if dist > (_cfg("dribble_leash_sprint", 3.6) if sprint or _long_touch else _cfg("dribble_leash", 2.4)):
 		return false
 	var reach := _cfg("dribble_touch_reach", 0.75)
-	if dist <= reach:
-		_long_touch = false
 	# Where he wants to take the ball (DribbleAssist may be walking him to it first).
 	var wanted := player.intent.dribble_dir if player.intent.dribble_dir != Vector3.ZERO else player.intent.move
 	var move := Steering.flat(wanted)
@@ -137,6 +135,7 @@ func _turn_touch(player: Player, ctx: MatchContext, to_ball: Vector3, move: Vect
 		ball.velocity.x = travel.x / distance * speed
 		ball.velocity.z = travel.z / distance * speed
 	_touch_timer = _cfg("dribble_touch_interval", 0.2)
+	_long_touch = false
 	ctx.possession.touched(player)
 
 
@@ -152,6 +151,7 @@ static func _foot(player: Player, to_ball: Vector3) -> float:
 ## Ball stopped under the sole: it follows the feet closely.
 func _hold_at_feet(player: Player, ball: BallPhysics) -> void:
 	ball.controlled = true
+	_long_touch = false
 	var target := player.position + player.motion.facing * _cfg("dribble_distance", 0.55)
 	var to_target := Vector3(target.x - ball.position.x, 0.0, target.z - ball.position.z)
 	var v := player.motion.velocity + to_target * _cfg("dribble_stiffness", 14.0)
