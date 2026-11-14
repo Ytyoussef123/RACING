@@ -1,0 +1,48 @@
+{
+	"name": "Bastien Lemoreau",
+	"short_name": "B. Lemoreau",
+	"nationality": "France",
+	"age": 20,
+	"height_cm": 178,
+	"preferred_foot": "right",
+	"weak_foot": 3,
+	"positions": [
+		"ATT",
+		"WING"
+	],
+	"playstyle": "speedster",
+	"skill_moves": 3,
+	"special_skills": [],
+	"look": {
+		"skin": "#c68a5e",
+		"hair": "#3b2416",
+		"hair_style": "buzz"
+	},
+	"attributes": {
+		"finishing": 77,
+		"shot_power": 77,
+		"long_shots": 62,
+		"heading": 60,
+		"dribbling": 82,
+		"ball_control": 75,
+		"tight_possession": 69,
+		"low_pass": 69,
+		"lofted_pass": 62,
+		"vision": 61,
+		"speed": 97,
+		"acceleration": 93,
+		"stamina": 82,
+		"strength": 58,
+		"balance": 78,
+		"jump": 70,
+		"tackling": 34,
+		"interception": 43,
+		"marking": 34,
+		"aggression": 49,
+		"gk_reflexes": 20,
+		"gk_diving": 22,
+		"gk_handling": 20,
+		"gk_positioning": 18,
+		"gk_kicking": 29
+	}
+}

@@ -1,0 +1,52 @@
+{
+	"name": "Thiago Ferraduz",
+	"short_name": "T. Ferraduz",
+	"nationality": "Brazil",
+	"age": 23,
+	"height_cm": 175,
+	"preferred_foot": "right",
+	"weak_foot": 4,
+	"positions": [
+		"ATT",
+		"WING"
+	],
+	"playstyle": "street_dribbler",
+	"skill_moves": 5,
+	"special_skills": [
+		"flip_flap",
+		"rabona",
+		"nutmeg"
+	],
+	"look": {
+		"skin": "#a86b45",
+		"hair": "#1b1410",
+		"hair_style": "mohawk"
+	},
+	"attributes": {
+		"finishing": 78,
+		"shot_power": 75,
+		"long_shots": 65,
+		"heading": 52,
+		"dribbling": 97,
+		"ball_control": 94,
+		"tight_possession": 92,
+		"low_pass": 77,
+		"lofted_pass": 66,
+		"vision": 75,
+		"speed": 87,
+		"acceleration": 93,
+		"stamina": 75,
+		"strength": 54,
+		"balance": 91,
+		"jump": 63,
+		"tackling": 36,
+		"interception": 44,
+		"marking": 33,
+		"aggression": 48,
+		"gk_reflexes": 25,
+		"gk_diving": 23,
+		"gk_handling": 17,
+		"gk_positioning": 21,
+		"gk_kicking": 31
+	}
+}

@@ -1,0 +1,50 @@
+{
+	"name": "Luka Stankovar",
+	"short_name": "L. Stankovar",
+	"nationality": "Serbia",
+	"age": 26,
+	"height_cm": 180,
+	"preferred_foot": "right",
+	"weak_foot": 4,
+	"positions": [
+		"MID",
+		"ATT"
+	],
+	"playstyle": "playmaker",
+	"skill_moves": 3,
+	"special_skills": [
+		"first_time_shot"
+	],
+	"look": {
+		"skin": "#f1c7a5",
+		"hair": "#3b2416",
+		"hair_style": "short"
+	},
+	"attributes": {
+		"finishing": 71,
+		"shot_power": 72,
+		"long_shots": 84,
+		"heading": 48,
+		"dribbling": 82,
+		"ball_control": 88,
+		"tight_possession": 79,
+		"low_pass": 87,
+		"lofted_pass": 89,
+		"vision": 95,
+		"speed": 67,
+		"acceleration": 69,
+		"stamina": 77,
+		"strength": 58,
+		"balance": 80,
+		"jump": 53,
+		"tackling": 51,
+		"interception": 60,
+		"marking": 50,
+		"aggression": 45,
+		"gk_reflexes": 20,
+		"gk_diving": 18,
+		"gk_handling": 16,
+		"gk_positioning": 17,
+		"gk_kicking": 31
+	}
+}

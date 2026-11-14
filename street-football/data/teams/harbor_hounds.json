@@ -1,0 +1,33 @@
+{
+	"name": "Harbor Hounds",
+	"short_name": "HBH",
+	"home_court": "cage_concrete",
+	"colors": {
+		"kit": "#2ecc71",
+		"keeper": "#ff6b6b",
+		"alt_kit": "#0f3d2a",
+		"alt_keeper": "#ffe66d"
+	},
+	"players": [
+		{
+			"id": "idrissa_kambale",
+			"number": 1
+		},
+		{
+			"id": "piotr_wrzesniak",
+			"number": 3
+		},
+		{
+			"id": "emre_kaltakci",
+			"number": 8
+		},
+		{
+			"id": "jaylen_marchbanks",
+			"number": 17
+		},
+		{
+			"id": "thiago_ferraduz",
+			"number": 10
+		}
+	]
+}

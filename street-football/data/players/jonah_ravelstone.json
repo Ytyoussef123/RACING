@@ -1,0 +1,47 @@
+{
+	"name": "Jonah Ravelstone",
+	"short_name": "J. Ravelstone",
+	"nationality": "United States",
+	"age": 28,
+	"height_cm": 190,
+	"preferred_foot": "right",
+	"weak_foot": 2,
+	"positions": [
+		"DEF"
+	],
+	"playstyle": "enforcer",
+	"skill_moves": 1,
+	"special_skills": [],
+	"look": {
+		"skin": "#e0ac7e",
+		"hair": "#b5502a",
+		"hair_style": "buzz"
+	},
+	"attributes": {
+		"finishing": 42,
+		"shot_power": 73,
+		"long_shots": 41,
+		"heading": 78,
+		"dribbling": 51,
+		"ball_control": 59,
+		"tight_possession": 51,
+		"low_pass": 64,
+		"lofted_pass": 57,
+		"vision": 50,
+		"speed": 70,
+		"acceleration": 64,
+		"stamina": 75,
+		"strength": 89,
+		"balance": 61,
+		"jump": 83,
+		"tackling": 85,
+		"interception": 74,
+		"marking": 74,
+		"aggression": 93,
+		"gk_reflexes": 22,
+		"gk_diving": 18,
+		"gk_handling": 16,
+		"gk_positioning": 17,
+		"gk_kicking": 25
+	}
+}

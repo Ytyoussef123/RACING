@@ -1,0 +1,33 @@
+{
+	"name": "Concrete Kings",
+	"short_name": "CKS",
+	"home_court": "cage_concrete",
+	"colors": {
+		"kit": "#ff5c1a",
+		"keeper": "#ffd61a",
+		"alt_kit": "#f2f2f2",
+		"alt_keeper": "#2f2f36"
+	},
+	"players": [
+		{
+			"id": "rui_calvanteo",
+			"number": 1
+		},
+		{
+			"id": "malik_obadunmi",
+			"number": 4
+		},
+		{
+			"id": "yanis_belkaroun",
+			"number": 8
+		},
+		{
+			"id": "teo_varmanetti",
+			"number": 7
+		},
+		{
+			"id": "dayo_fenwick_ashe",
+			"number": 9
+		}
+	]
+}

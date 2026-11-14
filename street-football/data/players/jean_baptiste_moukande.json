@@ -1,0 +1,47 @@
+{
+	"name": "Jean-Baptiste Moukandé",
+	"short_name": "J-B. Moukandé",
+	"nationality": "France",
+	"age": 24,
+	"height_cm": 179,
+	"preferred_foot": "right",
+	"weak_foot": 3,
+	"positions": [
+		"ATT"
+	],
+	"playstyle": "speedster",
+	"skill_moves": 3,
+	"special_skills": [],
+	"look": {
+		"skin": "#5e3a22",
+		"hair": "#7a2fd0",
+		"hair_style": "mohawk"
+	},
+	"attributes": {
+		"finishing": 75,
+		"shot_power": 73,
+		"long_shots": 57,
+		"heading": 55,
+		"dribbling": 80,
+		"ball_control": 78,
+		"tight_possession": 69,
+		"low_pass": 70,
+		"lofted_pass": 58,
+		"vision": 64,
+		"speed": 94,
+		"acceleration": 92,
+		"stamina": 83,
+		"strength": 62,
+		"balance": 81,
+		"jump": 65,
+		"tackling": 39,
+		"interception": 43,
+		"marking": 35,
+		"aggression": 54,
+		"gk_reflexes": 22,
+		"gk_diving": 23,
+		"gk_handling": 20,
+		"gk_positioning": 19,
+		"gk_kicking": 28
+	}
+}

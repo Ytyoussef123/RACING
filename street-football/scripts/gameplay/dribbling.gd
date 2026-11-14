@@ -53,8 +53,8 @@ static func can_steal(player: Player, ctx: MatchContext) -> bool:
 	if holder == null or holder.team == player.team:
 		return false
 	var holder_dist := holder.flat_distance_to(ctx.ball.position)
-	return holder_dist > _cfg("dribble_exposed_distance", 0.8) \
-		and player.flat_distance_to(ctx.ball.position) < holder_dist
+	var exposed := holder.stat("dribble_exposed_distance", _cfg("dribble_exposed_distance", 0.8))
+	return holder_dist > exposed and player.flat_distance_to(ctx.ball.position) < holder_dist
 
 
 func _touch(player: Player, ctx: MatchContext, to_ball: Vector3, dir: Vector3, player_along: float,
@@ -69,6 +69,8 @@ func _touch(player: Player, ctx: MatchContext, to_ball: Vector3, dir: Vector3, p
 		var run_speed := _cfg("run_speed", 5.5) * player.motion.speed_factor
 		extra = lerpf(_cfg("dribble_touch_extra_min", 1.6), _cfg("dribble_touch_extra_run", 2.6),
 			clampf(player_along / maxf(0.1, run_speed), 0.0, 1.0))
+	# Good dribblers keep their touches closer.
+	extra *= player.stat("dribble_touch_extra_mult", 1.0)
 	# Push along the wanted direction, steering the ball back onto the line in front of him.
 	var lateral := to_ball - dir * to_ball.dot(dir)
 	var v := dir * (player_along + extra) - lateral * _cfg("dribble_touch_centering", 2.5)

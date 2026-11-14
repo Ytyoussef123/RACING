@@ -1,0 +1,51 @@
+{
+	"name": "Samir Qadouri",
+	"short_name": "S. Qadouri",
+	"nationality": "Egypt",
+	"age": 22,
+	"height_cm": 170,
+	"preferred_foot": "left",
+	"weak_foot": 3,
+	"positions": [
+		"WING",
+		"MID"
+	],
+	"playstyle": "street_dribbler",
+	"skill_moves": 4,
+	"special_skills": [
+		"flip_flap",
+		"heel_flick"
+	],
+	"look": {
+		"skin": "#a86b45",
+		"hair": "#1b1410",
+		"hair_style": "short"
+	},
+	"attributes": {
+		"finishing": 71,
+		"shot_power": 66,
+		"long_shots": 63,
+		"heading": 44,
+		"dribbling": 87,
+		"ball_control": 83,
+		"tight_possession": 89,
+		"low_pass": 75,
+		"lofted_pass": 61,
+		"vision": 71,
+		"speed": 84,
+		"acceleration": 89,
+		"stamina": 73,
+		"strength": 45,
+		"balance": 91,
+		"jump": 56,
+		"tackling": 31,
+		"interception": 39,
+		"marking": 29,
+		"aggression": 45,
+		"gk_reflexes": 23,
+		"gk_diving": 22,
+		"gk_handling": 17,
+		"gk_positioning": 21,
+		"gk_kicking": 28
+	}
+}

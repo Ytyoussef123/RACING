@@ -1,7 +1,7 @@
 class_name MatchHud
 extends Control
-## Match overlay: score and clock, big messages (GOAL!, OUT, FULL TIME), shot power bar,
-## court name, formation button and menu button.
+## Match overlay: team names, score and clock, big messages (GOAL!, OUT, FULL TIME), shot power
+## bar, name tag with stamina above the human's player, court name, formation and menu buttons.
 
 signal menu_pressed
 signal formation_pressed
@@ -13,6 +13,12 @@ signal formation_pressed
 @onready var _home_chip: ColorRect = $ScoreBar/HomeChip
 @onready var _away_chip: ColorRect = $ScoreBar/AwayChip
 @onready var _clock: Label = $ScoreBar/Clock
+@onready var _home_name: Label = $ScoreBar/HomeName
+@onready var _away_name: Label = $ScoreBar/AwayName
+@onready var _tag: Control = $PlayerTag
+@onready var _tag_name: Label = $PlayerTag/Name
+@onready var _energy_back: ColorRect = $PlayerTag/Energy/Back
+@onready var _energy_fill: ColorRect = $PlayerTag/Energy/Back/Fill
 @onready var _power_bar: Control = $PowerBar
 @onready var _power_fill: ColorRect = $PowerBar/Fill
 @onready var _menu_button: Button = $MenuButton
@@ -45,6 +51,11 @@ func set_team_colors(home: Color, away: Color) -> void:
 	_away_chip.color = away
 
 
+func set_team_names(home: String, away: String) -> void:
+	_home_name.text = home
+	_away_name.text = away
+
+
 func set_score(home: int, away: int) -> void:
 	_home_score.text = str(home)
 	_away_score.text = str(away)
@@ -65,3 +76,15 @@ func update_power(charge: float, shown: bool, screen_position: Vector2) -> void:
 		return
 	_power_bar.position = screen_position - _power_bar.size * 0.5
 	_power_fill.size = Vector2(_power_bar.size.x * clampf(charge, 0.0, 1.0), _power_bar.size.y)
+
+
+## Name tag above the human's player; energy 0..1 drawn as a bar (green, then orange, then red).
+func update_player_tag(text: String, energy: float, shown: bool, screen_position: Vector2) -> void:
+	_tag.visible = shown and not text.is_empty()
+	if not _tag.visible:
+		return
+	_tag_name.text = text
+	_tag.position = screen_position - Vector2(_tag.size.x * 0.5, _tag.size.y)
+	var e := clampf(energy, 0.0, 1.0)
+	_energy_fill.size = Vector2(_energy_back.size.x * e, _energy_back.size.y)
+	_energy_fill.color = Color(0.4, 1.0, 0.55) if e > 0.5 else (Color(1.0, 0.7, 0.2) if e > 0.25 else Color(1.0, 0.3, 0.25))

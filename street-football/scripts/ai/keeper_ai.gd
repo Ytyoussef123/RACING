@@ -53,14 +53,16 @@ static func try_save(keeper: Player, ctx: MatchContext) -> void:
 	var speed := ball.velocity.length()
 	if -ball.velocity.x * s < 1.0 or speed < Steering.num("keeper_save_min_speed", 7.0):
 		return
-	if keeper.flat_distance_to(ball.position) > Steering.num("keeper_reach", 1.6):
+	# Diving decides the reach, reflexes the save chance, handling whether he holds the ball.
+	if keeper.flat_distance_to(ball.position) > keeper.stat("keeper_reach", Steering.num("keeper_reach", 1.6)):
 		return
 	if ball.position.y > Steering.num("keeper_reach_height", 2.3):
 		return
 	state.last_save_kick = possession.kick_count
-	if ctx.rng.randf() >= keeper.team.tuning.keeper_save_chance:
+	var save_chance := minf(0.97, keeper.team.tuning.keeper_save_chance * keeper.stat("keeper_save_mult", 1.0))
+	if ctx.rng.randf() >= save_chance:
 		return
-	if speed <= Steering.num("keeper_catch_speed", 18.0):
+	if speed <= keeper.stat("keeper_catch_speed", Steering.num("keeper_catch_speed", 18.0)):
 		ball.place(keeper.position + keeper.motion.facing * 0.5 + Vector3.UP * ball.radius)
 		possession.take(keeper, ball)
 	else:

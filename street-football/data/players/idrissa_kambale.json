@@ -1,0 +1,47 @@
+{
+	"name": "Idrissa Kambalé",
+	"short_name": "I. Kambalé",
+	"nationality": "Senegal",
+	"age": 29,
+	"height_cm": 190,
+	"preferred_foot": "right",
+	"weak_foot": 2,
+	"positions": [
+		"GK"
+	],
+	"playstyle": "line_keeper",
+	"skill_moves": 1,
+	"special_skills": [],
+	"look": {
+		"skin": "#3f2716",
+		"hair": "#1b1410",
+		"hair_style": "bald"
+	},
+	"attributes": {
+		"finishing": 26,
+		"shot_power": 52,
+		"long_shots": 32,
+		"heading": 42,
+		"dribbling": 34,
+		"ball_control": 47,
+		"tight_possession": 36,
+		"low_pass": 55,
+		"lofted_pass": 57,
+		"vision": 48,
+		"speed": 48,
+		"acceleration": 50,
+		"stamina": 59,
+		"strength": 73,
+		"balance": 57,
+		"jump": 73,
+		"tackling": 27,
+		"interception": 33,
+		"marking": 28,
+		"aggression": 41,
+		"gk_reflexes": 86,
+		"gk_diving": 81,
+		"gk_handling": 85,
+		"gk_positioning": 80,
+		"gk_kicking": 66
+	}
+}

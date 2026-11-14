@@ -1,12 +1,12 @@
 {
-	"_note": "AI tuning. 'difficulties' change how well the AI plays; the rest shapes positioning and decisions. Distances in meters, times in seconds.",
+	"_note": "AI tuning. 'difficulties' change how well the AI plays (its aim error adds to the players' own stat-based error); the rest shapes positioning and decisions. Distances in meters, times in seconds.",
 	"teammates_difficulty": "normal",
 	"opponent_formation": "1-2-1",
 	"difficulties": {
 		"easy": {
 			"decision_interval": 0.45,
 			"speed_factor": 0.9,
-			"shot_error_degrees": 12.0,
+			"shot_error_degrees": 8.0,
 			"shoot_range": 9.0,
 			"pass_tendency": 0.15,
 			"pass_pressure_distance": 1.8,
@@ -17,7 +17,7 @@
 		"normal": {
 			"decision_interval": 0.28,
 			"speed_factor": 0.97,
-			"shot_error_degrees": 7.0,
+			"shot_error_degrees": 4.0,
 			"shoot_range": 11.0,
 			"pass_tendency": 0.25,
 			"pass_pressure_distance": 2.2,
@@ -28,7 +28,7 @@
 		"hard": {
 			"decision_interval": 0.15,
 			"speed_factor": 1.03,
-			"shot_error_degrees": 3.5,
+			"shot_error_degrees": 2.0,
 			"shoot_range": 12.5,
 			"pass_tendency": 0.35,
 			"pass_pressure_distance": 2.6,

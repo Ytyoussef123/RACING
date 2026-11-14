@@ -1,0 +1,33 @@
+{
+	"name": "Sandstorm Strikers",
+	"short_name": "SST",
+	"home_court": "open_lot",
+	"colors": {
+		"kit": "#f4c542",
+		"keeper": "#2d6cdf",
+		"alt_kit": "#5a3b12",
+		"alt_keeper": "#ff5c5c"
+	},
+	"players": [
+		{
+			"id": "hiro_tanazaki",
+			"number": 1
+		},
+		{
+			"id": "omar_benslimar",
+			"number": 4
+		},
+		{
+			"id": "felipe_carvalhedo",
+			"number": 8
+		},
+		{
+			"id": "samir_qadouri",
+			"number": 7
+		},
+		{
+			"id": "jean_baptiste_moukande",
+			"number": 9
+		}
+	]
+}

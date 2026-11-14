@@ -1,0 +1,47 @@
+{
+	"name": "Kemal Yıldırak",
+	"short_name": "K. Yıldırak",
+	"nationality": "Turkey",
+	"age": 31,
+	"height_cm": 187,
+	"preferred_foot": "right",
+	"weak_foot": 2,
+	"positions": [
+		"GK"
+	],
+	"playstyle": "line_keeper",
+	"skill_moves": 1,
+	"special_skills": [],
+	"look": {
+		"skin": "#c68a5e",
+		"hair": "#d9d9d9",
+		"hair_style": "short"
+	},
+	"attributes": {
+		"finishing": 24,
+		"shot_power": 57,
+		"long_shots": 31,
+		"heading": 39,
+		"dribbling": 38,
+		"ball_control": 47,
+		"tight_possession": 37,
+		"low_pass": 55,
+		"lofted_pass": 61,
+		"vision": 46,
+		"speed": 48,
+		"acceleration": 55,
+		"stamina": 55,
+		"strength": 73,
+		"balance": 60,
+		"jump": 78,
+		"tackling": 28,
+		"interception": 34,
+		"marking": 26,
+		"aggression": 39,
+		"gk_reflexes": 87,
+		"gk_diving": 83,
+		"gk_handling": 82,
+		"gk_positioning": 78,
+		"gk_kicking": 65
+	}
+}

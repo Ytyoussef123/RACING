@@ -1,0 +1,51 @@
+{
+	"name": "Kenji Hanazono",
+	"short_name": "K. Hanazono",
+	"nationality": "Japan",
+	"age": 22,
+	"height_cm": 170,
+	"preferred_foot": "left",
+	"weak_foot": 4,
+	"positions": [
+		"MID",
+		"WING"
+	],
+	"playstyle": "playmaker",
+	"skill_moves": 4,
+	"special_skills": [
+		"heel_flick",
+		"first_time_shot"
+	],
+	"look": {
+		"skin": "#e0ac7e",
+		"hair": "#1b1410",
+		"hair_style": "short"
+	},
+	"attributes": {
+		"finishing": 75,
+		"shot_power": 80,
+		"long_shots": 87,
+		"heading": 55,
+		"dribbling": 81,
+		"ball_control": 93,
+		"tight_possession": 89,
+		"low_pass": 91,
+		"lofted_pass": 93,
+		"vision": 94,
+		"speed": 69,
+		"acceleration": 71,
+		"stamina": 78,
+		"strength": 62,
+		"balance": 85,
+		"jump": 63,
+		"tackling": 57,
+		"interception": 63,
+		"marking": 53,
+		"aggression": 51,
+		"gk_reflexes": 21,
+		"gk_diving": 18,
+		"gk_handling": 16,
+		"gk_positioning": 19,
+		"gk_kicking": 29
+	}
+}

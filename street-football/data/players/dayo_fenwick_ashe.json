@@ -1,0 +1,49 @@
+{
+	"name": "Dayo Fenwick-Ashe",
+	"short_name": "D. Fenwick-Ashe",
+	"nationality": "England",
+	"age": 26,
+	"height_cm": 183,
+	"preferred_foot": "right",
+	"weak_foot": 3,
+	"positions": [
+		"ATT"
+	],
+	"playstyle": "box_finisher",
+	"skill_moves": 3,
+	"special_skills": [
+		"first_time_shot"
+	],
+	"look": {
+		"skin": "#8a5534",
+		"hair": "#1b1410",
+		"hair_style": "afro"
+	},
+	"attributes": {
+		"finishing": 89,
+		"shot_power": 83,
+		"long_shots": 75,
+		"heading": 86,
+		"dribbling": 74,
+		"ball_control": 82,
+		"tight_possession": 76,
+		"low_pass": 68,
+		"lofted_pass": 57,
+		"vision": 69,
+		"speed": 79,
+		"acceleration": 80,
+		"stamina": 69,
+		"strength": 79,
+		"balance": 70,
+		"jump": 83,
+		"tackling": 33,
+		"interception": 34,
+		"marking": 28,
+		"aggression": 65,
+		"gk_reflexes": 22,
+		"gk_diving": 20,
+		"gk_handling": 19,
+		"gk_positioning": 20,
+		"gk_kicking": 29
+	}
+}

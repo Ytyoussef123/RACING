@@ -1,0 +1,47 @@
+{
+	"name": "Omar Benslimar",
+	"short_name": "O. Benslimar",
+	"nationality": "Algeria",
+	"age": 28,
+	"height_cm": 186,
+	"preferred_foot": "right",
+	"weak_foot": 2,
+	"positions": [
+		"DEF"
+	],
+	"playstyle": "rock_defender",
+	"skill_moves": 2,
+	"special_skills": [],
+	"look": {
+		"skin": "#c68a5e",
+		"hair": "#1b1410",
+		"hair_style": "buzz"
+	},
+	"attributes": {
+		"finishing": 40,
+		"shot_power": 67,
+		"long_shots": 43,
+		"heading": 78,
+		"dribbling": 52,
+		"ball_control": 59,
+		"tight_possession": 55,
+		"low_pass": 68,
+		"lofted_pass": 63,
+		"vision": 55,
+		"speed": 69,
+		"acceleration": 62,
+		"stamina": 73,
+		"strength": 84,
+		"balance": 65,
+		"jump": 75,
+		"tackling": 86,
+		"interception": 82,
+		"marking": 85,
+		"aggression": 80,
+		"gk_reflexes": 22,
+		"gk_diving": 20,
+		"gk_handling": 15,
+		"gk_positioning": 21,
+		"gk_kicking": 31
+	}
+}

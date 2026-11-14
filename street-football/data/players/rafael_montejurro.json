@@ -1,0 +1,51 @@
+{
+	"name": "Rafael Montejurro",
+	"short_name": "R. Montejurro",
+	"nationality": "Spain",
+	"age": 22,
+	"height_cm": 168,
+	"preferred_foot": "left",
+	"weak_foot": 3,
+	"positions": [
+		"WING"
+	],
+	"playstyle": "street_dribbler",
+	"skill_moves": 5,
+	"special_skills": [
+		"rainbow",
+		"roulette",
+		"nutmeg"
+	],
+	"look": {
+		"skin": "#e0ac7e",
+		"hair": "#6b4423",
+		"hair_style": "long"
+	},
+	"attributes": {
+		"finishing": 74,
+		"shot_power": 70,
+		"long_shots": 61,
+		"heading": 44,
+		"dribbling": 89,
+		"ball_control": 90,
+		"tight_possession": 89,
+		"low_pass": 72,
+		"lofted_pass": 64,
+		"vision": 69,
+		"speed": 88,
+		"acceleration": 91,
+		"stamina": 75,
+		"strength": 52,
+		"balance": 92,
+		"jump": 56,
+		"tackling": 34,
+		"interception": 36,
+		"marking": 29,
+		"aggression": 42,
+		"gk_reflexes": 25,
+		"gk_diving": 17,
+		"gk_handling": 18,
+		"gk_positioning": 19,
+		"gk_kicking": 31
+	}
+}

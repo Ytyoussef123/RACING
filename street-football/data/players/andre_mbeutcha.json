@@ -1,0 +1,47 @@
+{
+	"name": "André Mbeutcha",
+	"short_name": "A. Mbeutcha",
+	"nationality": "Cameroon",
+	"age": 23,
+	"height_cm": 176,
+	"preferred_foot": "right",
+	"weak_foot": 3,
+	"positions": [
+		"WING"
+	],
+	"playstyle": "speedster",
+	"skill_moves": 3,
+	"special_skills": [],
+	"look": {
+		"skin": "#3f2716",
+		"hair": "#1b1410",
+		"hair_style": "short"
+	},
+	"attributes": {
+		"finishing": 75,
+		"shot_power": 74,
+		"long_shots": 59,
+		"heading": 55,
+		"dribbling": 81,
+		"ball_control": 79,
+		"tight_possession": 72,
+		"low_pass": 68,
+		"lofted_pass": 61,
+		"vision": 59,
+		"speed": 95,
+		"acceleration": 95,
+		"stamina": 80,
+		"strength": 59,
+		"balance": 76,
+		"jump": 65,
+		"tackling": 31,
+		"interception": 38,
+		"marking": 35,
+		"aggression": 49,
+		"gk_reflexes": 24,
+		"gk_diving": 23,
+		"gk_handling": 19,
+		"gk_positioning": 23,
+		"gk_kicking": 25
+	}
+}

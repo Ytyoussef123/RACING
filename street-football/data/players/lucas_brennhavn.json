@@ -1,0 +1,47 @@
+{
+	"name": "Lucas Brennhavn",
+	"short_name": "L. Brennhavn",
+	"nationality": "Norway",
+	"age": 28,
+	"height_cm": 191,
+	"preferred_foot": "right",
+	"weak_foot": 2,
+	"positions": [
+		"DEF"
+	],
+	"playstyle": "rock_defender",
+	"skill_moves": 2,
+	"special_skills": [],
+	"look": {
+		"skin": "#f1c7a5",
+		"hair": "#6b4423",
+		"hair_style": "buzz"
+	},
+	"attributes": {
+		"finishing": 40,
+		"shot_power": 69,
+		"long_shots": 47,
+		"heading": 77,
+		"dribbling": 53,
+		"ball_control": 64,
+		"tight_possession": 52,
+		"low_pass": 67,
+		"lofted_pass": 63,
+		"vision": 53,
+		"speed": 65,
+		"acceleration": 59,
+		"stamina": 75,
+		"strength": 85,
+		"balance": 61,
+		"jump": 80,
+		"tackling": 87,
+		"interception": 79,
+		"marking": 85,
+		"aggression": 83,
+		"gk_reflexes": 24,
+		"gk_diving": 17,
+		"gk_handling": 17,
+		"gk_positioning": 21,
+		"gk_kicking": 28
+	}
+}

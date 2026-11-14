@@ -1,0 +1,33 @@
+{
+	"name": "Rooftop Rebels",
+	"short_name": "RTR",
+	"home_court": "open_lot",
+	"colors": {
+		"kit": "#20c4d8",
+		"keeper": "#7a5cff",
+		"alt_kit": "#14141a",
+		"alt_keeper": "#ff9fd1"
+	},
+	"players": [
+		{
+			"id": "sven_ostrakk",
+			"number": 1
+		},
+		{
+			"id": "lucas_brennhavn",
+			"number": 5
+		},
+		{
+			"id": "andres_tolvaquera",
+			"number": 6
+		},
+		{
+			"id": "kenji_hanazono",
+			"number": 10
+		},
+		{
+			"id": "bastien_lemoreau",
+			"number": 11
+		}
+	]
+}

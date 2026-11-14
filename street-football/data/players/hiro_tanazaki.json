@@ -1,0 +1,47 @@
+{
+	"name": "Hiro Tanazaki",
+	"short_name": "H. Tanazaki",
+	"nationality": "Japan",
+	"age": 25,
+	"height_cm": 182,
+	"preferred_foot": "right",
+	"weak_foot": 3,
+	"positions": [
+		"GK"
+	],
+	"playstyle": "sweeper_keeper",
+	"skill_moves": 1,
+	"special_skills": [],
+	"look": {
+		"skin": "#e0ac7e",
+		"hair": "#1b1410",
+		"hair_style": "short"
+	},
+	"attributes": {
+		"finishing": 22,
+		"shot_power": 53,
+		"long_shots": 31,
+		"heading": 41,
+		"dribbling": 36,
+		"ball_control": 46,
+		"tight_possession": 33,
+		"low_pass": 64,
+		"lofted_pass": 68,
+		"vision": 59,
+		"speed": 60,
+		"acceleration": 63,
+		"stamina": 59,
+		"strength": 68,
+		"balance": 62,
+		"jump": 69,
+		"tackling": 31,
+		"interception": 32,
+		"marking": 22,
+		"aggression": 42,
+		"gk_reflexes": 79,
+		"gk_diving": 81,
+		"gk_handling": 73,
+		"gk_positioning": 74,
+		"gk_kicking": 85
+	}
+}

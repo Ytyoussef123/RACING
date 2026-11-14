@@ -53,14 +53,25 @@ layout_mode = 1
 anchors_preset = 5
 anchor_left = 0.5
 anchor_right = 0.5
-offset_left = -260.0
+offset_left = -460.0
 offset_top = 20.0
-offset_right = 260.0
+offset_right = 460.0
 offset_bottom = 110.0
 grow_horizontal = 2
 mouse_filter = 2
 theme_override_constants/separation = 14
 alignment = 1
+
+[node name="HomeName" type="Label" parent="ScoreBar"]
+custom_minimum_size = Vector2(130, 0)
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 10
+theme_override_font_sizes/font_size = 44
+text = "HOME"
+horizontal_alignment = 2
+auto_translate_mode = 2
 
 [node name="HomeChip" type="ColorRect" parent="ScoreBar"]
 custom_minimum_size = Vector2(26, 60)
@@ -103,6 +114,61 @@ custom_minimum_size = Vector2(26, 60)
 layout_mode = 2
 size_flags_vertical = 4
 mouse_filter = 2
+
+[node name="AwayName" type="Label" parent="ScoreBar"]
+custom_minimum_size = Vector2(130, 0)
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 10
+theme_override_font_sizes/font_size = 44
+text = "AWAY"
+auto_translate_mode = 2
+
+[node name="PlayerTag" type="VBoxContainer" parent="."]
+visible = false
+layout_mode = 0
+offset_right = 420.0
+offset_bottom = 60.0
+mouse_filter = 2
+theme_override_constants/separation = 4
+
+[node name="Name" type="Label" parent="PlayerTag"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 10
+theme_override_font_sizes/font_size = 30
+horizontal_alignment = 1
+auto_translate_mode = 2
+
+[node name="Energy" type="Control" parent="PlayerTag"]
+custom_minimum_size = Vector2(0, 10)
+layout_mode = 2
+mouse_filter = 2
+
+[node name="Back" type="ColorRect" parent="PlayerTag/Energy"]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -70.0
+offset_top = -5.0
+offset_right = 70.0
+offset_bottom = 5.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+color = Color(0, 0, 0, 0.6)
+
+[node name="Fill" type="ColorRect" parent="PlayerTag/Energy/Back"]
+layout_mode = 0
+offset_right = 140.0
+offset_bottom = 10.0
+mouse_filter = 2
+color = Color(0.4, 1, 0.55, 1)
 
 [node name="PowerBar" type="Control" parent="."]
 visible = false

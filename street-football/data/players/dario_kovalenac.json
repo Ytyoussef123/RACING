@@ -1,0 +1,48 @@
+{
+	"name": "Dario Kovalenac",
+	"short_name": "D. Kovalenac",
+	"nationality": "Croatia",
+	"age": 29,
+	"height_cm": 185,
+	"preferred_foot": "left",
+	"weak_foot": 3,
+	"positions": [
+		"DEF",
+		"MID"
+	],
+	"playstyle": "wall_passer",
+	"skill_moves": 2,
+	"special_skills": [],
+	"look": {
+		"skin": "#f1c7a5",
+		"hair": "#3b2416",
+		"hair_style": "short"
+	},
+	"attributes": {
+		"finishing": 61,
+		"shot_power": 72,
+		"long_shots": 74,
+		"heading": 52,
+		"dribbling": 77,
+		"ball_control": 79,
+		"tight_possession": 79,
+		"low_pass": 88,
+		"lofted_pass": 78,
+		"vision": 87,
+		"speed": 66,
+		"acceleration": 74,
+		"stamina": 84,
+		"strength": 66,
+		"balance": 72,
+		"jump": 60,
+		"tackling": 72,
+		"interception": 76,
+		"marking": 67,
+		"aggression": 56,
+		"gk_reflexes": 21,
+		"gk_diving": 20,
+		"gk_handling": 17,
+		"gk_positioning": 20,
+		"gk_kicking": 30
+	}
+}

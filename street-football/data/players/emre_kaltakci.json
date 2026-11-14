@@ -1,0 +1,47 @@
+{
+	"name": "Emre Kaltakçı",
+	"short_name": "E. Kaltakçı",
+	"nationality": "Turkey",
+	"age": 26,
+	"height_cm": 181,
+	"preferred_foot": "right",
+	"weak_foot": 3,
+	"positions": [
+		"MID"
+	],
+	"playstyle": "engine",
+	"skill_moves": 3,
+	"special_skills": [],
+	"look": {
+		"skin": "#c68a5e",
+		"hair": "#1b1410",
+		"hair_style": "short"
+	},
+	"attributes": {
+		"finishing": 60,
+		"shot_power": 77,
+		"long_shots": 72,
+		"heading": 63,
+		"dribbling": 71,
+		"ball_control": 75,
+		"tight_possession": 64,
+		"low_pass": 75,
+		"lofted_pass": 69,
+		"vision": 70,
+		"speed": 76,
+		"acceleration": 70,
+		"stamina": 95,
+		"strength": 73,
+		"balance": 70,
+		"jump": 74,
+		"tackling": 75,
+		"interception": 77,
+		"marking": 67,
+		"aggression": 74,
+		"gk_reflexes": 22,
+		"gk_diving": 20,
+		"gk_handling": 20,
+		"gk_positioning": 18,
+		"gk_kicking": 30
+	}
+}

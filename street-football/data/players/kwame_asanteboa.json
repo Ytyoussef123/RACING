@@ -1,0 +1,47 @@
+{
+	"name": "Kwame Asanteboa",
+	"short_name": "K. Asanteboa",
+	"nationality": "Ghana",
+	"age": 27,
+	"height_cm": 188,
+	"preferred_foot": "right",
+	"weak_foot": 2,
+	"positions": [
+		"ATT"
+	],
+	"playstyle": "box_finisher",
+	"skill_moves": 2,
+	"special_skills": [],
+	"look": {
+		"skin": "#5e3a22",
+		"hair": "#1b1410",
+		"hair_style": "buzz"
+	},
+	"attributes": {
+		"finishing": 92,
+		"shot_power": 82,
+		"long_shots": 70,
+		"heading": 85,
+		"dribbling": 77,
+		"ball_control": 81,
+		"tight_possession": 72,
+		"low_pass": 66,
+		"lofted_pass": 53,
+		"vision": 66,
+		"speed": 71,
+		"acceleration": 76,
+		"stamina": 65,
+		"strength": 87,
+		"balance": 71,
+		"jump": 78,
+		"tackling": 33,
+		"interception": 33,
+		"marking": 27,
+		"aggression": 63,
+		"gk_reflexes": 20,
+		"gk_diving": 19,
+		"gk_handling": 18,
+		"gk_positioning": 19,
+		"gk_kicking": 27
+	}
+}

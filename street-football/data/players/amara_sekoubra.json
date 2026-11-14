@@ -1,0 +1,47 @@
+{
+	"name": "Amara Sékoubra",
+	"short_name": "A. Sékoubra",
+	"nationality": "Ivory Coast",
+	"age": 25,
+	"height_cm": 183,
+	"preferred_foot": "right",
+	"weak_foot": 3,
+	"positions": [
+		"MID"
+	],
+	"playstyle": "engine",
+	"skill_moves": 3,
+	"special_skills": [],
+	"look": {
+		"skin": "#3f2716",
+		"hair": "#1b1410",
+		"hair_style": "buzz"
+	},
+	"attributes": {
+		"finishing": 61,
+		"shot_power": 77,
+		"long_shots": 74,
+		"heading": 65,
+		"dribbling": 68,
+		"ball_control": 76,
+		"tight_possession": 66,
+		"low_pass": 73,
+		"lofted_pass": 70,
+		"vision": 67,
+		"speed": 75,
+		"acceleration": 76,
+		"stamina": 91,
+		"strength": 77,
+		"balance": 67,
+		"jump": 77,
+		"tackling": 79,
+		"interception": 77,
+		"marking": 74,
+		"aggression": 77,
+		"gk_reflexes": 19,
+		"gk_diving": 19,
+		"gk_handling": 19,
+		"gk_positioning": 22,
+		"gk_kicking": 25
+	}
+}

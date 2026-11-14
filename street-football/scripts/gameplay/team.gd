@@ -9,6 +9,8 @@ var attack_sign: float = 1.0
 var color: Color = Color.WHITE
 var keeper_color: Color = Color.WHITE
 var formation: FormationData
+## The crew's data (name, colors...), or null for test teams.
+var data: TeamData = null
 var players: Array[Player] = []
 var keeper: Player
 var opponent: Team
@@ -61,8 +63,43 @@ func nearest_distance_to(pos: Vector3) -> float:
 	return best
 
 
-## Applies a new formation: slot i keeps player i, roles follow the new slots.
+## Applies a new formation and puts every player in the slot that suits him.
 func set_formation(new_formation: FormationData) -> void:
 	formation = new_formation
+	assign_slots()
+
+
+## Places players in the formation slots (SlotAssigner) and gives them their roles and stats.
+## Players without a profile keep their order.
+func assign_slots() -> void:
+	var profiles: Array[PlayerProfile] = []
 	for p in players:
-		p.role = formation.role(p.slot_index)
+		if p.profile == null:
+			profiles.clear()
+			break
+		profiles.append(p.profile)
+	var order: Array[int] = []
+	if profiles.size() == players.size():
+		order = SlotAssigner.assign(profiles, formation)
+	else:
+		for i in range(players.size()):
+			order.append(i)
+	keeper = null
+	for slot in range(order.size()):
+		var p := players[order[slot]]
+		p.slot_index = slot
+		p.is_keeper = formation.role(slot) == "GK"
+		if p.profile != null and p.display_name.is_empty():
+			p.apply_profile(p.profile, formation.role(slot), p.number)
+		else:
+			p.set_role(formation.role(slot))
+		if p.is_keeper:
+			keeper = p
+
+
+func display_name() -> String:
+	return data.name if data != null else "Team %d" % (index + 1)
+
+
+func short_name() -> String:
+	return data.short_name if data != null else "T%d" % (index + 1)

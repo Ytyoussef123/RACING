@@ -1,0 +1,47 @@
+{
+	"name": "Mateo Quillabamba",
+	"short_name": "M. Quillabamba",
+	"nationality": "Peru",
+	"age": 26,
+	"height_cm": 184,
+	"preferred_foot": "right",
+	"weak_foot": 3,
+	"positions": [
+		"GK"
+	],
+	"playstyle": "sweeper_keeper",
+	"skill_moves": 1,
+	"special_skills": [],
+	"look": {
+		"skin": "#a86b45",
+		"hair": "#1b1410",
+		"hair_style": "long"
+	},
+	"attributes": {
+		"finishing": 27,
+		"shot_power": 56,
+		"long_shots": 28,
+		"heading": 38,
+		"dribbling": 34,
+		"ball_control": 47,
+		"tight_possession": 33,
+		"low_pass": 64,
+		"lofted_pass": 68,
+		"vision": 59,
+		"speed": 59,
+		"acceleration": 59,
+		"stamina": 59,
+		"strength": 68,
+		"balance": 61,
+		"jump": 73,
+		"tackling": 32,
+		"interception": 36,
+		"marking": 27,
+		"aggression": 43,
+		"gk_reflexes": 77,
+		"gk_diving": 78,
+		"gk_handling": 70,
+		"gk_positioning": 76,
+		"gk_kicking": 83
+	}
+}

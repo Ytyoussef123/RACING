@@ -5,7 +5,9 @@ extends RefCounted
 ## and bounce the ball off the body.
 ## Kicks only happen with the ball within reach: a pass, through pass or shot asked when the ball
 ## is a little away is kept (with its aim) and played as soon as the ball is reached: first-time
-## on an incoming ball, or at the next touch when dribbling. Numbers: data/config/player.json.
+## on an incoming ball, or at the next touch when dribbling.
+## Player attributes (stat sheet) change control, shot power and accuracy, pass accuracy and the
+## weak foot. Numbers: data/config/player.json and stat_effects.json.
 
 var is_charging: bool = false
 ## 0..1 while the shoot button is held.
@@ -93,7 +95,7 @@ func _tick_timers(delta: float) -> void:
 
 ## Takes a loose ball in control range, or steals one an opponent knocked too far ahead.
 func _try_take(player: Player, ctx: MatchContext) -> void:
-	if _cooldown > 0.0 or player.stun_timer > 0.0 or not _can_take(player, ctx.ball):
+	if _cooldown > 0.0 or player.stun_timer > 0.0 or not _can_take(player, ctx):
 		return
 	var holder := ctx.possession.holder
 	if holder == null:
@@ -132,24 +134,57 @@ func _pass(player: Player, ctx: MatchContext, aim: Vector3) -> void:
 		kick_velocity = PassTargeting.pass_velocity(player, target)
 	else:
 		kick_velocity = aim * _cfg("pass_speed", 11.0) + Vector3.UP * _cfg("pass_lift", 0.0)
+	var error := player.stat("keeper_kick_error_degrees" if player.is_keeper else "pass_error_degrees", 0.0)
+	kick_velocity = _with_error(kick_velocity, error * _weak_foot_mult(player, aim), ctx)
 	_kick(player, ctx, kick_velocity, 0.0, target)
 
 
 ## Ground pass into the space in front of the receiver, toward the opponent's goal.
 func _through_pass(player: Player, ctx: MatchContext, aim: Vector3) -> void:
 	var target := PassTargeting.choose(player, aim, ctx)
+	var error := player.stat("keeper_kick_error_degrees" if player.is_keeper else "through_error_degrees", 0.0)
+	error *= _weak_foot_mult(player, aim)
 	if target == null:
-		_kick(player, ctx, aim * _cfg("through_space_speed", 10.0), 0.0, null)
+		_kick(player, ctx, _with_error(aim * _cfg("through_space_speed", 10.0), error, ctx), 0.0, null)
 		return
-	_kick(player, ctx, PassTargeting.through_velocity(player, target, ctx), 0.0, target)
+	_kick(player, ctx, _with_error(PassTargeting.through_velocity(player, target, ctx), error, ctx), 0.0, target)
 
 
 func _shoot(player: Player, ctx: MatchContext, aim: Vector3, charge: float) -> void:
 	var speed := lerpf(_cfg("shot_speed_min", 12.0), _cfg("shot_speed_max", 26.0), charge)
+	speed *= player.stat("shot_speed_mult", 1.0)
 	var lift := lerpf(_cfg("shot_lift_min", 0.5), _cfg("shot_lift_max", 5.5), charge)
 	# Turning while shooting curls the ball the same way.
 	var spin := player.motion.turn_rate * _cfg("shot_curve_from_turn", 0.35)
-	_kick(player, ctx, aim * speed + Vector3.UP * lift, spin, null)
+	# Accuracy: finishing, plus long shots beyond long_shot_distance, worse on the weak foot.
+	var goal := Vector3(player.team.target_goal_x(ctx.court), 0.0, 0.0)
+	var beyond := maxf(0.0, player.flat_distance_to(goal) - StatEffects.num("long_shot_distance", 12.0))
+	var error := player.stat("shot_error_degrees", 0.0) + beyond * player.stat("long_shot_error_per_meter", 0.0)
+	error *= _weak_foot_mult(player, aim)
+	_kick(player, ctx, _with_error(aim * speed + Vector3.UP * lift, error, ctx), spin, null)
+
+
+## Turns a kick sideways by a random angle up to `degrees` (most kicks land near the aim).
+func _with_error(kick_velocity: Vector3, degrees: float, ctx: MatchContext) -> Vector3:
+	if degrees <= 0.0:
+		return kick_velocity
+	var angle := (ctx.rng.randf() + ctx.rng.randf() - 1.0) * degrees
+	return kick_velocity.rotated(Vector3.UP, deg_to_rad(angle))
+
+
+## Kicks aimed well to the weak-foot side are less accurate (weak_foot 1..4 stars).
+func _weak_foot_mult(player: Player, aim: Vector3) -> float:
+	if player.profile == null:
+		return 1.0
+	var facing := player.motion.facing
+	if rad_to_deg(facing.angle_to(aim)) < StatEffects.num("weak_side_degrees", 35.0):
+		return 1.0
+	var to_left := facing.cross(aim).y > 0.0
+	var weak_is_left := player.preferred_foot != "left"
+	if to_left != weak_is_left:
+		return 1.0
+	var mults: Array = Config.get_value("stat_effects", "weak_foot_error_mult", [2.6, 2.0, 1.5, 1.15])
+	return float(mults[clampi(player.weak_foot, 1, mults.size()) - 1])
 
 
 func _kick(player: Player, ctx: MatchContext, kick_velocity: Vector3, spin: float, target: Player) -> void:
@@ -180,13 +215,20 @@ func _bounce_off_body(player: Player, ctx: MatchContext) -> void:
 		ctx.possession.touched(player)
 
 
-func _can_take(player: Player, ball: BallPhysics) -> bool:
-	if ball.position.y > _cfg("control_max_ball_height", 0.6):
+## Ball low enough, close enough and not too fast to control (ball control, jump), or to cut
+## out when the other team played it last (interception).
+func _can_take(player: Player, ctx: MatchContext) -> bool:
+	var ball := ctx.ball
+	if ball.position.y > player.stat("control_max_ball_height", _cfg("control_max_ball_height", 0.6)):
 		return false
-	if player.flat_distance_to(ball.position) > _cfg("control_radius", 0.9):
+	var radius := player.stat("control_radius", _cfg("control_radius", 0.9))
+	var last := ctx.possession.last_touch_team
+	if ctx.possession.holder == null and last >= 0 and last != player.team.index:
+		radius = player.stat("intercept_radius", radius)
+	if player.flat_distance_to(ball.position) > radius:
 		return false
 	var rel := Vector2(ball.velocity.x - player.motion.velocity.x, ball.velocity.z - player.motion.velocity.z)
-	return rel.length() <= _cfg("control_max_relative_speed", 17.0)
+	return rel.length() <= player.stat("control_max_relative_speed", _cfg("control_max_relative_speed", 17.0))
 
 
 ## True when this player can kick now: the ball (his own, or loose) is within reach.

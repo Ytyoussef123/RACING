@@ -1,0 +1,50 @@
+{
+	"name": "Yanis Belkaroun",
+	"short_name": "Y. Belkaroun",
+	"nationality": "Morocco",
+	"age": 23,
+	"height_cm": 176,
+	"preferred_foot": "left",
+	"weak_foot": 3,
+	"positions": [
+		"MID",
+		"DEF"
+	],
+	"playstyle": "wall_passer",
+	"skill_moves": 3,
+	"special_skills": [
+		"first_time_shot"
+	],
+	"look": {
+		"skin": "#c68a5e",
+		"hair": "#1b1410",
+		"hair_style": "short"
+	},
+	"attributes": {
+		"finishing": 62,
+		"shot_power": 73,
+		"long_shots": 71,
+		"heading": 51,
+		"dribbling": 70,
+		"ball_control": 80,
+		"tight_possession": 79,
+		"low_pass": 89,
+		"lofted_pass": 76,
+		"vision": 89,
+		"speed": 69,
+		"acceleration": 73,
+		"stamina": 78,
+		"strength": 59,
+		"balance": 73,
+		"jump": 55,
+		"tackling": 62,
+		"interception": 69,
+		"marking": 57,
+		"aggression": 56,
+		"gk_reflexes": 19,
+		"gk_diving": 19,
+		"gk_handling": 16,
+		"gk_positioning": 18,
+		"gk_kicking": 29
+	}
+}

@@ -69,6 +69,16 @@ jobs:
             exit 1
           fi
 
+      - name: Player stats tests (headless)
+        run: |
+          godot --headless --path "$PROJECT_DIR" res://tests/stats_test.tscn --quit-after 3000 2>&1 | tee stats.log
+          grep -E "TEST (PASS|FAIL)" stats.log || true
+          if ! grep -q "STATS TESTS DONE: 0 failure" stats.log; then
+            echo "::error::Player stats tests failed or did not finish (see above)."
+            awk '/SCRIPT ERROR|ERROR:/ && !seen[$0]++' stats.log | head -30
+            exit 1
+          fi
+
       - name: AI vs AI match test (headless)
         run: |
           godot --headless --fixed-fps 60 --path "$PROJECT_DIR" res://tests/match_sim_test.tscn --quit-after 30000 2>&1 | tee match_test.log
@@ -83,7 +93,7 @@ jobs:
         run: |
           godot --headless --path "$PROJECT_DIR" --quit-after 120 2>&1 | tee run.log
           godot --headless --path "$PROJECT_DIR" res://scenes/match/match.tscn --quit-after 300 2>&1 | tee match.log
-          if grep -E "SCRIPT ERROR|Parse Error|Failed to load script|Invalid call|Invalid access" import.log test.log match_test.log run.log match.log > errors.log; then
+          if grep -E "SCRIPT ERROR|Parse Error|Failed to load script|Invalid call|Invalid access" import.log test.log stats.log match_test.log run.log match.log > errors.log; then
             echo "Distinct errors (count, file:message), first ones first:"
             awk '!seen[$0]++' errors.log | head -40
             echo "::error::Godot reported script errors (see above)."

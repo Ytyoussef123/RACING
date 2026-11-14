@@ -13,7 +13,7 @@ static func intercept_point(player: Player, ctx: MatchContext) -> Vector3:
 	var sim := ctx.ball.copy()
 	var step := 1.0 / maxf(1.0, _cfg("receive_prediction_rate", 20.0))
 	var horizon := _cfg("receive_prediction_seconds", 2.0)
-	var speed := _cfg("sprint_speed", 7.8) * player.motion.speed_factor * _cfg("receive_speed_margin", 0.85)
+	var speed := player.motion.top_speed(true) * _cfg("receive_speed_margin", 0.85)
 	var reach := _cfg("control_radius", 0.9)
 	var max_height := _cfg("control_max_ball_height", 0.6)
 	var t := 0.0

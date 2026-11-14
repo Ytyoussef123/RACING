@@ -21,6 +21,7 @@ config/icon="res://icon.svg"
 
 Config="*res://scripts/core/config.gd"
 FrameRate="*res://scripts/core/frame_rate.gd"
+Roster="*res://scripts/core/roster.gd"
 MatchSetup="*res://scripts/core/match_setup.gd"
 
 [display]

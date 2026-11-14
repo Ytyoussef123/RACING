@@ -1,0 +1,33 @@
+{
+	"name": "Parking Lot Pirates",
+	"short_name": "PLP",
+	"home_court": "open_lot",
+	"colors": {
+		"kit": "#9b59ff",
+		"keeper": "#c6ff4f",
+		"alt_kit": "#e8e8e8",
+		"alt_keeper": "#2b2b2b"
+	},
+	"players": [
+		{
+			"id": "kemal_yildirak",
+			"number": 1
+		},
+		{
+			"id": "jonah_ravelstone",
+			"number": 5
+		},
+		{
+			"id": "luka_stankovar",
+			"number": 8
+		},
+		{
+			"id": "andre_mbeutcha",
+			"number": 11
+		},
+		{
+			"id": "nico_arrabalde",
+			"number": 10
+		}
+	]
+}

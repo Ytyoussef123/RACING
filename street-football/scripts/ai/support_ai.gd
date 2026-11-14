@@ -34,7 +34,7 @@ static func _chase(player: Player, delta: float, ctx: MatchContext) -> PlayerInt
 	var reach := float(Config.get_value("player", "tackle_reach", 1.3)) * Steering.num("tackle_reach_factor", 0.9)
 	if player.flat_distance_to(ctx.ball.position) <= reach and state.tackle_timer <= 0.0:
 		state.tackle_timer = Steering.num("tackle_check_interval", 0.4)
-		if ctx.rng.randf() < player.team.tuning.tackle_attempt_chance:
+		if ctx.rng.randf() < player.team.tuning.tackle_attempt_chance * player.stat("tackle_attempt_mult", 1.0):
 			intent.tackle_pressed = true
 	return intent
 
@@ -44,7 +44,7 @@ static func _mark_point(player: Player, opponent: Player, ctx: MatchContext) -> 
 	var to_goal := Steering.flat(own_goal - opponent.position)
 	if to_goal.length() < 0.01:
 		return opponent.position
-	return opponent.position + to_goal.normalized() * Steering.num("mark_distance", 1.5)
+	return opponent.position + to_goal.normalized() * player.stat("mark_distance", Steering.num("mark_distance", 1.5))
 
 
 ## Moves the target away from the nearest defender so the player can receive a pass.

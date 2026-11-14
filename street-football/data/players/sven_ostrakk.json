@@ -1,0 +1,47 @@
+{
+	"name": "Sven Ostrakk",
+	"short_name": "S. Ostrakk",
+	"nationality": "Sweden",
+	"age": 30,
+	"height_cm": 193,
+	"preferred_foot": "left",
+	"weak_foot": 2,
+	"positions": [
+		"GK"
+	],
+	"playstyle": "line_keeper",
+	"skill_moves": 1,
+	"special_skills": [],
+	"look": {
+		"skin": "#f1c7a5",
+		"hair": "#c9a15b",
+		"hair_style": "short"
+	},
+	"attributes": {
+		"finishing": 28,
+		"shot_power": 58,
+		"long_shots": 32,
+		"heading": 42,
+		"dribbling": 34,
+		"ball_control": 44,
+		"tight_possession": 32,
+		"low_pass": 52,
+		"lofted_pass": 55,
+		"vision": 47,
+		"speed": 48,
+		"acceleration": 49,
+		"stamina": 56,
+		"strength": 73,
+		"balance": 56,
+		"jump": 77,
+		"tackling": 27,
+		"interception": 34,
+		"marking": 25,
+		"aggression": 43,
+		"gk_reflexes": 86,
+		"gk_diving": 83,
+		"gk_handling": 82,
+		"gk_positioning": 83,
+		"gk_kicking": 72
+	}
+}

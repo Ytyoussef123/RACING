@@ -1,0 +1,47 @@
+{
+	"name": "Piotr Wrześniak",
+	"short_name": "P. Wrześniak",
+	"nationality": "Poland",
+	"age": 27,
+	"height_cm": 188,
+	"preferred_foot": "right",
+	"weak_foot": 2,
+	"positions": [
+		"DEF"
+	],
+	"playstyle": "rock_defender",
+	"skill_moves": 2,
+	"special_skills": [],
+	"look": {
+		"skin": "#f1c7a5",
+		"hair": "#6b4423",
+		"hair_style": "short"
+	},
+	"attributes": {
+		"finishing": 35,
+		"shot_power": 63,
+		"long_shots": 46,
+		"heading": 74,
+		"dribbling": 56,
+		"ball_control": 58,
+		"tight_possession": 47,
+		"low_pass": 61,
+		"lofted_pass": 58,
+		"vision": 47,
+		"speed": 65,
+		"acceleration": 57,
+		"stamina": 75,
+		"strength": 82,
+		"balance": 63,
+		"jump": 78,
+		"tackling": 83,
+		"interception": 76,
+		"marking": 81,
+		"aggression": 76,
+		"gk_reflexes": 25,
+		"gk_diving": 19,
+		"gk_handling": 20,
+		"gk_positioning": 17,
+		"gk_kicking": 27
+	}
+}

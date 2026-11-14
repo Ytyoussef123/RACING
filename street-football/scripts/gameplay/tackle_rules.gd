@@ -15,8 +15,7 @@ static func attempt(tackler: Player, ctx: MatchContext) -> bool:
 	if not in_reach or is_protected(carrier, ctx):
 		tackler.stun_timer = _cfg("tackle_whiff_stun", 0.35)
 		return false
-	var chance := _cfg("tackle_success", 0.55) + tackler.team.tuning.tackle_success_bonus
-	if ctx.rng.randf() >= chance:
+	if ctx.rng.randf() >= success_chance(tackler, carrier):
 		tackler.stun_timer = _cfg("tackle_fail_stun", 0.6)
 		return false
 	possession.release(ball)
@@ -24,6 +23,15 @@ static func attempt(tackler: Player, ctx: MatchContext) -> bool:
 	ball.kick(tackler.motion.facing * _cfg("tackle_ball_speed", 2.5), 0.0)
 	possession.touched(tackler)
 	return true
+
+
+## Tackler's tackling, the AI difficulty bonus, and the carrier's balance (harder to knock over).
+static func success_chance(tackler: Player, carrier: Player) -> float:
+	var chance := tackler.stat("tackle_success", _cfg("tackle_success", 0.55))
+	if tackler.team.tuning != null:
+		chance += tackler.team.tuning.tackle_success_bonus
+	chance += carrier.stat("tackle_resist", 0.0)
+	return clampf(chance, 0.05, 0.95)
 
 
 ## A keeper holding the ball inside his own goal area cannot be tackled.

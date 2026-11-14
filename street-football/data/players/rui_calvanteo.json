@@ -1,0 +1,47 @@
+{
+	"name": "Rui Calvanteo",
+	"short_name": "R. Calvanteo",
+	"nationality": "Portugal",
+	"age": 27,
+	"height_cm": 186,
+	"preferred_foot": "right",
+	"weak_foot": 3,
+	"positions": [
+		"GK"
+	],
+	"playstyle": "sweeper_keeper",
+	"skill_moves": 1,
+	"special_skills": [],
+	"look": {
+		"skin": "#e0ac7e",
+		"hair": "#1b1410",
+		"hair_style": "short"
+	},
+	"attributes": {
+		"finishing": 27,
+		"shot_power": 54,
+		"long_shots": 28,
+		"heading": 40,
+		"dribbling": 32,
+		"ball_control": 45,
+		"tight_possession": 37,
+		"low_pass": 63,
+		"lofted_pass": 71,
+		"vision": 55,
+		"speed": 61,
+		"acceleration": 65,
+		"stamina": 57,
+		"strength": 69,
+		"balance": 61,
+		"jump": 71,
+		"tackling": 27,
+		"interception": 35,
+		"marking": 26,
+		"aggression": 38,
+		"gk_reflexes": 77,
+		"gk_diving": 81,
+		"gk_handling": 72,
+		"gk_positioning": 79,
+		"gk_kicking": 84
+	}
+}

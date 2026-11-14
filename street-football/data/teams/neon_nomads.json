@@ -1,0 +1,33 @@
+{
+	"name": "Neon Nomads",
+	"short_name": "NNM",
+	"home_court": "open_lot",
+	"colors": {
+		"kit": "#ff4fa3",
+		"keeper": "#00e0b0",
+		"alt_kit": "#2a1033",
+		"alt_keeper": "#f5f5f5"
+	},
+	"players": [
+		{
+			"id": "mateo_quillabamba",
+			"number": 1
+		},
+		{
+			"id": "dario_kovalenac",
+			"number": 4
+		},
+		{
+			"id": "amara_sekoubra",
+			"number": 6
+		},
+		{
+			"id": "rafael_montejurro",
+			"number": 7
+		},
+		{
+			"id": "kwame_asanteboa",
+			"number": 9
+		}
+	]
+}

@@ -1,0 +1,52 @@
+{
+	"name": "Teo Varmanetti",
+	"short_name": "T. Varmanetti",
+	"nationality": "Italy",
+	"age": 21,
+	"height_cm": 171,
+	"preferred_foot": "right",
+	"weak_foot": 3,
+	"positions": [
+		"WING",
+		"ATT"
+	],
+	"playstyle": "street_dribbler",
+	"skill_moves": 5,
+	"special_skills": [
+		"flip_flap",
+		"rainbow",
+		"nutmeg"
+	],
+	"look": {
+		"skin": "#e0ac7e",
+		"hair": "#3b2416",
+		"hair_style": "short"
+	},
+	"attributes": {
+		"finishing": 74,
+		"shot_power": 72,
+		"long_shots": 67,
+		"heading": 50,
+		"dribbling": 91,
+		"ball_control": 87,
+		"tight_possession": 89,
+		"low_pass": 78,
+		"lofted_pass": 61,
+		"vision": 73,
+		"speed": 91,
+		"acceleration": 94,
+		"stamina": 74,
+		"strength": 50,
+		"balance": 90,
+		"jump": 57,
+		"tackling": 33,
+		"interception": 38,
+		"marking": 32,
+		"aggression": 48,
+		"gk_reflexes": 22,
+		"gk_diving": 20,
+		"gk_handling": 18,
+		"gk_positioning": 18,
+		"gk_kicking": 30
+	}
+}

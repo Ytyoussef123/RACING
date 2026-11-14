@@ -1,0 +1,51 @@
+{
+	"name": "Nico Arrabalde",
+	"short_name": "N. Arrabalde",
+	"nationality": "Argentina",
+	"age": 24,
+	"height_cm": 172,
+	"preferred_foot": "left",
+	"weak_foot": 3,
+	"positions": [
+		"ATT",
+		"WING"
+	],
+	"playstyle": "street_dribbler",
+	"skill_moves": 4,
+	"special_skills": [
+		"nutmeg",
+		"rabona"
+	],
+	"look": {
+		"skin": "#e0ac7e",
+		"hair": "#1b1410",
+		"hair_style": "long"
+	},
+	"attributes": {
+		"finishing": 80,
+		"shot_power": 68,
+		"long_shots": 66,
+		"heading": 50,
+		"dribbling": 94,
+		"ball_control": 88,
+		"tight_possession": 95,
+		"low_pass": 77,
+		"lofted_pass": 62,
+		"vision": 76,
+		"speed": 87,
+		"acceleration": 97,
+		"stamina": 75,
+		"strength": 55,
+		"balance": 90,
+		"jump": 58,
+		"tackling": 36,
+		"interception": 42,
+		"marking": 35,
+		"aggression": 44,
+		"gk_reflexes": 25,
+		"gk_diving": 17,
+		"gk_handling": 18,
+		"gk_positioning": 23,
+		"gk_kicking": 29
+	}
+}

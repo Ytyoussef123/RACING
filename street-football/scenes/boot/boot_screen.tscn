@@ -88,6 +88,11 @@ custom_minimum_size = Vector2(370, 100)
 layout_mode = 2
 theme_override_font_sizes/font_size = 36
 
+[node name="OpponentButton" type="Button" parent="Center/Column/SetupRow"]
+custom_minimum_size = Vector2(520, 100)
+layout_mode = 2
+theme_override_font_sizes/font_size = 36
+
 [node name="LanguageButton" type="Button" parent="Center/Column"]
 custom_minimum_size = Vector2(760, 110)
 layout_mode = 2

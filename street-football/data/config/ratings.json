@@ -1,0 +1,27 @@
+{
+	"_note": "Overall rating per role = weighted average of attributes x position fitness. A player outside his natural positions plays with all attributes scaled by the fitness factor.",
+	"weights": {
+		"GK": {"gk_reflexes": 0.25, "gk_diving": 0.2, "gk_handling": 0.2, "gk_positioning": 0.2, "gk_kicking": 0.1, "jump": 0.05},
+		"DEF": {"tackling": 0.2, "marking": 0.18, "interception": 0.17, "strength": 0.12, "heading": 0.08, "jump": 0.05, "speed": 0.07, "aggression": 0.05, "low_pass": 0.05, "ball_control": 0.03},
+		"MID": {"low_pass": 0.17, "vision": 0.15, "ball_control": 0.13, "lofted_pass": 0.1, "dribbling": 0.08, "tight_possession": 0.07, "stamina": 0.08, "interception": 0.07, "tackling": 0.05, "long_shots": 0.05, "acceleration": 0.05},
+		"WING": {"speed": 0.16, "acceleration": 0.15, "dribbling": 0.16, "ball_control": 0.1, "tight_possession": 0.08, "balance": 0.08, "low_pass": 0.08, "finishing": 0.09, "vision": 0.05, "stamina": 0.05},
+		"ATT": {"finishing": 0.25, "shot_power": 0.12, "ball_control": 0.1, "dribbling": 0.1, "speed": 0.1, "acceleration": 0.1, "heading": 0.07, "strength": 0.06, "long_shots": 0.05, "balance": 0.05}
+	},
+	"position_fitness": {
+		"natural": 1.0,
+		"adjacent": 0.95,
+		"other": 0.88,
+		"keeper_outfield": 0.75,
+		"outfield_in_goal": 0.6
+	},
+	"adjacent": {
+		"GK": [],
+		"DEF": ["MID"],
+		"MID": ["DEF", "WING", "ATT"],
+		"WING": ["MID", "ATT"],
+		"ATT": ["WING", "MID"]
+	},
+	"positions": ["GK", "DEF", "MID", "WING", "ATT"],
+	"playstyles": ["street_dribbler", "wall_passer", "rock_defender", "sweeper_keeper", "line_keeper", "box_finisher", "speedster", "playmaker", "engine", "enforcer"],
+	"special_skills": ["flip_flap", "rainbow", "nutmeg", "rabona", "first_time_shot", "roulette", "heel_flick"]
+}

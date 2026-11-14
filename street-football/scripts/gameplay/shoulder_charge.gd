@@ -2,7 +2,7 @@ class_name ShoulderCharge
 extends RefCounted
 ## Shoulder charge (double-tap the joystick when you don't have the ball): a body duel with the
 ## ball carrier next to you. Win it and he is knocked off the ball; lose it and you bounce off.
-## The chance compares both players' strength (equal for everyone until Phase 4 player stats).
+## The chance compares both players' strength (and a little their balance).
 ## Numbers: data/config/player.json (shoulder_*).
 
 
@@ -33,11 +33,16 @@ static func attempt(charger: Player, ctx: MatchContext) -> bool:
 	return false
 
 
-## Base chance, moved by the strength difference, kept between the min and max chance.
+## Base chance, moved by the difference in duel power, kept between the min and max chance.
 static func success_chance(charger: Player, carrier: Player) -> float:
 	var chance := _cfg("shoulder_base_chance", 0.5) \
-		+ (charger.strength - carrier.strength) * _cfg("shoulder_strength_factor", 0.01)
+		+ (duel_power(charger) - duel_power(carrier)) * _cfg("shoulder_strength_factor", 0.01)
 	return clampf(chance, _cfg("shoulder_min_chance", 0.15), _cfg("shoulder_max_chance", 0.85))
+
+
+## Strength, helped a little by balance (shoulder_balance_weight in stat_effects.json).
+static func duel_power(player: Player) -> float:
+	return player.strength + (player.balance - 50.0) * StatEffects.num("shoulder_balance_weight", 0.3)
 
 
 static func _cfg(key: String, fallback: float) -> float:

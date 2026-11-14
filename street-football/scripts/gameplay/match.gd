@@ -9,7 +9,9 @@ signal full_time(home_score: int, away_score: int)
 const MENU_SCENE := "res://scenes/boot/boot_screen.tscn"
 const PLAYER_SCENE := preload("res://scenes/player/player.tscn")
 ## Height above the player's feet where the shot power bar is drawn (visual only).
-const POWER_BAR_HEIGHT := 2.3
+const POWER_BAR_HEIGHT := 2.6
+## Height above the player's head where his name tag is drawn (visual only).
+const TAG_HEIGHT_OFFSET := 0.25
 
 var ctx := MatchContext.new()
 var flow := MatchFlow.new()
@@ -40,6 +42,7 @@ func _ready() -> void:
 	_hud.formation_pressed.connect(_on_formation_pressed)
 	_hud.set_court_name(ctx.court.name_key)
 	_hud.set_team_colors(ctx.teams[0].color, ctx.teams[1].color)
+	_hud.set_team_names(ctx.teams[0].short_name(), ctx.teams[1].short_name())
 	_hud.set_formation_name(ctx.teams[0].formation.id)
 	flow.start(MatchSetup.get_match_seconds())
 	_kick_off(ctx.teams[ctx.rng.randi_range(0, 1)])
@@ -47,17 +50,16 @@ func _ready() -> void:
 
 
 func _build_teams() -> void:
-	var home_kit := Color.html(str(Config.get_value("match", "home_color", "#ff5c1a")))
-	var away_kit := Color.html(str(Config.get_value("match", "away_color", "#20c4d8")))
-	var home_gk := Color.html(str(Config.get_value("match", "home_keeper_color", "#ffd61a")))
-	var away_gk := Color.html(str(Config.get_value("match", "away_keeper_color", "#7a5cff")))
+	var home_data: TeamData = Roster.team(MatchSetup.get_home_team_id())
+	var away_data: TeamData = Roster.team(MatchSetup.get_away_team_id())
 	var mates_tuning := AiTuning.for_difficulty(str(Config.get_value("ai", "teammates_difficulty", "normal")))
 	var opp_tuning := AiTuning.for_difficulty(MatchSetup.get_difficulty())
 	var home_speed := mates_tuning.speed_factor if MatchSetup.test_mode else 1.0
-	var home := TeamFactory.build(_players_root, PLAYER_SCENE, 0, MatchSetup.get_formation_id(),
-		home_kit, home_gk, mates_tuning, home_speed)
-	var away := TeamFactory.build(_players_root, PLAYER_SCENE, 1,
-		str(Config.get_value("ai", "opponent_formation", "1-2-1")), away_kit, away_gk, opp_tuning, opp_tuning.speed_factor)
+	var away_alt := TeamFactory.kits_clash(home_data.color("kit", Color.WHITE), away_data.color("kit", Color.BLACK))
+	var home := TeamFactory.build(_players_root, PLAYER_SCENE, 0, home_data, MatchSetup.get_formation_id(),
+		false, mates_tuning, home_speed)
+	var away := TeamFactory.build(_players_root, PLAYER_SCENE, 1, away_data,
+		str(Config.get_value("ai", "opponent_formation", "1-2-1")), away_alt, opp_tuning, opp_tuning.speed_factor)
 	home.opponent = away
 	away.opponent = home
 	ctx.add_team(home)
@@ -167,10 +169,22 @@ func _update_hud(human_player: Player) -> void:
 	_hud.set_clock(flow.clock_text())
 	if human_player == null:
 		_hud.update_power(0.0, false, Vector2.ZERO)
+		_hud.update_player_tag("", 0.0, false, Vector2.ZERO)
 		return
 	var head := human_player.global_position + Vector3(0.0, POWER_BAR_HEIGHT, 0.0)
-	var shown := human_player.handling.is_charging and not _camera.is_position_behind(head)
-	_hud.update_power(human_player.handling.shot_charge, shown, _camera.unproject_position(head))
+	var on_screen := not _camera.is_position_behind(head)
+	_hud.update_power(human_player.handling.shot_charge, on_screen and human_player.handling.is_charging,
+		_camera.unproject_position(head))
+	var tag_point := human_player.global_position + Vector3(0.0, human_player.height + TAG_HEIGHT_OFFSET, 0.0)
+	_hud.update_player_tag(_tag_text(human_player), human_player.energy,
+		on_screen and not _camera.is_position_behind(tag_point), _camera.unproject_position(tag_point))
+
+
+## "7  T. Varmanetti  86": shirt number, name, overall in the current role.
+func _tag_text(player: Player) -> String:
+	if player.profile == null:
+		return ""
+	return "%d  %s  %d" % [player.number, player.display_name, Ratings.overall(player.profile, player.role)]
 
 
 func _on_formation_pressed() -> void:

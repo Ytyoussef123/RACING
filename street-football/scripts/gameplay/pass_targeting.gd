@@ -65,7 +65,9 @@ static func through_velocity(passer: Player, target: Player, ctx: MatchContext) 
 	var w := _cfg("through_forward_weight", 0.6)
 	var lead_dir := forward * w + run_dir * (1.0 - w)
 	lead_dir = lead_dir.normalized() if lead_dir.length() > 0.01 else forward
-	var spot := target.position + lead_dir * _cfg("through_lead_distance", 4.0)
+	# Vision: better players play the ball further into the receiver's run.
+	var lead := _cfg("through_lead_distance", 4.0) * passer.stat("through_lead_mult", 1.0)
+	var spot := target.position + lead_dir * lead
 	var margin := _cfg("through_wall_margin", 1.0)
 	spot.x = clampf(spot.x, -court.half_length + margin, court.half_length - margin)
 	spot.z = clampf(spot.z, -court.half_width + margin, court.half_width - margin)

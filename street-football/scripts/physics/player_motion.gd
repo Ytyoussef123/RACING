@@ -1,15 +1,18 @@
 class_name PlayerMotion
 extends RefCounted
 ## Pure player movement on the ground plane: acceleration, sprint and turning.
-## Numbers come from data/config/player.json (Phase 4 will scale them by player stats).
+## Base numbers come from data/config/player.json; the player's stat sheet scales them
+## (apply_sheet) and tiredness lowers the top speed (energy_mult).
 
 var velocity: Vector3 = Vector3.ZERO
 ## Unit vector the player looks at (on the ground plane).
 var facing: Vector3 = Vector3.RIGHT
 ## Turning speed measured on the last step, rad/s. Positive = counter-clockwise seen from above.
 var turn_rate: float = 0.0
-## Multiplies the top speed (AI difficulty now, player stats in Phase 4).
+## Multiplies the top speed: the AI difficulty.
 var speed_factor: float = 1.0
+## Multiplies the top speed: tiredness (1.0 = fresh), set by Player every frame.
+var energy_mult: float = 1.0
 
 var _run_speed: float
 var _sprint_speed: float
@@ -18,6 +21,12 @@ var _acceleration: float
 var _deceleration: float
 var _turn_speed: float
 var _dribble_turn_speed: float
+# From the stat sheet (1.0 = average player).
+var _run_mult: float = 1.0
+var _sprint_mult: float = 1.0
+var _accel_mult: float = 1.0
+var _turn_mult: float = 1.0
+var _dribble_turn_mult: float = 1.0
 
 
 func _init() -> void:
@@ -30,6 +39,16 @@ func _init() -> void:
 	_dribble_turn_speed = deg_to_rad(_cfg("dribble_turn_speed_degrees", 540.0))
 
 
+## Takes the movement numbers from a stat sheet (StatEffects); missing ones stay neutral.
+func apply_sheet(sheet: Dictionary) -> void:
+	_run_mult = float(sheet.get("run_speed_mult", 1.0))
+	_sprint_mult = float(sheet.get("sprint_speed_mult", 1.0))
+	_accel_mult = float(sheet.get("acceleration_mult", 1.0))
+	_turn_mult = float(sheet.get("turn_speed_mult", 1.0))
+	_dribble_turn_mult = float(sheet.get("dribble_turn_speed_mult", 1.0))
+	_dribble_factor = float(sheet.get("dribble_speed_factor", _cfg("dribble_speed_factor", 0.92)))
+
+
 func reset(new_facing: Vector3) -> void:
 	velocity = Vector3.ZERO
 	turn_rate = 0.0
@@ -37,14 +56,17 @@ func reset(new_facing: Vector3) -> void:
 	facing = flat.normalized() if flat.length() > 0.001 else Vector3.RIGHT
 
 
+## Current top speed, m/s.
+func top_speed(sprint: bool, dribbling: bool = false) -> float:
+	var speed := (_sprint_speed * _sprint_mult if sprint else _run_speed * _run_mult) * speed_factor * energy_mult
+	return speed * _dribble_factor if dribbling else speed
+
+
 ## move: wanted direction on the ground, length 0..1 (joystick strength).
 func step(delta: float, move: Vector3, sprint: bool, dribbling: bool) -> void:
-	var max_speed := (_sprint_speed if sprint else _run_speed) * speed_factor
-	if dribbling:
-		max_speed *= _dribble_factor
 	var wanted := Vector3(move.x, 0.0, move.z).limit_length(1.0)
-	var target := wanted * max_speed
-	var rate := _acceleration if wanted.length() > 0.05 else _deceleration
+	var target := wanted * top_speed(sprint, dribbling)
+	var rate := _acceleration * _accel_mult if wanted.length() > 0.05 else _deceleration
 	velocity = velocity.move_toward(target, rate * delta)
 	_turn(delta, wanted, dribbling)
 
@@ -53,7 +75,8 @@ func _turn(delta: float, wanted: Vector3, dribbling: bool) -> void:
 	var old_yaw := atan2(facing.x, facing.z)
 	if wanted.length() > 0.1:
 		var target_yaw := atan2(wanted.x, wanted.z)
-		var max_turn := (_dribble_turn_speed if dribbling else _turn_speed) * delta
+		var turn_speed := _dribble_turn_speed * _dribble_turn_mult if dribbling else _turn_speed * _turn_mult
+		var max_turn := turn_speed * delta
 		var diff := wrapf(target_yaw - old_yaw, -PI, PI)
 		var new_yaw := old_yaw + clampf(diff, -max_turn, max_turn)
 		facing = Vector3(sin(new_yaw), 0.0, cos(new_yaw))

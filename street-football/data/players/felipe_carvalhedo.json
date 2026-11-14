@@ -1,0 +1,49 @@
+{
+	"name": "Felipe Carvalhedo",
+	"short_name": "F. Carvalhedo",
+	"nationality": "Brazil",
+	"age": 27,
+	"height_cm": 177,
+	"preferred_foot": "right",
+	"weak_foot": 3,
+	"positions": [
+		"MID"
+	],
+	"playstyle": "wall_passer",
+	"skill_moves": 3,
+	"special_skills": [
+		"heel_flick"
+	],
+	"look": {
+		"skin": "#a86b45",
+		"hair": "#3b2416",
+		"hair_style": "short"
+	},
+	"attributes": {
+		"finishing": 64,
+		"shot_power": 73,
+		"long_shots": 71,
+		"heading": 51,
+		"dribbling": 74,
+		"ball_control": 80,
+		"tight_possession": 80,
+		"low_pass": 85,
+		"lofted_pass": 77,
+		"vision": 85,
+		"speed": 70,
+		"acceleration": 70,
+		"stamina": 84,
+		"strength": 64,
+		"balance": 73,
+		"jump": 59,
+		"tackling": 61,
+		"interception": 67,
+		"marking": 57,
+		"aggression": 58,
+		"gk_reflexes": 25,
+		"gk_diving": 21,
+		"gk_handling": 17,
+		"gk_positioning": 18,
+		"gk_kicking": 30
+	}
+}
