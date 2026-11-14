@@ -1,0 +1,12 @@
+# Godot
+.godot/
+*.translation
+
+# Exports
+build/
+*.apk
+*.aab
+
+# Never commit release keys
+*.jks
+release.keystore

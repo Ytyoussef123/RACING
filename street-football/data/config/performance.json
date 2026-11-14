@@ -1,0 +1,5 @@
+{
+	"target_fps": 60,
+	"fallback_fps": 30,
+	"physics_ticks_per_second": 60
+}

@@ -1,0 +1,8 @@
+keys,en,fr
+TITLE,STREET FOOTBALL 5v5,STREET FOOTBALL 5v5
+BOOT_SUBTITLE,Phase 1 — setup test,Phase 1 — test de l'installation
+TAP_TEST,Tap me,Touche-moi
+TAP_COUNT,Taps: %d,Touches : %d
+LANGUAGE,Language: English,Langue : Français
+FPS_LABEL,FPS: %d,IPS : %d
+DEVICE_INFO,Screen %d × %d · %s · Godot %s,Écran %d × %d · %s · Godot %s

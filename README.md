@@ -10,3 +10,6 @@ Jeu de conduite en vue cockpit sur la corniche de Casablanca (Casa Port → Aïn
 
 Lancer : servir `game/` avec un serveur statique (`npx serve game`) et ouvrir `index.html`. Les modèles se chargent par `fetch`, il faut donc un serveur.
 Les gros fichiers sources `.glb` ne sont pas dans ce dépôt (voir JOURNAL, Modèles 3D).
+
+---
+Ce dépôt contient aussi un second jeu, **Street Football 5v5** (Godot, Android) : voir `street-football/README.md`.
