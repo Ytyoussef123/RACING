@@ -71,13 +71,14 @@ static func cylinder(top_radius: float, bottom_radius: float, height: float, cap
 	return m
 
 
-## A sphere (or an ellipsoid when height != 2 * radius), centered.
-static func sphere(radius: float, height: float = -1.0) -> SphereMesh:
+## A sphere (or an ellipsoid when height != 2 * radius), centered. segments > 0: fewer faces
+## for small details (eyes, ears).
+static func sphere(radius: float, height: float = -1.0, segments: int = 0) -> SphereMesh:
 	var m := SphereMesh.new()
 	m.radius = radius
 	m.height = height if height > 0.0 else radius * 2.0
-	m.radial_segments = _segments()
-	m.rings = _rings()
+	m.radial_segments = segments if segments > 0 else _segments()
+	m.rings = maxi(2, segments / 2) if segments > 0 else _rings()
 	return m
 
 

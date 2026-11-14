@@ -166,10 +166,10 @@ func _build_chest() -> ArrayMesh:
 
 
 func _build_head() -> ArrayMesh:
-	var neck_len := _n("neck_length", 0.08)
+	var neck_len := _n("neck_length", 0.065)
 	var neck_r := _n("neck_radius", 0.052)
-	var head_r := _n("head_radius", 0.104)
-	var head_h := _n("head_height", 0.24)
+	var head_r := _n("head_radius", 0.11)
+	var head_h := _n("head_height", 0.25)
 	var center := neck_len + head_h * 0.5
 	var skin: Color = _colors["skin"]
 	var hair: Color = _colors["hair"]
@@ -178,17 +178,48 @@ func _build_head() -> ArrayMesh:
 		[RigMeshBuilder.cylinder(neck_r * 0.95, neck_r * 1.08, neck_h, false), RigMeshBuilder.at(Vector3(0.0, neck_h * 0.5 - 0.04, 0.0)), skin],
 		[RigMeshBuilder.sphere(head_r, head_h), RigMeshBuilder.at(Vector3(0.0, center, 0.0)), skin],
 	]
+	parts.append_array(_face_parts(center, head_r, head_h))
+	# Hair: a cap following the head's shape, a little bigger (thickness) and taller on top,
+	# tilted back so it starts above the eyes at the front and low on the nape.
 	var styles: Dictionary = Config.get_value("body", "hair_styles", {})
-	var s: Array = styles.get(_hair_style, [1.0, 1.0, 1.0])
-	var hair_scale := Vector3(float(s[0]), float(s[1]), float(s[2]))
-	if hair_scale.x > 0.0:
-		var hair_r := _n("hair_radius", 0.112)
-		parts.append([RigMeshBuilder.dome(hair_r, hair_r), RigMeshBuilder.at(Vector3(0.0, center - 0.01, -0.012), hair_scale), hair])
+	var style: Array = styles.get(_hair_style, [1.0, 0.012, 0.022])
+	var width := float(style[0])
+	if width > 0.0:
+		var cap_r := head_r + float(style[1])
+		var drop := _n("hair_base_drop", 0.012)
+		var cap_h := head_h * 0.5 + drop + float(style[2])
+		var tilt := deg_to_rad(_n("hair_tilt_degrees", -25.0))
+		parts.append([RigMeshBuilder.dome(cap_r, cap_h), RigMeshBuilder.at(Vector3(0.0, center - drop, 0.0), Vector3(width, 1.0, 1.0), tilt), hair])
 		if _hair_style == "long":
-			var drop := _n("long_hair_drop", 0.15)
-			var back := RigMeshBuilder.cylinder(hair_r * 0.9, hair_r * 0.75, drop)
-			parts.append([back, RigMeshBuilder.at(Vector3(0.0, center - drop * 0.4, -0.045), Vector3(1.0, 1.0, 0.6)), hair])
+			var fall := _n("long_hair_drop", 0.15)
+			var back := RigMeshBuilder.cylinder(cap_r * 0.92, cap_r * 0.78, fall)
+			parts.append([back, RigMeshBuilder.at(Vector3(0.0, center - fall * 0.4, -0.045), Vector3(1.0, 1.0, 0.6)), hair])
 	return RigMeshBuilder.merge(parts)
+
+
+## Eyes, nose and ears, placed on the head's surface (head center at height `center`).
+func _face_parts(center: float, head_r: float, head_h: float) -> Array:
+	var skin: Color = _colors["skin"]
+	var segments := int(_cfg("feature_segments", 6))
+	var eye_r := _n("eye_radius", 0.016)
+	var eye_x := _n("eye_spacing", 0.038)
+	var eye_y := _n("eye_height", 0.02)
+	var half_h := head_h * 0.5
+	var eye_z := head_r * sqrt(maxf(0.0, 1.0 - pow(eye_x / head_r, 2.0) - pow(eye_y / half_h, 2.0))) - eye_r * 0.4
+	var eye_color := Color.html(str(_cfg("eye_color", "#1a1410")))
+	var nose_r := _n("nose_radius", 0.02)
+	var nose_y := -eye_y * 0.6
+	var nose_z := head_r * sqrt(maxf(0.0, 1.0 - pow(nose_y / half_h, 2.0))) - nose_r * 0.25
+	var ear_r := _n("ear_radius", 0.024)
+	var eye := RigMeshBuilder.sphere(eye_r, -1.0, segments)
+	var ear := RigMeshBuilder.sphere(ear_r, -1.0, segments)
+	return [
+		[eye, RigMeshBuilder.at(Vector3(eye_x, center + eye_y, eye_z)), eye_color],
+		[eye, RigMeshBuilder.at(Vector3(-eye_x, center + eye_y, eye_z)), eye_color],
+		[RigMeshBuilder.sphere(nose_r, -1.0, segments), RigMeshBuilder.at(Vector3(0.0, center + nose_y, nose_z), Vector3(0.75, 1.0, 1.0)), skin.darkened(0.06)],
+		[ear, RigMeshBuilder.at(Vector3(head_r + 0.002, center, -0.006), Vector3(0.55, 1.0, 0.8)), skin],
+		[ear, RigMeshBuilder.at(Vector3(-head_r - 0.002, center, -0.006), Vector3(0.55, 1.0, 0.8)), skin],
+	]
 
 
 func _build_thigh() -> ArrayMesh:

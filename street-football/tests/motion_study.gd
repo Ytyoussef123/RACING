@@ -44,6 +44,7 @@ func _run_sequence(shot_name: String, sprint: bool, side_view: bool) -> void:
 	for f in range(GRID * GRID):
 		for i in range(6):
 			_step(Vector3.RIGHT, sprint)
+		_report(shot_name, f)
 		frames.append(await _capture(side_view))
 	_shots[shot_name] = _grid(frames)
 
@@ -68,13 +69,15 @@ func _turn_and_shoot(shot_name: String) -> void:
 		var step: Array = plan[i]
 		_step(step[0], step[1], step[2])
 		if i % every == every - 1 and frames.size() < GRID * GRID:
+			_report(shot_name, frames.size())
 			frames.append(await _capture(false))
 	_shots[shot_name] = _grid(frames)
 
 
 ## Eight bodies facing the camera: idle, keeper ready, jog, sprint, kick, dribble touch, tackle, dive.
 ## Actions are frozen at a telling moment: kick just after contact, touch at contact, tackle at its
-## lowest, dive in the air.
+## lowest, dive in the air (to the right of the picture, where there is room). Then a close-up
+## of the first three heads (face, hair).
 func _lineup(shot_name: String) -> void:
 	var team_ids: Array = Roster.team_ids()
 	var poses := ["idle", "keeper", "jog", "sprint", "kick", "touch", "tackle", "dive"]
@@ -86,7 +89,7 @@ func _lineup(shot_name: String) -> void:
 		var keeper: bool = poses[i] in ["keeper", "dive"]
 		var kit := team.color("keeper" if keeper else "kit", Color.WHITE)
 		var p := _spawn(Roster.player(str(entry.get("id", ""))), "GK" if keeper else "MID", kit, keeper)
-		p.reset_to(Vector3(-4.2 + i * 1.2, 0.0, 0.0), Vector3.BACK)
+		p.reset_to(Vector3(-4.375 + i * 1.25, 0.0, 0.0), Vector3.BACK)
 		bodies.append(p)
 	for i in range(bodies.size()):
 		if poses[i] == "jog":
@@ -105,7 +108,7 @@ func _lineup(shot_name: String) -> void:
 			"tackle":
 				bodies[i].animate("tackle")
 			"dive":
-				bodies[i].animate("dive", 1.0)
+				bodies[i].animate("dive", -1.0)
 	var step := DT * 0.25
 	var elapsed := 0.0
 	while elapsed < 0.25:
@@ -113,13 +116,27 @@ func _lineup(shot_name: String) -> void:
 		for i in range(bodies.size()):
 			if elapsed <= float(freeze_at.get(poses[i], 1.0)):
 				bodies[i].update_look(step)
-	_camera.fov = 40.0
-	_camera.look_at_from_position(Vector3(0.0, 1.5, 6.5), Vector3(0.0, 0.9, 0.0), Vector3.UP)
+	_camera.fov = 42.0
+	_camera.look_at_from_position(Vector3(0.6, 1.5, 6.6), Vector3(0.6, 0.9, 0.0), Vector3.UP)
 	await _settle()
 	await RenderingServer.frame_post_draw
 	_shots[shot_name] = get_viewport().get_texture().get_image()
+	_camera.fov = 30.0
+	_camera.look_at_from_position(Vector3(-3.125, 1.62, 2.2), Vector3(-3.125, 1.52, 0.0), Vector3.UP)
+	await _settle()
+	await RenderingServer.frame_post_draw
+	_shots[shot_name + "_heads"] = get_viewport().get_texture().get_image()
 	for p in bodies:
 		p.queue_free()
+
+
+## One log line per frame, to check the ball against the player with numbers.
+func _report(shot_name: String, frame: int) -> void:
+	var to_ball := _ball.physics.position - _player.position
+	var lead := to_ball.dot(_player.motion.facing)
+	print("MOTION %s %02d lead=%.2f side=%.2f ball=%.2f player=%.2f holder=%s" % [shot_name, frame, lead,
+		to_ball.dot(Vector3(-_player.motion.facing.z, 0.0, _player.motion.facing.x)), _ball.physics.horizontal_speed(),
+		Vector2(_player.motion.velocity.x, _player.motion.velocity.z).length(), _ctx.possession.holder == _player])
 
 
 func _step(move: Vector3, sprint: bool, shoot: bool = false) -> void:

@@ -5,6 +5,8 @@ extends RefCounted
 ##    opposite arms with bent elbows, hips and shoulders twisting against each other, bob;
 ##  - idle stance when standing (keepers: ready stance), breathing and weight shift;
 ##  - whole-body lean with acceleration, and into turns;
+##  - when the player moves at an angle to where he faces (turning, back-pedalling), the hips turn
+##    toward the way he goes and the legs step that way, so the feet don't slide;
 ##  - dribble touch: the foot reaches the ball when the touch lands (Dribbling starts it a little
 ##    earlier), the running cycle is steered so that leg is the one swinging forward;
 ##  - short actions on top (PlayerActions): kick, tackle, shoulder, dive, skill, celebrate.
@@ -21,6 +23,8 @@ var _move: float = 0.0
 var _accel: float = 0.0
 var _prev_forward: float = 0.0
 var _turn_lean: float = 0.0
+## Angle between where the player goes and where he faces (radians, + = to his right), smoothed.
+var _travel: float = 0.0
 var _clock: float = 0.0
 var _action: String = ""
 var _action_time: float = 0.0
@@ -61,10 +65,12 @@ func update(delta: float, velocity: Vector3, facing: Vector3, turn_rate: float, 
 	_clock += delta
 	var speed := Vector2(velocity.x, velocity.z).length()
 	var forward := velocity.x * facing.x + velocity.z * facing.z
+	var sideways := velocity.z * facing.x - velocity.x * facing.z
 	var target_move := smoothstep(_n("move_blend_min_speed", 0.15), _n("move_blend_full_speed", 1.6), speed)
 	_move = move_toward(_move, target_move, delta * _n("move_blend_rate", 6.0))
 	_advance_phase(delta, speed, forward)
 	_update_leans(delta, speed, forward, turn_rate)
+	_update_travel(delta, speed, forward, sideways)
 	var sprint := clampf(speed / maxf(1.0, top_speed), 0.0, 1.0)
 	_pose.clear()
 	_running_pose(sprint)
@@ -111,6 +117,17 @@ func _update_leans(delta: float, speed: float, forward: float, turn_rate: float)
 	_turn_lean = lerpf(_turn_lean, lean, 1.0 - exp(-_n("turn_lean_smoothing", 8.0) * delta))
 
 
+## Direction of travel against the facing, measured from the running direction (forward, or
+## backward when back-pedalling), limited to a quarter turn.
+func _update_travel(delta: float, speed: float, forward: float, sideways: float) -> void:
+	var angle := 0.0
+	if speed > 0.3:
+		var backward := forward < _n("backpedal_threshold", -0.4) * speed
+		angle = atan2(-sideways, -forward) if backward else atan2(sideways, forward)
+		angle = clampf(angle, -PI * 0.5, PI * 0.5)
+	_travel = lerpf(_travel, angle, 1.0 - exp(-_n("travel_smoothing", 12.0) * delta))
+
+
 func _running_pose(sprint: float) -> void:
 	var m := _move
 	var s := sin(_phase)
@@ -124,18 +141,23 @@ func _running_pose(sprint: float) -> void:
 	var elbow_run := _n("elbow_run", 88.0) * m
 	var elbow_swing := _n("elbow_swing", 18.0) * m
 	var arm_out := _n("arm_out_degrees", 7.0)
+	# Part of the travel angle turns the hips, the rest swings the legs sideways.
+	var hips_turn := _travel * _n("travel_hips_share", 0.5) * m
+	var leg_angle := _travel * m - hips_turn
 	for leg in [-1.0, 1.0]:
 		# Left leg (-1) follows the phase, the right leg is half a cycle later.
 		var phase: float = _phase if leg < 0.0 else _phase + PI
 		var fold := pow(maxf(0.0, cos(phase + knee_offset)), 2.0)
-		_pose.blend_leg(leg, hip * sin(phase) + bias, knee_stance + knee_swing * fold, 0.0, 1.0)
+		var swing: float = hip * sin(phase) + bias
+		_pose.blend_leg(leg, swing * cos(leg_angle), knee_stance + knee_swing * fold, leg * swing * sin(leg_angle), 1.0)
 		# Each arm swings with the opposite leg; the elbow bends more when it comes forward.
 		var arm_swing := -sin(phase)
 		_pose.blend_arm(leg, arm * arm_swing + arm_bias, arm_out, elbow_run + elbow_swing * maxf(0.0, arm_swing), 1.0)
 	var twist := deg_to_rad(_n("torso_twist_degrees", 8.0)) * s * m
 	var hips_twist := deg_to_rad(_n("hips_twist_degrees", 7.0)) * s * m
-	_pose.v[RigPose.HIPS_Y] = -hips_twist
-	_pose.v[RigPose.SPINE_Y] = twist + hips_twist
+	# The chest keeps facing ahead while the hips turn toward the way he goes.
+	_pose.v[RigPose.HIPS_Y] = -hips_twist - hips_turn
+	_pose.v[RigPose.SPINE_Y] = twist + hips_twist + hips_turn
 	var bob := _n("run_bob", 0.045) * (0.4 + 0.6 * sprint)
 	_pose.v[RigPose.ROOT_Y] = (bob * s * s - _n("run_crouch", 0.035) * sprint) * m
 	var accel_lean := clampf(_accel * _n("accel_lean_per_ms2", 0.8), -_n("brake_lean_max_degrees", 9.0),
