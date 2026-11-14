@@ -29,8 +29,8 @@ Match:
 Touch (phone):
 
 - **Move:** floating joystick on the left part of the screen (it appears under your thumb).
-- **SHOOT:** hold to charge (a power bar appears above the player), release to shoot. Turning while shooting curls the ball.
-- **PASS:** goes to the best teammate in the joystick direction. Becomes **TACKLE** when an opponent has the ball.
+- **SHOOT:** hold to charge (a power bar appears above the player), release to shoot. Turning while shooting curls the ball. Becomes **PRESS** when an opponent has the ball: hold it and the player runs goal-side of the ball carrier, then goes for the ball and tackles by himself when in reach.
+- **PASS:** goes to the teammate closest to the joystick direction (it does not need to be exactly on the line). Becomes **TACKLE** when an opponent has the ball.
 - **SPRINT:** hold.
 - **SWITCH:** jump to the teammate nearest the ball. Switching is also automatic when a pass leaves for a teammate, when a teammate gets the ball, and when defending if a teammate is clearly closer.
 - Goalkeepers are always AI.

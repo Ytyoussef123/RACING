@@ -17,6 +17,19 @@ A dated log, newest entry first: what was done, what was decided and why, and wh
 
 ## Log
 
+### 2026-11-14 — Phase 3: PRESS button and pass assist (user feedback)
+
+#### Done
+
+- The user asked (like eFootball) for a button that makes the selected player go and win the ball from the opponent, and for passes to reach the teammate roughly in the joystick direction even when not exactly on the line.
+- PRESS: on defense (opponent has the ball) SHOOT becomes PRESS. Hold it and the player runs goal-side of the ball carrier at sprint speed, then goes for the ball and tackles by himself when in reach (`scripts/gameplay/press_assist.gd`; `press_*` keys in `data/config/player.json`). PASS still becomes TACKLE.
+- Pass assist (`scripts/gameplay/pass_targeting.gd`): cone widened to 70 degrees; the choice is scored mostly by angle (`pass_angle_weight` 3.0, `pass_distance_weight` 0.04), with a small penalty for a blocked lane (`pass_blocked_penalty` 0.8). If nobody is in the cone, the teammate closest to the joystick direction is chosen, up to 120 degrees (`pass_assist_max_degrees`). The ball still goes to where the receiver is running.
+- New physics tests for the pass assist: 50 degrees off the line, fallback, nothing past 120 degrees. CI green.
+
+#### Next
+
+- User tests on the phone, then the rest of the Phase 3 feedback.
+
 ### 2026-11-14 — Phase 3: 5v5
 
 #### Done
