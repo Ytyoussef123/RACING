@@ -231,7 +231,7 @@ func _test_defense_cover_and_marks() -> void:
 	var brain := _home.brain
 	_check("defense: the nearest player presses", brain.chaser == _home.players[1],
 		"chaser=%s" % [str(brain.chaser.name) if brain.chaser != null else "none"])
-	_check("defense: the next nearest covers behind him", brain.cover == _home.players[2],
+	_check("defense: the player nearest the cover point covers behind him", brain.cover == _home.players[2],
 		"cover=%s" % [str(brain.cover.name) if brain.cover != null else "none"])
 	var cover := SupportAI.cover_point(_home, _ctx)
 	_check("defense: the cover stands between the ball and our goal", cover.x < _ctx.ball.position.x - 3.0

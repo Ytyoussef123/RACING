@@ -66,19 +66,23 @@ func _assign_roles(ctx: MatchContext, human_player: Player) -> void:
 	_assign_marks(ctx, human_player)
 
 
-## The outfield player nearest the ball after the one pressing it (never the human's player),
-## when the ball is far enough from our goal (cover_min_goal_distance) for a second line.
+## While the other side has the ball (or its pass is on the way) and the ball is far enough from
+## our goal (cover_min_goal_distance): the outfield player nearest the cover point behind the ball
+## (not the one pressing, never the human's player). A loose ball gets no cover: one player goes.
 func _pick_cover(ctx: MatchContext, human_player: Player, presser: Player) -> Player:
+	if not AttackRoles.in_possession(team.opponent, ctx):
+		return null
 	var ball_pos := ctx.ball.position
 	var to_goal := Vector2(ball_pos.x - team.own_goal_x(ctx.court), ball_pos.z)
 	if to_goal.length() < Steering.num("cover_min_goal_distance", 7.0):
 		return null
+	var spot := SupportAI.cover_point(team, ctx)
 	var best: Player = null
 	var best_d := INF
 	for p in team.outfield():
 		if p == presser or p == human_player:
 			continue
-		var d := p.flat_distance_to(ball_pos)
+		var d := p.flat_distance_to(spot)
 		if d < best_d:
 			best_d = d
 			best = p

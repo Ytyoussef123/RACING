@@ -51,6 +51,10 @@ var _phase_count: Array[int] = [0, 0, 0]
 var _phase_close: Array[int] = [0, 0, 0]
 var _phase_crowd: Array[int] = [0, 0, 0]
 var _phase_sides: Array[int] = [0, 0, 0]
+## Diagnosis: how often each kind of close pair and each crowd near the ball happens, by the
+## players' jobs (AttackRoles with the ball; chaser, cover, marker or zone without it).
+var _pair_kinds: Dictionary = {}
+var _crowd_kinds: Dictionary = {}
 
 
 func _ready() -> void:
@@ -116,6 +120,11 @@ func _sample_spacing(ctx: MatchContext) -> void:
 		var outfield := team.outfield()
 		var near_ball := 0
 		var close_pair := false
+		var near_labels: Array[String] = []
+		for i in range(outfield.size()):
+			for j in range(i + 1, outfield.size()):
+				if outfield[i].flat_distance_to(outfield[j].position) < CLOSE_PAIR:
+					_count(_pair_kinds, PHASES[phase], [_label(outfield[i], team, ctx, phase), _label(outfield[j], team, ctx, phase)])
 		for p in outfield:
 			var nearest := INF
 			for q in outfield:
@@ -129,14 +138,43 @@ func _sample_spacing(ctx: MatchContext) -> void:
 				close_pair = close_pair or nearest < CLOSE_PAIR
 			if p.flat_distance_to(ctx.ball.position) < CROWD_RADIUS:
 				near_ball += 1
+				near_labels.append(_label(p, team, ctx, phase))
 		_side_samples += 1
 		_phase_sides[phase] += 1
 		if near_ball >= CROWD_COUNT:
 			_crowd_samples += 1
 			_phase_crowd[phase] += 1
+			_count(_crowd_kinds, PHASES[phase], near_labels)
 		if close_pair:
 			_close_samples += 1
 			_phase_close[phase] += 1
+
+
+## What a player is doing, for the diagnosis.
+static func _label(p: Player, team: Team, ctx: MatchContext, phase: int) -> String:
+	if phase == 0:
+		if p == ctx.possession.holder or p == ctx.possession.pass_target:
+			return "carrier"
+		if p.ai.go_left > 0.0:
+			return "give-go"
+		if p.ai.run_left > 0.0:
+			return "runner"
+		var jobs: Array[String] = ["no job", "support", "forward", "cover"]
+		return jobs[int(p.ai.attack_role)]
+	if p == team.brain.chaser:
+		return "chaser"
+	if p == team.brain.cover:
+		return "cover"
+	return "marker" if p.ai.mark != null else "zone"
+
+
+static func _count(kinds: Dictionary, phase_name: String, labels: Array) -> void:
+	labels.sort()
+	var parts := PackedStringArray()
+	for label in labels:
+		parts.append(str(label))
+	var key := "%s: %s" % [phase_name, " + ".join(parts)]
+	kinds[key] = int(kinds.get(key, 0)) + 1
 
 
 ## The side has the ball, or its pass is on the way to a teammate.
@@ -183,6 +221,8 @@ func _report() -> void:
 		print("MATCH SPACING %s (%.0f %% of the time): %.1f m to the nearest teammate, %.0f %% two closer than %.0f m, %.0f %% 3+ near the ball"
 			% [PHASES[k], 100.0 * _phase_sides[k] / sides, _phase_sum[k] / maxf(1.0, float(_phase_count[k])),
 			100.0 * _phase_close[k] / phase_sides, CLOSE_PAIR, 100.0 * _phase_crowd[k] / phase_sides])
+	_print_kinds("close pair", _pair_kinds, sides)
+	_print_kinds("crowd", _crowd_kinds, sides)
 	_check("every match reaches full time", _all_finished)
 	_check("goals are scored", _total_goals >= MIN_TOTAL_GOALS, "total=%d" % _total_goals)
 	_check("score matches goals", not _score_mismatch)
@@ -190,6 +230,14 @@ func _report() -> void:
 	_check("ball and players stay in the court", not _out_of_bounds)
 	print("MATCH TESTS DONE: %d failure(s)" % _failures)
 	get_tree().quit(1 if _failures > 0 else 0)
+
+
+## The most frequent kinds, as a share of all side samples.
+func _print_kinds(what: String, kinds: Dictionary, sides: float) -> void:
+	var keys: Array = kinds.keys()
+	keys.sort_custom(func(a: Variant, b: Variant) -> bool: return int(kinds[a]) > int(kinds[b]))
+	for k in range(mini(keys.size(), 8)):
+		print("MATCH SPACING %s %s: %.1f %%" % [what, str(keys[k]), 100.0 * int(kinds[keys[k]]) / sides])
 
 
 func _check(test_name: String, ok: bool, detail: String = "") -> void:
