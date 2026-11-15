@@ -62,6 +62,9 @@ static func try_save(keeper: Player, ctx: MatchContext) -> void:
 	var speed := ball.velocity.length()
 	if -ball.velocity.x * s < 1.0 or speed < Steering.num("keeper_save_min_speed", 7.0):
 		return
+	# A ball already behind him (a chip over his head) can no longer be saved.
+	if (ball.position.x - keeper.position.x) * s < -Steering.num("keeper_behind_margin", 0.3):
+		return
 	# Diving decides the reach, reflexes the save chance, handling whether he holds the ball.
 	if keeper.flat_distance_to(ball.position) > keeper.stat("keeper_reach", Steering.num("keeper_reach", 1.6)):
 		return

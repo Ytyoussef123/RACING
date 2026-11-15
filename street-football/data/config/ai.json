@@ -19,7 +19,7 @@
 			"give_go_chance": 0.3,
 			"lofted_tendency": 0.2,
 			"lofted_power_error": 0.12,
-			"chip_tendency": 0.15,
+			"chip_tendency": 0.1,
 			"curl_tendency": 0.1,
 			"low_tendency": 0.2,
 			"shot_power_error": 0.15
@@ -40,7 +40,7 @@
 			"give_go_chance": 0.6,
 			"lofted_tendency": 0.35,
 			"lofted_power_error": 0.07,
-			"chip_tendency": 0.3,
+			"chip_tendency": 0.2,
 			"curl_tendency": 0.2,
 			"low_tendency": 0.25,
 			"shot_power_error": 0.08
@@ -61,7 +61,7 @@
 			"give_go_chance": 0.85,
 			"lofted_tendency": 0.5,
 			"lofted_power_error": 0.04,
-			"chip_tendency": 0.45,
+			"chip_tendency": 0.3,
 			"curl_tendency": 0.3,
 			"low_tendency": 0.3,
 			"shot_power_error": 0.04
@@ -195,8 +195,9 @@
 	"keeper_out_start_distance": 10.0,
 	"keeper_out_full_distance": 5.0,
 	"keeper_out_max": 2.5,
+	"keeper_behind_margin": 0.3,
 	"ai_chip_keeper_out": 1.8,
-	"ai_chip_min_distance": 6.0,
+	"ai_chip_min_distance": 8.0,
 	"ai_chip_max_distance": 15.0,
 	"ai_curl_min_distance": 8.0,
 	"ai_curl_max_distance": 16.0,

@@ -25,7 +25,7 @@ var lofted_tendency: float = 0.35
 var lofted_power_error: float = 0.07
 ## Shot types (AiShots): chances of a chip (keeper off his line), a curled shot (edge of the box)
 ## and a low shot (close in), and how far off a chip's or curl's power can be (0..1 of the bar).
-var chip_tendency: float = 0.3
+var chip_tendency: float = 0.2
 var curl_tendency: float = 0.2
 var low_tendency: float = 0.25
 var shot_power_error: float = 0.08

@@ -3,7 +3,8 @@ extends RefCounted
 ## The shot types chosen by a slide on SHOOT; the power bar always sets only the power.
 ##   "low"  (slide down): along the ground, never over the bar; the bar sets its speed.
 ##   "chip" (slide up): a lob that comes down behind a keeper off his line; the bar sets where it
-##          comes down: too little falls short, right drops under the bar, too much flies over.
+##          comes down: too little falls short, right drops under the bar, too much flies over
+##          (the right power crosses the line at shot_chip_cross_height from any distance).
 ##   "curl" (slide left or right): starts wide of the far post and curls back inside it. Right
 ##          power goes in the corner; a bit too much hits the post or the bar (faster, less curve,
 ##          higher); too much flies over; too little curls into the middle (the keeper's ball).
@@ -27,17 +28,26 @@ static func chip(player: Player, ctx: MatchContext, target: Vector3, charge: flo
 	var from := ctx.ball.position
 	var power := skilled(player, chip_ideal_power(from, target), charge)
 	var distance := lerpf(_cfg("shot_chip_distance_min", 4.0), _cfg("shot_chip_distance_max", 24.0), power)
-	var apex := clampf(_cfg("shot_chip_apex_base", 2.6) + distance * _cfg("shot_chip_apex_per_meter", 0.06),
-		_cfg("shot_chip_apex_min", 2.8), _cfg("shot_chip_apex_max", 4.2))
-	return {"velocity": LoftedKick.velocity_with_apex(from, target - from, distance, apex), "spin": 0.0}
+	return {"velocity": LoftedKick.velocity_with_apex(from, target - from, distance, _chip_apex(distance)), "spin": 0.0}
 
 
-## The power that drops a chip shot_chip_land_beyond past the goal line at `target`.
+## The power that brings a chip down through the goal line at shot_chip_cross_height: it comes down
+## a little past the line, closer to it for a short chip (its fall is steeper).
 static func chip_ideal_power(from: Vector3, target: Vector3) -> float:
 	var low := _cfg("shot_chip_distance_min", 4.0)
 	var high := _cfg("shot_chip_distance_max", 24.0)
-	var distance := Steering.flat(target - from).length() + _cfg("shot_chip_land_beyond", 1.5)
-	return clampf((distance - low) / maxf(0.01, high - low), 0.0, 1.0)
+	var d := Steering.flat(target - from).length()
+	var cross := _cfg("shot_chip_cross_height", 1.2) - from.y
+	var beyond := 0.0
+	for i in range(2):
+		var apex := _chip_apex(d + beyond)
+		beyond = cross * d / maxf(0.5, 4.0 * apex - 2.0 * cross)
+	return clampf((d + beyond - low) / maxf(0.01, high - low), 0.0, 1.0)
+
+
+static func _chip_apex(distance: float) -> float:
+	return clampf(_cfg("shot_chip_apex_base", 2.6) + distance * _cfg("shot_chip_apex_per_meter", 0.06),
+		_cfg("shot_chip_apex_min", 2.8), _cfg("shot_chip_apex_max", 4.2))
 
 
 ## A curled shot to shot_curl_post_inset inside the far post, shot_curl_height high: aimed so that,
