@@ -19,6 +19,9 @@ const SPACING_SAMPLE_SECONDS := 0.5
 const CLOSE_PAIR := 3.0
 const CROWD_RADIUS := 4.0
 const CROWD_COUNT := 3
+## The same numbers for each side by phase of play: its side has the ball (or its pass is on the
+## way to a teammate), the other side has it, or the ball is loose.
+const PHASES: Array[String] = ["with the ball", "without the ball", "loose ball"]
 const SAFETY_SECONDS_PER_MATCH := 400.0
 
 var _match: Node
@@ -43,6 +46,11 @@ var _spacing_count := 0
 var _crowd_samples := 0
 var _close_samples := 0
 var _side_samples := 0
+var _phase_sum: Array[float] = [0.0, 0.0, 0.0]
+var _phase_count: Array[int] = [0, 0, 0]
+var _phase_close: Array[int] = [0, 0, 0]
+var _phase_crowd: Array[int] = [0, 0, 0]
+var _phase_sides: Array[int] = [0, 0, 0]
 
 
 func _ready() -> void:
@@ -100,6 +108,11 @@ func _physics_process(delta: float) -> void:
 
 func _sample_spacing(ctx: MatchContext) -> void:
 	for team in ctx.teams:
+		var phase := 2
+		if _has_ball(team, ctx):
+			phase = 0
+		elif _has_ball(team.opponent, ctx):
+			phase = 1
 		var outfield := team.outfield()
 		var near_ball := 0
 		var close_pair := false
@@ -111,14 +124,28 @@ func _sample_spacing(ctx: MatchContext) -> void:
 			if nearest < INF:
 				_spacing_sum += nearest
 				_spacing_count += 1
+				_phase_sum[phase] += nearest
+				_phase_count[phase] += 1
 				close_pair = close_pair or nearest < CLOSE_PAIR
 			if p.flat_distance_to(ctx.ball.position) < CROWD_RADIUS:
 				near_ball += 1
 		_side_samples += 1
+		_phase_sides[phase] += 1
 		if near_ball >= CROWD_COUNT:
 			_crowd_samples += 1
+			_phase_crowd[phase] += 1
 		if close_pair:
 			_close_samples += 1
+			_phase_close[phase] += 1
+
+
+## The side has the ball, or its pass is on the way to a teammate.
+static func _has_ball(team: Team, ctx: MatchContext) -> bool:
+	var holder := ctx.possession.holder
+	if holder != null:
+		return holder.team == team
+	var target := ctx.possession.pass_target
+	return target != null and target.team == team
 
 
 func _on_full_time(home: int, away: int) -> void:
@@ -151,6 +178,11 @@ func _report() -> void:
 	var sides := maxf(1.0, float(_side_samples))
 	print("MATCH SPACING: %.1f m from each outfielder to his nearest teammate, %.0f %% of the time two teammates closer than %.0f m, %.0f %% of the time 3+ players of a side near the ball"
 		% [_spacing_sum / maxf(1.0, float(_spacing_count)), 100.0 * _close_samples / sides, CLOSE_PAIR, 100.0 * _crowd_samples / sides])
+	for k in range(PHASES.size()):
+		var phase_sides := maxf(1.0, float(_phase_sides[k]))
+		print("MATCH SPACING %s (%.0f %% of the time): %.1f m to the nearest teammate, %.0f %% two closer than %.0f m, %.0f %% 3+ near the ball"
+			% [PHASES[k], 100.0 * _phase_sides[k] / sides, _phase_sum[k] / maxf(1.0, float(_phase_count[k])),
+			100.0 * _phase_close[k] / phase_sides, CLOSE_PAIR, 100.0 * _phase_crowd[k] / phase_sides])
 	_check("every match reaches full time", _all_finished)
 	_check("goals are scored", _total_goals >= MIN_TOTAL_GOALS, "total=%d" % _total_goals)
 	_check("score matches goals", not _score_mismatch)

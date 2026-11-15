@@ -26,7 +26,7 @@ static func intent_for(player: Player, ctx: MatchContext, brain: TeamBrain) -> P
 		elif s.attack_role == AiPlayerState.AttackRole.FORWARD:
 			target = forward_spot(player.team, ctx, brain.forward_side)
 		elif s.attack_role == AiPlayerState.AttackRole.COVER:
-			target = cover_spot(player.team, ctx)
+			target = cover_spot(player.team, ctx, brain.forward_side)
 		else:
 			target = FormationPositions.slot_target(player, ctx, true)
 		target = get_open(target, player.team)
@@ -71,13 +71,20 @@ static func forward_spot(team: Team, ctx: MatchContext, side: float) -> Vector3:
 	return clamp_to_court(Vector3(team.frac_to_x(frac, court), 0.0, z), court)
 
 
-## Cover: cover_attack_depth behind the ball (not deeper than cover_min_frac), near the middle.
-static func cover_spot(team: Team, ctx: MatchContext) -> Vector3:
+## Cover: cover_attack_depth behind the ball, near the middle. When the ball is too deep for that
+## (cover_min_frac), he comes level with it and moves across to side `side` (cover_wide_z), so the
+## carrier has a square pass instead of a teammate at his heels.
+static func cover_spot(team: Team, ctx: MatchContext, side: float) -> Vector3:
 	var court := ctx.court
-	var frac := team.to_frac(ctx.ball.position.x, court) - Steering.num("cover_attack_depth", 10.0) / court.length
-	frac = maxf(frac, Steering.num("cover_min_frac", 0.15))
-	var z := ctx.ball.position.z * Steering.num("cover_z_follow", 0.3)
-	return clamp_to_court(Vector3(team.frac_to_x(frac, court), 0.0, z), court)
+	var ball := ctx.ball.position
+	var depth := Steering.num("cover_attack_depth", 10.0) / court.length
+	var frac := team.to_frac(ball.x, court) - depth
+	var min_frac := Steering.num("cover_min_frac", 0.15)
+	var z := ball.z * Steering.num("cover_z_follow", 0.3)
+	if frac < min_frac:
+		var wide := side * Steering.num("cover_wide_z", 0.45) * (court.half_width - 1.0)
+		z = lerpf(z, wide, clampf((min_frac - frac) / (depth * 0.5), 0.0, 1.0))
+	return clamp_to_court(Vector3(team.frac_to_x(maxf(frac, min_frac), court), 0.0, z), court)
 
 
 ## Run in behind: run_depth beyond the opponent's last outfield defender (not past

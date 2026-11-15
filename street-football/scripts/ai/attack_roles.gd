@@ -72,7 +72,7 @@ static func assign(brain: TeamBrain, ctx: MatchContext, human_player: Player) ->
 	if absf(ball_z) >= Steering.num("forward_side_switch_z", 2.5):
 		brain.forward_side = -signf(ball_z)
 	var forward_spot := AttackShape.forward_spot(team, ctx, brain.forward_side)
-	var cover_spot := AttackShape.cover_spot(team, ctx)
+	var cover_spot := AttackShape.cover_spot(team, ctx, brain.forward_side)
 	brain.support_angle = AttackShape.best_support_angle(carrier, ctx, brain.support_angle, [forward_spot, cover_spot])
 	var spots := [AttackShape.support_spot(carrier, ctx, brain.support_angle), forward_spot, cover_spot]
 	_give_jobs(off, spots)

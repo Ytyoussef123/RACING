@@ -128,8 +128,15 @@ func _test_jobs() -> void:
 	var line_x := _home.frac_to_x(AttackShape.last_defender_frac(_home, _ctx), _ctx.court)
 	_check("forward: level with the last defender and wide", absf(forward.x - line_x) < 2.0
 		and absf(forward.z) > 4.0, "spot=%s line=%.2f" % [forward, line_x])
-	var cover := AttackShape.cover_spot(_home, _ctx)
+	var cover := AttackShape.cover_spot(_home, _ctx, _home.brain.forward_side)
 	_check("cover: well behind the ball", cover.x < _ctx.ball.position.x - 6.0, "spot=%s" % cover)
+	# Ball deep in our half: the cover comes level and across, not at the carrier's heels.
+	var deep_ball := _ctx.ball.position
+	_ctx.ball.place(Vector3(-13.0, deep_ball.y, -3.0))
+	var deep := AttackShape.cover_spot(_home, _ctx, 1.0)
+	_ctx.ball.place(deep_ball)
+	_check("cover: with the ball deep he stands across, away from it", Vector2(deep.x + 13.0, deep.z + 3.0).length() > 5.0
+		and deep.z > 2.0, "spot=%s" % deep)
 	var spots: Array[Vector3] = [support, forward, cover]
 	var closest := INF
 	for i in range(spots.size()):
