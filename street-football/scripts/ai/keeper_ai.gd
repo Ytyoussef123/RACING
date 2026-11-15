@@ -39,10 +39,10 @@ static func intent_for(keeper: Player, delta: float, ctx: MatchContext) -> Playe
 		to_ball = Vector3(s, 0.0, 0.0)
 	var out := line_offset
 	if possession.holder != null and possession.holder.team != team:
-		var start := Steering.num("keeper_out_start_distance", 10.0)
-		var full := Steering.num("keeper_out_full_distance", 5.0)
+		var start := Steering.num("keeper_out_start_distance", 8.0)
+		var full := Steering.num("keeper_out_full_distance", 4.0)
 		var near := clampf((start - to_ball.length()) / maxf(0.1, start - full), 0.0, 1.0)
-		out = lerpf(line_offset, Steering.num("keeper_out_max", 2.5), near)
+		out = lerpf(line_offset, Steering.num("keeper_out_max", 1.8), near)
 	var target := goal_center + to_ball.normalized() * minf(out, maxf(line_offset, to_ball.length() * 0.5))
 	target.z = clampf(target.z, -max_z, max_z)
 	target.x = goal_x + s * maxf(0.4, absf(target.x - goal_x))
