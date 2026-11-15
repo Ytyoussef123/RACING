@@ -23,7 +23,8 @@ static func intent_for(player: Player, delta: float, ctx: MatchContext, brain: T
 ## A defending spot kept defend_spacing_min from teammates: two defenders never stand on top of
 ## each other (the one pressing the ball is not moved).
 static func _apart(player: Player, target: Vector3, ctx: MatchContext) -> Vector3:
-	return AttackShape.spaced(player, target, ctx, Steering.num("defend_spacing_min", 3.0))
+	return AttackShape.spaced(player, target, ctx, Steering.num("defend_spacing_min", 3.0),
+		Steering.num("defend_spacing_push", 1.0))
 
 
 ## Second defender: between the ball and our goal, cover_defend_depth behind the ball (at most

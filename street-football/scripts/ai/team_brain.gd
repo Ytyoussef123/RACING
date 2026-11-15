@@ -17,6 +17,8 @@ var forward_side: float = 1.0
 var kick_seen: int = -1
 
 var _think_timer: float = 0.0
+## Our side had the ball last frame: winning it gives the jobs at once (the shape forms sooner).
+var _had_ball: bool = false
 
 
 func _init(owner_team: Team) -> void:
@@ -25,12 +27,17 @@ func _init(owner_team: Team) -> void:
 
 func reset() -> void:
 	_think_timer = 0.0
+	_had_ball = false
 	chaser = null
 	cover = null
 
 
 func update(delta: float, ctx: MatchContext, human_player: Player) -> void:
 	AttackRoles.tick(self, delta, ctx)
+	var has_ball := AttackRoles.in_possession(team, ctx)
+	if has_ball and not _had_ball:
+		AttackRoles.assign(self, ctx, human_player)
+	_had_ball = has_ball
 	_think_timer -= delta
 	if _think_timer <= 0.0:
 		_think_timer = team.tuning.decision_interval

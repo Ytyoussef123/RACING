@@ -31,14 +31,36 @@ static func intent_for(player: Player, ctx: MatchContext, brain: TeamBrain) -> P
 			target = FormationPositions.slot_target(player, ctx, true)
 		target = get_open(target, player.team)
 	target = spaced(player, target, ctx)
-	var intent := Steering.seek(player, target)
 	# Far from his spot (the ball just changed sides, or the carrier ran away): he sprints there.
 	if s.attack_role != AiPlayerState.AttackRole.NONE \
 			and player.flat_distance_to(target) > Steering.num("job_sprint_distance", 4.5):
 		sprint = true
+	var intent := Steering.seek(player, around_carrier(player, target, carrier))
 	if sprint and intent.move != Vector3.ZERO:
 		intent.sprint = true
 	return intent
+
+
+## Goes around the carrier instead of through him: when the straight way to the spot passes within
+## detour_radius of the carrier (and the spot is not next to him), heads first for the point beside
+## the carrier on the side he passes.
+static func around_carrier(player: Player, target: Vector3, carrier: Player) -> Vector3:
+	if carrier == null or carrier == player:
+		return target
+	var radius := Steering.num("detour_radius", 3.0)
+	var from := Vector2(player.position.x, player.position.z)
+	var to := Vector2(target.x, target.z)
+	var c := Vector2(carrier.position.x, carrier.position.z)
+	if c.distance_to(to) < radius:
+		return target
+	var closest := Geometry2D.get_closest_point_to_segment(c, from, to)
+	if closest.distance_to(c) >= radius:
+		return target
+	var side := closest - c
+	if side.length() < 0.01:
+		side = (to - from).orthogonal()
+	var waypoint := c + side.normalized() * radius * Steering.num("detour_margin", 1.2)
+	return Vector3(waypoint.x, 0.0, waypoint.y)
 
 
 ## Support: support_distance from where the carrier will be in support_lead_seconds, `angle`
@@ -163,10 +185,12 @@ static func get_open(target: Vector3, team: Team) -> Vector3:
 
 ## Pushes the spot away from every teammate closer than `min_gap` (spacing_min when not given;
 ## by spacing_push of the missing distance), so teammates spread out; then keeps it on the court.
-static func spaced(player: Player, target: Vector3, ctx: MatchContext, min_gap: float = -1.0) -> Vector3:
+static func spaced(player: Player, target: Vector3, ctx: MatchContext, min_gap: float = -1.0,
+		push: float = -1.0) -> Vector3:
 	if min_gap < 0.0:
 		min_gap = Steering.num("spacing_min", 5.0)
-	var push := Steering.num("spacing_push", 0.7)
+	if push < 0.0:
+		push = Steering.num("spacing_push", 0.7)
 	var result := target
 	for mate in player.team.outfield():
 		if mate == player:

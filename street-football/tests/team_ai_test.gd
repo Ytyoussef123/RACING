@@ -156,6 +156,15 @@ func _test_spacing() -> void:
 	var open := AttackShape.get_open(_away.players[3].position + Vector3(0.0, 0.0, 1.0), _home)
 	_check("get open: a spot next to a defender moves away from him", _away.players[3].flat_distance_to(open) > 2.0,
 		"d=%.2f" % _away.players[3].flat_distance_to(open))
+	# On the way to his spot he goes around the carrier, not through him.
+	var carrier := _home.players[2]
+	p.reset_to(carrier.position + Vector3(-5.0, 0.0, -0.5), Vector3.RIGHT)
+	var beyond := carrier.position + Vector3(5.0, 0.0, 0.0)
+	var step := AttackShape.around_carrier(p, beyond, carrier)
+	_check("detour: the way through the carrier goes around him", step != beyond
+		and carrier.flat_distance_to(step) >= 3.0, "step=%s" % step)
+	var clear := carrier.position + Vector3(0.0, 0.0, -8.0)
+	_check("detour: a clear way is kept", AttackShape.around_carrier(p, clear, carrier) == clear)
 
 
 func _test_run_in_behind() -> void:
