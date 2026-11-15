@@ -1,6 +1,6 @@
 # Team movement
 
-Last change: 2026-11-15, markers keep room (4.5 m) around a pressed ball; final version of the team movement work (branch `feature/team-movement`, commit `cf0ecf7`)
+Last change: 2026-11-15, after a pass the passer stops, then jogs (`AfterPass`; branch `feature/after-pass`, commit `3fc24de`). Before that: markers keep room (4.5 m) around a pressed ball; final version of the team movement work (branch `feature/team-movement`, commit `cf0ecf7`)
 
 ## What it does now
 - Goal: players create empty space and are not all near each other (user request, 2026-11-15). Spacing about 5 m. Calling runs (asking a teammate to run) is NOT done, planned for later.
@@ -23,6 +23,7 @@ Last change: 2026-11-15, markers keep room (4.5 m) around a pressed ball; final 
   - A loose ball gets one player only, as before.
   - Marking: of the free opponents in our part of the court (`mark_zone_frac` 0.62), the most advanced ones, as many as we have markers, are matched closest pair first (no crossing).
   - Defending spots (cover, mark, zone) keep 3 m from teammates (`defend_spacing_min` 3, push 1.0). While a teammate is nearer the ball, a marker or zone player stays 4.5 m from it (`press_room`): at most the presser is around the ball.
+- After a pass (`AfterPass`, details in `ai.md`): the passer stands still 0.25 s, then jogs 1.2 s (no sprint, 0.7 of run speed) before he follows his job. A give-and-go or a run in behind starts right after the short stop, so they still happen.
 - Carrier pass weights moved from code to `ai.json` (`pass_progress_weight` 3, `pass_open_weight` 0.3, `pass_open_cap` 5, `pass_blocked_score` 5), same values.
 - Measured (MATCH SPACING, 6 fixed-seed AI matches, old AI -> new): nearest teammate 5.3 m -> 5.3 m; two teammates closer than 3 m 39 % -> 34 % of the time; 3+ of a side within 4 m of the ball 7 % -> 8 %. With the ball 5.5 m -> 5.8 m, 40 % -> 33 %, 6 % -> 7 %. Settled possession (with the ball 2 s+) 5.6 m -> 6.2 m, 43 % -> 37 %, 5 % -> 6 %. Without the ball 5.0 m -> 4.9 m, 42 % -> 36 %, 10 % -> 11 %. Loose ball 5.6 m -> 5.3 m, 32 % -> 31 %, 2 % -> 3 %. Passes per team per match 38 -> 52 (completion 74 %).
 - Most remaining close pairs with the ball are carrier + support right after short passes; without the ball, the presser and a marker.
@@ -35,6 +36,7 @@ Last change: 2026-11-15, markers keep room (4.5 m) around a pressed ball; final 
 - Tests: `tests/team_ai_test.gd` + `.tscn`: 31 checks (possession, jobs, support, forward, cover, spacing, get open, detour, runs, through pass, give-and-go, keeper's ball, defense, brains); prints `TEAM AI TESTS DONE: N failure(s)`. `tests/match_sim_test.gd`: `MATCH SPACING` lines. `tests/screenshot_tour.gd`: top views `match_top_1..4`.
 
 ## History (newest first)
+- 2026-11-15: after a pass the passer stops 0.25 s and jogs 1.2 s (`AfterPass`); give-and-go and runs in behind start right after the short stop. Why: user request, a natural movement after a pass. Match spacing after the change (6 AI matches): nearest teammate 5.4 -> 5.3 m, two closer than 3 m 31 -> 34 %, 3+ near the ball 8 %. Branch `feature/after-pass`, commit `3fc24de`.
 - 2026-11-15: slower players: the AI's through ball needs a runner at 2.1 m/s or more (`through_min_runner_speed` 3.0 -> 2.1, see `ai.md`). Match spacing after the change: 5.4 m to the nearest teammate (same), two teammates closer than 3 m 31 % -> 30 %, 3+ near the ball 8 % (same). Branch `feature/player-speed`, commit `bea4541`.
 - 2026-11-15: markers and zone players keep 4.5 m from a ball being pressed (`press_room`). Why: with a teammate already at the ball, markers still crowded it. Branch `feature/team-movement`, commit `cf0ecf7`.
 - 2026-11-15: off-ball players go around the carrier; jobs are given at once when the ball is won; defending spots keep the full 3 m. Why: after a pass, players ran to their new spot straight past the new carrier (carrier + support was the main close pair with the ball), and a won ball waited up to one decision tick for the jobs while the players were still bunched from defending. Branch `feature/team-movement`, commit `c4df0bd`.
