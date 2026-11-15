@@ -87,7 +87,7 @@ func _turn_and_shoot(shot_name: String) -> void:
 func _lineup(shot_name: String) -> void:
 	var team_ids: Array = Roster.team_ids()
 	var poses := ["idle", "keeper", "jog", "pass", "kick", "kick_late", "tackle", "dive"]
-	var freeze_at := {"pass": 0.12, "kick": 0.08, "kick_late": 0.22, "tackle": 0.15, "dive": 0.25}
+	var freeze_at := {"pass": 0.12, "kick": 0.08, "kick_late": 0.22, "tackle": 0.35, "dive": 0.35}
 	var bodies: Array[Player] = []
 	for i in range(poses.size()):
 		var team: TeamData = Roster.team(str(team_ids[i % team_ids.size()]))
@@ -96,9 +96,6 @@ func _lineup(shot_name: String) -> void:
 		var kit := team.color("keeper" if keeper else "kit", Color.WHITE)
 		var p := _spawn(Roster.player(str(entry.get("id", ""))), "GK" if keeper else "MID", kit, keeper)
 		p.reset_to(Vector3(-4.375 + i * 1.25, 0.0, 0.0), Vector3.BACK)
-		# The trial 3D body on the jog, pass and kick poses.
-		if i >= 2 and i <= 5 and p.use_model_body():
-			p.set_kit(kit)
 		bodies.append(p)
 	for i in range(bodies.size()):
 		if poses[i] == "jog":
@@ -220,6 +217,8 @@ func _spawn(profile: PlayerProfile, role: String, kit: Color, keeper: bool) -> P
 	if profile != null:
 		p.apply_profile(profile, role, 7)
 	p.set_kit(kit)
+	if p.use_model_body():
+		p.set_kit(kit)
 	p.reset_to(p.position, Vector3.RIGHT)
 	return p
 

@@ -98,7 +98,9 @@ func update(delta: float, velocity: Vector3, facing: Vector3, turn_rate: float, 
 	_pose.v[RigPose.NECK_X] = -(_pose.v[RigPose.ROOT_X] + _pose.v[RigPose.SPINE_X]) * _n("head_stabilize", 0.7)
 	_rig.apply(_pose)
 	if model != null:
-		model.apply(_pose, _action, _action_time, _action_duration)
+		var backward := forward < _n("backpedal_threshold", -0.4) * speed
+		model.advance(delta, speed, backward, (1.0 - _walk) * _move)
+		model.apply(_pose, _action, _action_time, _action_duration, _side, keeper)
 
 
 ## The running cycle advances with the distance covered (longer strides when faster), backward

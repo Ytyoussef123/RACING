@@ -30,6 +30,7 @@ static func may_handle(keeper: Player, ctx: MatchContext) -> bool:
 
 ## Takes the ball in his hands (catch, pick-up, goal kick).
 static func take(keeper: Player, ctx: MatchContext) -> void:
+	keeper.animate("scoop" if ctx.ball.position.y < _num("keeper_scoop_height", 0.5) else "catch")
 	keeper.ball_in_hands = true
 	keeper.hands_time = 0.0
 	hold(keeper, ctx)
@@ -51,6 +52,7 @@ static func hold(keeper: Player, ctx: MatchContext) -> void:
 
 ## Puts the ball down at his feet: from now on he plays it like any player.
 static func drop(keeper: Player, ctx: MatchContext) -> void:
+	keeper.animate("place")
 	keeper.ball_in_hands = false
 	var ball := ctx.ball
 	var feet := keeper.position + keeper.motion.facing * _num("dribble_distance", 0.48)
