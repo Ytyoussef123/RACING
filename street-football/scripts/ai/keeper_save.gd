@@ -18,7 +18,7 @@ static func chance(keeper: Player, ctx: MatchContext) -> float:
 	var reach := keeper.stat("keeper_reach", Steering.num("keeper_reach", 1.6))
 	var cross := crossing(keeper, ball)
 	var offset := clampf(absf(cross.z - keeper.position.z) / maxf(0.1, reach), 0.0, 1.0)
-	var mult := lerpf(Steering.num("keeper_save_center_mult", 1.45), Steering.num("keeper_save_corner_mult", 0.75), offset)
+	var mult := lerpf(Steering.num("keeper_save_center_mult", 1.65), Steering.num("keeper_save_corner_mult", 0.85), offset)
 	var fast := clampf((ball.velocity.length() - 10.0) / 16.0, 0.0, 1.0)
 	mult *= lerpf(Steering.num("keeper_save_slow_mult", 1.1), Steering.num("keeper_save_fast_mult", 0.9), fast)
 	if cross.y > Steering.num("keeper_save_high_height", 1.6):
