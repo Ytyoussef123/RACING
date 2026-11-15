@@ -25,7 +25,12 @@ static func build(parent: Node3D, player_scene: PackedScene, index: int, data: T
 		p.number = int(entry.get("number", i + 1))
 		team.players.append(p)
 	team.assign_slots()
+	var model_role := str(Config.get_value("body", "model_trial_role", ""))
 	for p in team.players:
+		# Trial of the skinned 3D body: one player of the home side.
+		if index == 0 and not model_role.is_empty() and p.role == model_role:
+			model_role = ""
+			p.use_model_body()
 		p.set_kit(team.keeper_color if p.is_keeper else team.color)
 	team.brain = TeamBrain.new(team)
 	return team

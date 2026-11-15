@@ -96,6 +96,9 @@ func _lineup(shot_name: String) -> void:
 		var kit := team.color("keeper" if keeper else "kit", Color.WHITE)
 		var p := _spawn(Roster.player(str(entry.get("id", ""))), "GK" if keeper else "MID", kit, keeper)
 		p.reset_to(Vector3(-4.375 + i * 1.25, 0.0, 0.0), Vector3.BACK)
+		# The trial 3D body on the jog, pass and kick poses.
+		if i >= 2 and i <= 5 and p.use_model_body():
+			p.set_kit(kit)
 		bodies.append(p)
 	for i in range(bodies.size()):
 		if poses[i] == "jog":

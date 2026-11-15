@@ -33,6 +33,8 @@ var _travel: float = 0.0
 var _walk: float = 0.0
 var _clock: float = 0.0
 var _action: String = ""
+## A skinned 3D body worn instead of the coded one (ModelBody), or null.
+var model: ModelBody = null
 var _action_time: float = 0.0
 var _action_duration: float = 0.3
 var _side: float = 1.0
@@ -95,6 +97,8 @@ func update(delta: float, velocity: Vector3, facing: Vector3, turn_rate: float, 
 	# The head stays level when the body leans.
 	_pose.v[RigPose.NECK_X] = -(_pose.v[RigPose.ROOT_X] + _pose.v[RigPose.SPINE_X]) * _n("head_stabilize", 0.7)
 	_rig.apply(_pose)
+	if model != null:
+		model.apply(_pose, _action, _action_time, _action_duration)
 
 
 ## The running cycle advances with the distance covered (longer strides when faster), backward

@@ -1,6 +1,12 @@
 {
 	"_note": "Player body, look only (no gameplay effect). Sizes in meters for a player of reference_height; taller or shorter players are scaled as a whole. Joints: hips, spine, neck, shoulders, elbows, hips (legs) and knees. Each limb is a few low-poly shapes merged into one mesh, colored per vertex.",
 	"reference_height": 1.75,
+	"_model": "Trial of a skinned 3D body (ModelBody): the home player in model_trial_role wears model_scene instead of the coded body (empty role = nobody). model_clips: the recorded animation played for an action. Mixamo character and animations (mixamo.com).",
+	"model_trial_role": "ATT",
+	"model_scene": "res://assets/art/players/mixamo/soccer_pass.fbx",
+	"model_clips": {"pass": "res://assets/art/players/mixamo/soccer_pass.fbx", "kick": "res://assets/art/players/mixamo/drop_kick.fbx"},
+	"model_foot_height": 0.03,
+	"model_joint_darken": 0.5,
 	"radial_segments": 8,
 	"sphere_rings": 5,
 	"roughness": 0.78,

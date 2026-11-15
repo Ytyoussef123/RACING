@@ -123,6 +123,18 @@ func stat(effect: String, fallback: float) -> float:
 ## Dresses the player: shirt in the kit color, darker shorts, socks; keepers wear gloves.
 func set_kit(kit_color: Color) -> void:
 	_rig.set_kit(kit_color, is_keeper)
+	if _animator.model != null:
+		_animator.model.set_kit(kit_color)
+
+
+## Trial: wears the skinned 3D model (ModelBody) instead of the coded body. False if it cannot load.
+func use_model_body() -> bool:
+	var model := ModelBody.new()
+	if not model.build(_body, float(Config.get_value("body", "reference_height", 1.75))):
+		return false
+	$Body/Pose.visible = false
+	_animator.model = model
+	return true
 
 
 func reset_to(ground_position: Vector3, facing: Vector3) -> void:
