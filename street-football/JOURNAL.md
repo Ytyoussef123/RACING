@@ -15,9 +15,42 @@ A dated log, newest entry first: what was done, what was decided and why, and wh
 | 7 | Progression: coins, unlocks, upgrades, save system | Done, waiting for phone test |
 | 8 | Release build: optimized APK, full file review | Not started |
 
-The player-motion work is an extra feature branch between Phase 7 and Phase 8 (`feature/player-motion`, created from `feature/progression`), waiting for the phone test. `feature/broadcast-camera` (created from `feature/player-motion`) adds camera views and also waits for the phone test. `feature/speed-modes` (created from `feature/broadcast-camera`) adds walk, run, sprint and knock-on, and waits for the phone test. `feature/shot-on-target` (created from `feature/speed-modes`) adds shots on target and CLEAR, and waits for the phone test. `feature/keeper-ball` (created from `feature/shot-on-target`) adds the goalkeeper with the ball (hands or feet), and waits for the phone test. `feature/team-movement` (created from `feature/keeper-ball`) adds team movement (creating space), and waits for the phone test.
+The player-motion work is an extra feature branch between Phase 7 and Phase 8 (`feature/player-motion`, created from `feature/progression`), waiting for the phone test. `feature/broadcast-camera` (created from `feature/player-motion`) adds camera views and also waits for the phone test. `feature/speed-modes` (created from `feature/broadcast-camera`) adds walk, run, sprint and knock-on, and waits for the phone test. `feature/shot-on-target` (created from `feature/speed-modes`) adds shots on target and CLEAR, and waits for the phone test. `feature/keeper-ball` (created from `feature/shot-on-target`) adds the goalkeeper with the ball (hands or feet), and waits for the phone test. `feature/team-movement` (created from `feature/keeper-ball`) adds team movement (creating space), and waits for the phone test. `feature/kick-power` (created from `feature/team-movement`) adds the power bar for every kick, and waits for the phone test.
 
 ## Log
+
+### 2026-11-15 — Power bar for every kick (step 1)
+
+#### Why
+
+- Planning talk with the user about shots, long passes and tackles. Decisions: the power bar for every kick; Q1 answer A: a quick tap keeps the automatic power (like before), only a hold lets the bar decide; the bar sets only the power.
+- Planned next, not done: step 2 lofted passes (PASS + slide up = lofted pass in the air toward the teammate on the stick side, distance only from the power; THROUGH + slide up = lofted through ball over the last defender). Step 3 shot types by a slide on SHOOT (no slide = normal, up = chip (Panenka), left or right = curled shot that always curls toward the far post, down = low shot on the ground; the bar = power only; the good-power zone depends on the player; no type label next to the bar). Later: Blitz shot, tackles (timing, angle, results), slide tackle, fouls, volleys, penalties.
+
+#### Done
+
+- PASS, THROUGH and CLEAR (SHOOT in our own half), and the keeper's throw (PASS) and long kick (THROUGH), kick on RELEASE. A tap (under `kick_tap_seconds` 0.18 s) keeps the automatic power, exactly as before. Held longer, the bar fills over `kick_charge_time` 0.6 s and sets the power:
+  - pass: 6 to 20 m/s (automatic 7 to 16); to nobody: same range (automatic 11).
+  - through pass: lead 2 to 10 m in front of the runner (automatic 4), times the vision stat; to nobody: 7 to 17 m/s (automatic 10).
+  - clearance: 10 to 20 m/s, lift 4 to 7.5 m/s (automatic 17 and 6.5).
+  - keeper throw: 6 to 16 m/s; keeper long kick: lands 10 to 32 m away, lift 7.
+- SHOOT unchanged: fills the bar from the press over `shot_charge_time` 0.9 s.
+- The bar above the human's player shows for any held kick; for PASS/THROUGH/CLEAR only after the tap time, so a tap never flashes it. Red end from `kick_red_zone` 0.85 (ui.json `power_red_zone`, `power_fill_red`).
+- In the red end: a pass, through pass or clearance gets up to x1.6 aim error (`kick_red_error_mult`); a shot rises up to `shot_red_lift` 4.5 m/s extra at full power, scaled by the shooter's finishing error (0.4 to 1.6, better finishers rise less), so it can fly over the crossbar. Before, no shot could (about 1.65 m at most, the bar is 2 m).
+- A held button keeps the meaning of its press until the finger is lifted (`HumanInput._pressed_as`): winning or losing the ball or crossing the halfway line never turns a held button into another kick. This replaced `_shoot_locked` / `_was_attacking`.
+- Small changes: CLEAR goes on release (was on press); holding CLEAR also ends knock-on mode; `ReceiveAssist` carries `pass_held`, `through_held`, `clear_held`, `clear_pressed`.
+- New `scripts/gameplay/kicks.gd` (`Kicks`): kicks moved out of `ball_handling.gd` (was 298 lines, now 269), same behavior. Also changed: `player_intent.gd`, `human_input.gd`, `pass_targeting.gd`, `keeper_hands.gd`, `receive_assist.gd`, `match.gd`, `scripts/ui/match_hud.gd`, `data/config/player.json`, `data/config/ui.json`.
+- The AI is unchanged (automatic power, shots charged to at most 0.75, below the red end).
+- Tests: new `tests/kick_power_test.gd` (14 checks) and CI step "Kick power tests (headless)" printing `KICK TESTS DONE: N failure(s)`.
+- Branch `feature/kick-power`, commit `5631164`.
+
+#### Numbers
+
+- CI run 43728814989: all suites pass. Balance (6 AI matches) unchanged: 3.67 goals, 31.5 shots, 16.0 saves per match; MATCH SPACING unchanged.
+
+#### Next
+
+- Phone test, not done yet: tap passes feel as before; hold PASS for a soft or strong pass; hold THROUGH to send the ball further ahead of a runner; hold CLEAR; the keeper's throw and long kick held; a full-power shot can now fly over the bar. Nothing merged to main yet.
+- Step 2 (lofted passes), then step 3 (shot types).
 
 ### 2026-11-15 — Team movement: creating space
 
