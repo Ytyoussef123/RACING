@@ -1,6 +1,6 @@
 # AI
 
-Last change: 2026-11-15, team movement: jobs off the ball, runs in behind, through passes, give-and-go, cover, marking (branch `feature/team-movement`, commit `cf0ecf7`; details in `team-movement.md`). Before that: 2026-11-15, goalkeeper with the ball: hands or feet, catches only in his area, throws and long kicks (branch `feature/keeper-ball`, commit `346d461`). Before that: 2026-11-15, keeper save chance +0.05 (branch `feature/shot-on-target`, commit `2bcb10d`). Before that: 2026-11-15, `shoot_range` lowered to 8 / 9.5 / 11 m after the speed modes (branch `feature/speed-modes`, commit `9949e3f`)
+Last change: 2026-11-15, `LoftedAI`: the carrier switches the play with a lofted pass when no ground pass is on (branch `feature/lofted-pass`, commit `583d616`). Before that: 2026-11-15, team movement: jobs off the ball, runs in behind, through passes, give-and-go, cover, marking (branch `feature/team-movement`, commit `cf0ecf7`; details in `team-movement.md`). Before that: 2026-11-15, goalkeeper with the ball: hands or feet, catches only in his area, throws and long kicks (branch `feature/keeper-ball`, commit `346d461`). Before that: 2026-11-15, keeper save chance +0.05 (branch `feature/shot-on-target`, commit `2bcb10d`). Before that: 2026-11-15, `shoot_range` lowered to 8 / 9.5 / 11 m after the speed modes (branch `feature/speed-modes`, commit `9949e3f`)
 
 ## What it does now
 - Every player, human or AI, is driven by the same `PlayerIntent`. The AI has no cheating inputs.
@@ -22,6 +22,7 @@ Last change: 2026-11-15, team movement: jobs off the ball, runs in behind, throu
 - Keeper save chance is 0.4 / 0.6 / 0.75 (easy / normal / hard).
 - The AI's shot aim already crosses the goal, so the human shot-on-target aim (`ShotAim`) changed nothing for it.
 - Team movement (details in `team-movement.md`): with the ball, off-ball outfield players get a job (support, forward, cover) and keep about 5 m apart; the forward makes runs in behind, the carrier plays through passes to them, the passer does a give-and-go. Without the ball: one presses, one covers behind the ball, others mark (most advanced free opponents, closest pair first); defenders keep 3 m apart. Run, through-pass and give-and-go chances change with difficulty.
+- Lofted pass (`scripts/ai/lofted_ai.gd`, `LoftedAI`): when the carrier decides to pass but no ground pass is on (`best_pass` finds nobody), it may play a ball in the air (switch of play) to a teammate `lofted_ai_min_distance` 9 to `lofted_ai_max_distance` 26 m away with no opponent within `lofted_ai_open_distance` 3.5 m of him, not more than `lofted_ai_max_back_frac` 0.1 of the court further back; the most open and most advanced one. Chance per decision `lofted_tendency` (easy 0.2, normal 0.35, hard 0.5). Its power is the one for where the teammate will be, plus or minus `lofted_power_error` (easy 0.12, normal 0.07, hard 0.04 of the bar). It sets `PlayerIntent.pass_lofted` and `kick_power`. `AiTuning` has `lofted_tendency` and `lofted_power_error`. Flight and landing: see `passing-and-receiving.md`.
 - Carrier pass weights are now in `ai.json` (`pass_progress_weight`, `pass_open_weight`, `pass_open_cap`, `pass_blocked_score`), same values.
 - The human's teammates use "normal" (`teammates_difficulty`). The default opponent formation is 1-2-1.
 
@@ -33,10 +34,12 @@ Last change: 2026-11-15, team movement: jobs off the ball, runs in behind, throu
   - Decisions: `pass_lane_width`, `pass_min_score`, `pass_min_distance`, `pass_max_distance`, `shot_min_frac`, `shot_corner_inset` 0.55, `shot_min_goal_angle_degrees` 9.0, `shot_close_distance` 6.0, `shot_lane_width` 0.5, `shot_charge_min/max`.
   - Keeper: `keeper_line_offset`, `keeper_rush_distance`, `keeper_reach`, `keeper_reach_height`, `keeper_catch_speed`, `keeper_save_min_speed`, `keeper_hold_seconds`, `keeper_parry_lift`, `keeper_parry_spread`. Moved here from hard-coded values (2026-11-15): `keeper_outlet_min_distance` 3, `keeper_outlet_max_distance` 26 (was 20), `keeper_outlet_blocked_penalty` 5, `keeper_parry_back` 0.35, `keeper_parry_side` 0.4, `keeper_parry_block_seconds` 0.4.
   - Hands and throws: in `data/config/player.json` (see `passing-and-receiving.md`), `keeper_throw_max_distance` 14 is the AI's limit for a throw.
+  - Lofted pass: `lofted_ai_min_distance` 9, `lofted_ai_max_distance` 26, `lofted_ai_open_distance` 3.5, `lofted_ai_max_back_frac` 0.1; per difficulty `lofted_tendency` (0.2 / 0.35 / 0.5) and `lofted_power_error` (0.12 / 0.07 / 0.04).
   - Top level: `teammates_difficulty`, `opponent_formation`.
 - Tests: `tests/match_sim_test.gd`: 6 AI-vs-AI matches (seeds 11, 22, 33, 44, 55, 66; was 3) with fixed seeds (150 s each, fixed 60 fps), checks the ball never stays stuck and players stay in the court, prints the `MATCH BALANCE` line. `tests/stats_test.gd`: keeper attributes.
 
 ## History (newest first)
+- 2026-11-15: `LoftedAI` (new `scripts/ai/lofted_ai.gd`): when no ground pass is on, the carrier may switch the play with a lofted pass to an open teammate 9 to 26 m away; new keys `lofted_ai_*`, `lofted_tendency`, `lofted_power_error`; `AiTuning` extended; every ball coming down can now be taken in the air (`AirControl`), AI included. Why: user decision (planning talk): the AI uses lofted passes to switch the play when short passes are blocked. Balance (6 AI matches): 4.17 goals, 27.5 shots, 14.5 saves per match (before: 3.67 / 31.5 / 16.0); passes per team per match about 58 (was about 52), completion 74 %; MATCH SPACING about the same (with the ball 5.7 m nearest teammate, 33 % close pairs). Branch `feature/lofted-pass`, commit `583d616`. Tests: AI checks in `tests/lofted_pass_test.gd`.
 - 2026-11-15: team movement (jobs off the ball, support spots, runs in behind, through passes, give-and-go, cover, marking, spacing; new `attack_roles.gd`, `attack_shape.gd`, changes in `team_brain.gd`, `support_ai.gd`, `carrier_ai.gd`, `ai_player_state.gd`, `ai_tuning.gd`, `ai.json`). Why: user request, players should create empty space. Full story and numbers in `team-movement.md`. Balance (6 AI matches): 3.67 goals, 31.5 shots, 16.0 saves per match. Branch `feature/team-movement`, commits `c5888cf` to `cf0ecf7`.
 - 2026-11-15: goalkeeper with the ball (hands or feet). `KeeperAI.try_save` catches only inside his area, else parries/blocks; `_distribute` throws within 14 m, else long kick, a foot pass after a back-pass; `best_outlet` and `outlet_direction` public; hard-coded keeper numbers moved to `ai.json` (`keeper_outlet_max_distance` 26, was 20); same rules for the opponent keeper. Why: user request, the human controls his keeper when he has the ball. Balance (6 AI matches): 4.17 goals, 27.8 shots, 15.3 saves per match. Branch `feature/keeper-ball`, commit `346d461`.
 - 2026-11-15: keeper save chance easy / normal / hard 0.4 / 0.6 / 0.75 (was 0.35 / 0.55 / 0.7). Why: after the shot-on-target change and the pass-through fix, 6 AI matches gave 5.17 goals, 31.0 shots, 15.0 saves; after: 4.67 goals, 30.3 shots, 16.2 saves per match (3 to 7 goals per match). Branch `feature/shot-on-target`, commit `2bcb10d`.
@@ -59,17 +62,20 @@ Last change: 2026-11-15, team movement: jobs off the ball, runs in behind, throu
   - after the speed modes (6 matches): 2.33 goals, 29.3 shots, 13.3 saves with the old `shoot_range`; 3.67 goals, 33.2 shots, 14.0 saves with 8 / 9.5 / 11 m; after the gap touches (`45a870f`): 3.17 goals, 28.2 shots, 12.2 saves;
   - after shots on target and the pass-through fix: 5.17 goals, 31.0 shots, 15.0 saves; after the keeper save chance +0.05 (`2bcb10d`): 4.67 goals, 30.3 shots, 16.2 saves;
   - after the goalkeeper with the ball (`346d461`): 4.17 goals, 27.8 shots, 15.3 saves;
-  - after team movement (`cf0ecf7`): 3.67 goals, 31.5 shots, 16.0 saves (latest).
+  - after team movement (`cf0ecf7`): 3.67 goals, 31.5 shots, 16.0 saves;
+  - after the lofted pass (`583d616`): 4.17 goals, 27.5 shots, 14.5 saves (latest).
   With 3 matches the goal count moves a lot between runs (1.67 to 5.00 during the player-motion work). Judge by shots and saves too, and by the phone.
 - The AI uses the same `PlayerIntent` path as the human: no cheating inputs. Difficulty only changes reaction time, speed factor, aim error, tendencies and keeper save chance.
 - Decisions at an interval, movement every frame: difficulty stays tunable and movement smooth.
 - The AI match test uses two fixed crews (not My Crew), so the balance numbers stay comparable.
 - Keepers protect the goal automatically (AI), also on the human's team. The human controls his keeper only while the keeper has the ball (user decision, 2026-11-15; before, keepers were always AI).
 - The keeper catches only inside his area; outside he blocks the ball away. A back-pass is played with the feet. Same rules for both keepers.
+- The AI plays a lofted pass only when no ground pass is on (user decision: to switch the play when short passes are blocked); its power error is by difficulty.
 - Team movement rules (cover nearest the cover point and only when the other side has the ball, one player for a loose ball, defenders 3 m apart, jobs at once on winning the ball): see `team-movement.md`.
 
 ## How to check after a change
 - CI test `tests/match_sim_test.tscn`: the `MATCH BALANCE` line (goals, shots, saves, longest stuck ball) and the match results (6 matches); compare with the numbers above.
+- `LOFTED TESTS DONE: 0 failure(s)`; passes per team per match about 58 and balance 4.17 / 27.5 / 14.5 (see above).
 - `TEAM AI TESTS DONE: 0 failure(s)` and the `MATCH SPACING` lines (see `team-movement.md`).
 - Other CI suites pass (physics, stats, progression, menus).
 - Phone test: play each difficulty; check scoring is not too easy or too hard.

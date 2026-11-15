@@ -1,6 +1,6 @@
 # Player stats
 
-Last change: 2026-11-14, Phase 7 added 17 free agents (7 rookies for My Crew, 10 in the shop) and upgrades through the stat sheet (branch `feature/progression`, commits `f78448c`, `6f0f2ac`, `7946e17`)
+Last change: 2026-11-15, new stat effect `air_control_chance` from ball control (branch `feature/lofted-pass`, commit `583d616`). Before that: 2026-11-14, Phase 7 added 17 free agents (7 rookies for My Crew, 10 in the shop) and upgrades through the stat sheet (branch `feature/progression`, commits `f78448c`, `6f0f2ac`, `7946e17`)
 
 ## What it does now
 - Players have 25 attributes (0..99). They reach gameplay only through the stat sheet: `StatEffects.build_sheet(profile, role)` is built in `Player` and read with `Player.stat(effect, fallback)`. The fallback is the neutral value for test players.
@@ -8,6 +8,7 @@ Last change: 2026-11-14, Phase 7 added 17 free agents (7 rookies for My Crew, 10
 - The attribute is first scaled by the player's position fitness: natural 1.0, adjacent 0.95, other 0.88, keeper outfield 0.75, outfielder in goal 0.6.
 - Overall rating per role (GK, DEF, MID, WING, ATT) = weighted average of attributes x position fitness (`ratings.json` -> `weights`).
 - Effects (full list in `docs/player-data.md`): speed, acceleration, turning, dribbling (touch distance, speed and turning with the ball), tight possession, ball control, jump, interception, shot power, finishing, long shots, low pass, lofted pass, vision, tackling, balance, strength (shoulder duels), stamina, marking, aggression, goalkeeper reflexes, diving, handling, positioning, kicking. Weak foot: kicks aimed to the weak side are less accurate (`weak_foot_error_mult`).
+- Air first touch: `air_control_chance` (`stat_effects.json`, from `ball_control`, 0.55 at 40 to 0.95 at 99) is the chance of a clean first touch on a ball coming down (chest, thigh or foot); fallback 0.8 for players without a profile (`player.json` -> `air_control_chance`). Used by `AirControl` (see `passing-and-receiving.md`).
 - Stamina: sprinting drains energy (less with high stamina); below 40 % energy the top speed drops to 85 % when empty; it recovers when not sprinting.
 - Upgrades (levels 1-5) add +2 to every attribute per level through the stat sheet.
 - Roster: 47 fictional players: 30 in the 6 crews (5 each, one keeper each) and 17 free agents (7 rookies for My Crew, 10 in the shop). Crew overall 74-88 (crew averages 79-82), rookies 65-75, shop players 74-89.
@@ -22,6 +23,7 @@ Last change: 2026-11-14, Phase 7 added 17 free agents (7 rookies for My Crew, 10
 - Tests: `tests/stats_test.gd`: roster data valid (47 players, 17 free agents, 6 crews of 5 with one keeper, attributes 0-99, known playstyles, skills and positions, overall 60-95), slot assignment for every crew and formation, and that attributes change play (speed, dribbling, finishing, stamina, tackling and balance, keeper attributes, position fitness). `tests/progression_test.gd`: upgrades add +2 per level.
 
 ## History (newest first)
+- 2026-11-15: new stat effect `air_control_chance` (`ball_control`, 0.55 to 0.95) for the first touch on a ball coming down; the `lofted_pass` stat (`through_error_degrees`) also sets the aim error of lofted kicks. Why: user decision (planning talk): receiving a high ball by chest, thigh or foot control, harder when strong or high; better ball control makes a clean touch more likely. Branch `feature/lofted-pass`, commit `583d616`. Tests: air control checks in `tests/lofted_pass_test.gd`.
 - 2026-11-14: Phase 7: 7 rookies and 10 shop players (free agents), upgrades +2 per attribute per level, 47 players in total. Branch `feature/progression`, commit `f78448c`; docs `7946e17`.
 - 2026-11-14: stats test fixed: it expected 30 players, so it now counts crew players and free agents separately. Branch `feature/progression`, commit `6f0f2ac`.
 - 2026-11-14: sprint knock-on flag set by touches only; docs for player motion. Branch `feature/player-motion`, commit `1690191`.

@@ -15,9 +15,37 @@ A dated log, newest entry first: what was done, what was decided and why, and wh
 | 7 | Progression: coins, unlocks, upgrades, save system | Done, waiting for phone test |
 | 8 | Release build: optimized APK, full file review | Not started |
 
-The player-motion work is an extra feature branch between Phase 7 and Phase 8 (`feature/player-motion`, created from `feature/progression`), waiting for the phone test. `feature/broadcast-camera` (created from `feature/player-motion`) adds camera views and also waits for the phone test. `feature/speed-modes` (created from `feature/broadcast-camera`) adds walk, run, sprint and knock-on, and waits for the phone test. `feature/shot-on-target` (created from `feature/speed-modes`) adds shots on target and CLEAR, and waits for the phone test. `feature/keeper-ball` (created from `feature/shot-on-target`) adds the goalkeeper with the ball (hands or feet), and waits for the phone test. `feature/team-movement` (created from `feature/keeper-ball`) adds team movement (creating space), and waits for the phone test. `feature/kick-power` (created from `feature/team-movement`) adds the power bar for every kick, and waits for the phone test.
+The player-motion work is an extra feature branch between Phase 7 and Phase 8 (`feature/player-motion`, created from `feature/progression`), waiting for the phone test. `feature/broadcast-camera` (created from `feature/player-motion`) adds camera views and also waits for the phone test. `feature/speed-modes` (created from `feature/broadcast-camera`) adds walk, run, sprint and knock-on, and waits for the phone test. `feature/shot-on-target` (created from `feature/speed-modes`) adds shots on target and CLEAR, and waits for the phone test. `feature/keeper-ball` (created from `feature/shot-on-target`) adds the goalkeeper with the ball (hands or feet), and waits for the phone test. `feature/team-movement` (created from `feature/keeper-ball`) adds team movement (creating space), and waits for the phone test. `feature/kick-power` (created from `feature/team-movement`) adds the power bar for every kick, and waits for the phone test. `feature/lofted-pass` (created from `feature/kick-power`) adds lofted passes, and waits for the phone test.
 
 ## Log
+
+### 2026-11-15 — Lofted pass and lofted through ball (step 2)
+
+#### Why
+
+- Planning talk with the user (step 2 after the power bar). Decisions: PASS + slide up = a lofted pass ("the ball doesn't go on the ground, it makes an arc"), for example to switch the play from one side of the pitch to the other; it goes toward the teammate on the stick's side (Q2) and its distance comes only from the power bar ("the long ball depends only on the power"); THROUGH + slide up = lofted through ball (Q3 yes). Receiving a high ball: chest, thigh or foot control, harder when the ball is strong or high; a defender under the ball can win it. The AI uses lofted passes to switch the play when short passes are blocked.
+
+#### Done
+
+- Gesture: press PASS or THROUGH, slide the finger up on the button (more up than sideways, at least `button_slide_fraction` 0.5 of the button radius), release: the ball goes in the air. The slide is read while the finger is down and as it is lifted. Keyboard: T = lofted pass, G = lofted through ball.
+- Power: a lofted kick always takes the bar's power, filled from the press (`kick_charge_time` 0.6 s for a full bar); the bar shows at once. It comes down `lofted_distance_min` 5 to `lofted_distance_max` 30 m away by the bar. Too little: short; right: at the teammate; too much: over his head.
+- Direction: toward the teammate on the stick's side (same pass assist), aimed where he will be when it comes down; a lofted through ball goes to the space in front of him (`PassTargeting.through_spot`, now shared). Nobody on that side: along the stick. No power given (AUTO): lands at the teammate.
+- Flight (new `scripts/gameplay/lofted_kick.gd`, `LoftedKick`): apex 1.8 + 0.1 per meter, clamped 2.2 to 4.0 m, over the heads of players in between; speed corrected once on a quick simulated flight (air drag), so it lands within a meter of the distance asked. Accuracy: `lofted_pass` stat, weak foot, speed mode, red end.
+- Air control (new `scripts/gameplay/air_control.gd`, `AirControl`): a ball coming down can be taken up to 1.5 m (chest, thigh or foot) by either side, so a defender under the ball can win it. One first touch per player per kick: clean with `air_control_chance` (new stat effect from ball control, 0.55 to 0.95; fallback 0.8) minus 0.03 per m/s above 9 m/s (not below 0.2). Missed: a heavy touch, the ball bounces away from him and he cannot retake it for 0.4 s. It applies to every ball coming down (lofted passes, clearances, long kicks, high bounces).
+- Keeper with the ball in his hands: a slide is ignored (PASS stays the throw, THROUGH the long kick).
+- AI (new `scripts/ai/lofted_ai.gd`, `LoftedAI`): when the carrier decides to pass but no ground pass is on, it may play a ball in the air to a teammate 9 to 26 m away with no opponent within 3.5 m of him, not more than 0.1 of the court further back (the most open and most advanced). Chance `lofted_tendency` (easy 0.2, normal 0.35, hard 0.5); power error `lofted_power_error` (0.12, 0.07, 0.04 of the bar).
+- Code moved: the held-button logic (tap / hold / bar / lofted) moved from `BallHandling` into new `scripts/gameplay/held_kick.gd` (`HeldKick`); `BallHandling` is now 264 lines. `Kicks.lofted` is the new kick. `PlayerIntent`: `pass_lofted`, `through_lofted`, `kick_power`. `ActionButton` tracks the slide; `TouchControls.slide_direction(id)`; `HumanInput._slid_up`.
+- Tests: new `tests/lofted_pass_test.gd` (+ `.tscn`), 14 checks, and CI step "Lofted pass tests (headless)" printing `LOFTED TESTS DONE: N failure(s)`.
+- Branch `feature/lofted-pass`, commit `583d616`.
+
+#### Numbers
+
+- CI run 43730589670: all suites pass. Balance (6 AI matches): 4.17 goals, 27.5 shots, 14.5 saves per match (before, on `feature/kick-power`: 3.67, 31.5, 16.0). Passes per team per match about 58 (was about 52), completion 74 %. MATCH SPACING about the same (with the ball 5.7 m nearest teammate, 33 % close pairs).
+
+#### Next
+
+- Phone test, not done yet: PASS + slide up across the court to a far teammate (soft, right, too strong); THROUGH + slide up over the defense for a runner; receiving a high ball; defenders winning high balls; the AI switching play. Nothing merged to main yet.
+- Step 3: shot types (slide on SHOOT).
 
 ### 2026-11-15 — Power bar for every kick (step 1)
 
