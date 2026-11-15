@@ -29,6 +29,9 @@ var pass_lofted: bool = false
 var through_lofted: bool = false
 ## AI only: the power of this frame's PASS / THROUGH press, 0..1 (-1: automatic).
 var kick_power: float = -1.0
+## Type of the shot (ShotTypes), from a slide on SHOOT or the AI: "" normal, "low" (slide down),
+## "chip" (slide up), "curl" (slide left or right: curls toward the far post).
+var shot_type: String = ""
 ## True only on the frame the joystick is double-tapped with the ball: a keeper holding the ball
 ## in his hands puts it down at his feet.
 var drop_ball: bool = false

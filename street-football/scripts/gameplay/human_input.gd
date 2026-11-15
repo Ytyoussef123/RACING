@@ -6,13 +6,15 @@ extends RefCounted
 ##   without the ball:  MATCH-UP (hold)     TACKLE (tap)   SWITCH (tap)     PRESS (hold)
 ## PASS, THROUGH and CLEAR (SHOOT in our own half) kick on release: a tap with the automatic
 ## power, a longer hold with the power bar's (BallHandling). PASS or THROUGH with the finger slid
-## up on the button: the ball goes in the air (lofted pass, lofted through ball).
+## up on the button: the ball goes in the air (lofted pass, lofted through ball). SHOOT with the
+## finger slid: up = chip, left or right = curled shot toward the far post, down = low shot.
 ## Double-tap the joystick without the ball: shoulder charge. Flick it with the ball: skill move.
 ## Speed steps: joystick pushed softly = walk, fully = run, SPRINT = sprint; pulled hard twice with
 ## the ball = knock-on mode (until the stick is softened or released, or a pass / shot / skill).
 ## Without the ball, PRESS with the joystick moved sprints where it points; PRESS alone presses.
 ## Keyboard, same order: R, Space, E, Shift; WASD / arrows move; Q always switches; F shoulder;
-## C skill move in the direction held; Ctrl walk; K knock-on; T lofted pass, G lofted through ball.
+## C skill move in the direction held; Ctrl walk; K knock-on; T lofted pass, G lofted through ball;
+## V chip, B curled shot, N low shot (hold for power).
 
 var _touch: TouchControls
 var _keys_down: Dictionary = {}
@@ -49,13 +51,15 @@ func read(attacking: bool, clearing: bool = false) -> PlayerIntent:
 	var double_tap := _touch.consume_stick_double_tap()
 	var flick := _touch.consume_stick_flick()
 	var c_tap := _key_tapped(KEY_C)
-	var shoot_tap := _touch.consume_press("shoot") or space_tap
+	var shot_keys := [_key_tapped(KEY_V), _key_tapped(KEY_B), _key_tapped(KEY_N)]
+	var shoot_tap := _touch.consume_press("shoot") or space_tap or shot_keys.has(true)
 	var t_tap := _key_tapped(KEY_T)
 	var g_tap := _key_tapped(KEY_G)
 	var pass_tap := _touch.consume_press("pass") or e_tap or t_tap
 	var through_tap := _touch.consume_press("through") or r_tap or g_tap
 	_touch.consume_press("sprint")
-	var shoot_hold := _touch.is_held("shoot") or Input.is_physical_key_pressed(KEY_SPACE)
+	var shoot_hold := _touch.is_held("shoot") or Input.is_physical_key_pressed(KEY_SPACE) \
+		or not _shot_key().is_empty()
 	var pass_hold := _touch.is_held("pass") or Input.is_physical_key_pressed(KEY_E) \
 		or Input.is_physical_key_pressed(KEY_T)
 	var through_hold := _touch.is_held("through") or Input.is_physical_key_pressed(KEY_R) \
@@ -73,6 +77,9 @@ func read(attacking: bool, clearing: bool = false) -> PlayerIntent:
 		intent.through_held = through_as == "through"
 		intent.pass_lofted = _slid_up("pass") or Input.is_physical_key_pressed(KEY_T)
 		intent.through_lofted = _slid_up("through") or Input.is_physical_key_pressed(KEY_G)
+		intent.shot_type = _shot_key()
+		if intent.shot_type.is_empty() and _touch != null:
+			intent.shot_type = shot_type_for(_touch.slide_direction("shoot"))
 		intent.sprint = sprint_hold
 		# Keeper with the ball in his hands: a double tap puts it down at his feet.
 		intent.drop_ball = double_tap
@@ -102,6 +109,27 @@ func read(attacking: bool, clearing: bool = false) -> PlayerIntent:
 ## The finger slid up on `button` (more up than sideways): held, or as it was lifted.
 func _slid_up(button: String) -> bool:
 	return _touch != null and _touch.slide_direction(button).y < -0.7
+
+
+## The shot type of a slide on SHOOT (screen axes): up = chip, down = low, left or right = curl,
+## no slide = a normal shot ("").
+static func shot_type_for(slide: Vector2) -> String:
+	if slide == Vector2.ZERO:
+		return ""
+	if absf(slide.y) >= absf(slide.x):
+		return "chip" if slide.y < 0.0 else "low"
+	return "curl"
+
+
+## Shot type keys for a PC: V chip, B curl, N low (each also works as SHOOT).
+func _shot_key() -> String:
+	if Input.is_physical_key_pressed(KEY_V):
+		return "chip"
+	if Input.is_physical_key_pressed(KEY_B):
+		return "curl"
+	if Input.is_physical_key_pressed(KEY_N):
+		return "low"
+	return ""
 
 
 ## What `button` means for this press: set on the press (to `now`), kept while it is held, "" once

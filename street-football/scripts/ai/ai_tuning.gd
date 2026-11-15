@@ -23,6 +23,12 @@ var give_go_chance: float = 0.6
 ## far off its power can be (0..1 of the bar).
 var lofted_tendency: float = 0.35
 var lofted_power_error: float = 0.07
+## Shot types (AiShots): chances of a chip (keeper off his line), a curled shot (edge of the box)
+## and a low shot (close in), and how far off a chip's or curl's power can be (0..1 of the bar).
+var chip_tendency: float = 0.3
+var curl_tendency: float = 0.2
+var low_tendency: float = 0.25
+var shot_power_error: float = 0.08
 
 
 static func for_difficulty(difficulty_name: String) -> AiTuning:
@@ -45,4 +51,8 @@ static func for_difficulty(difficulty_name: String) -> AiTuning:
 	t.give_go_chance = float(d.get("give_go_chance", t.give_go_chance))
 	t.lofted_tendency = float(d.get("lofted_tendency", t.lofted_tendency))
 	t.lofted_power_error = float(d.get("lofted_power_error", t.lofted_power_error))
+	t.chip_tendency = float(d.get("chip_tendency", t.chip_tendency))
+	t.curl_tendency = float(d.get("curl_tendency", t.curl_tendency))
+	t.low_tendency = float(d.get("low_tendency", t.low_tendency))
+	t.shot_power_error = float(d.get("shot_power_error", t.shot_power_error))
 	return t

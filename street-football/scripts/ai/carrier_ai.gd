@@ -117,6 +117,8 @@ static func _start_shot(player: Player, ctx: MatchContext, dist_to_goal: float) 
 	state.aim = aim.rotated(Vector3.UP, error)
 	var charge := lerpf(Steering.num("shot_charge_min", 0.25), Steering.num("shot_charge_max", 0.75),
 		clampf(dist_to_goal / team.tuning.shoot_range, 0.0, 1.0))
+	state.shot_type = AiShots.choose(player, ctx, dist_to_goal)
+	charge = AiShots.charge(player, ctx, state.shot_type, aim_point, charge)
 	state.charge_left = charge * float(Config.get_value("player", "shot_charge_time", 0.9))
 	state.action = AiPlayerState.Action.SHOOT
 
@@ -126,6 +128,7 @@ static func _continue_shot(player: Player, delta: float) -> PlayerIntent:
 	var state := player.ai
 	var intent := PlayerIntent.new()
 	intent.move = state.aim
+	intent.shot_type = state.shot_type
 	state.charge_left -= delta
 	if state.charge_left > 0.0:
 		intent.shoot_held = true

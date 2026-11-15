@@ -11,8 +11,9 @@ var action: Action = Action.NONE
 var think_timer: float = 0.0
 ## Direction chosen at the last decision (dribble or shot aim).
 var aim: Vector3 = Vector3.RIGHT
-## Seconds the shoot button is still held for the current shot.
+## Seconds the shoot button is still held for the current shot, and its type (ShotTypes).
 var charge_left: float = 0.0
+var shot_type: String = ""
 ## Opponent this player marks when defending, or null.
 var mark: Player = null
 var tackle_timer: float = 0.0
@@ -34,6 +35,7 @@ func reset() -> void:
 	action = Action.NONE
 	think_timer = 0.0
 	charge_left = 0.0
+	shot_type = ""
 	mark = null
 	tackle_timer = 0.0
 	attack_role = AttackRole.NONE

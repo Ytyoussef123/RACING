@@ -34,9 +34,16 @@ static func flight_time(distance: float) -> float:
 
 ## Kick velocity from `from` along `dir` (flattened) that comes down `distance` away.
 static func velocity(from: Vector3, dir: Vector3, distance: float) -> Vector3:
+	return velocity_with_apex(from, dir, distance, apex(distance))
+
+
+## Kick velocity from `from` along `dir` that rises to `apex_height` and comes down `distance` away
+## (also the chip shot's).
+static func velocity_with_apex(from: Vector3, dir: Vector3, distance: float, apex_height: float) -> Vector3:
 	var flat_dir := Steering.flat(dir).normalized()
-	var up := sqrt(2.0 * _gravity() * apex(distance))
-	var flat_speed := distance / maxf(0.1, flight_time(distance))
+	var g := _gravity()
+	var up := sqrt(2.0 * g * maxf(0.1, apex_height))
+	var flat_speed := distance / maxf(0.1, 2.0 * up / g)
 	var landed := _landing_distance(from, flat_dir * flat_speed + Vector3.UP * up)
 	if landed > 0.1:
 		flat_speed *= distance / landed

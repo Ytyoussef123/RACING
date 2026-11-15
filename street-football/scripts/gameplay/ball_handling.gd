@@ -28,8 +28,11 @@ var _queued: String = ""
 var _queued_charge: float = 0.0
 var _queued_lofted: bool = false
 var _queued_aim: Vector3 = Vector3.ZERO
-## For a queued shot: the point in the goal it is aimed at (ShotAim).
+## For a queued shot: the point in the goal it is aimed at (ShotAim), and its type (ShotTypes).
 var _queued_point: Vector3 = Vector3.ZERO
+var _queued_shot_type: String = ""
+## Shot type read while SHOOT is held (a slide on the button), kept for the release.
+var _shot_type: String = ""
 var _queue_timer: float = 0.0
 ## Kick count of the last ball he tried to take from the air (one first touch per kick).
 var _air_kick: int = -1
@@ -38,6 +41,7 @@ var _air_kick: int = -1
 func reset() -> void:
 	is_charging = false
 	shot_charge = 0.0
+	_shot_type = ""
 	held_kick.reset()
 	_air_kick = -1
 	_cooldown = 0.0
@@ -106,15 +110,19 @@ func update(delta: float, player: Player, ctx: MatchContext) -> void:
 	elif intent.shoot_held:
 		is_charging = true
 		shot_charge = minf(1.0, shot_charge + delta / maxf(0.01, _cfg("shot_charge_time", 0.9)))
+		_shot_type = intent.shot_type
 	elif is_charging:
 		var shot_point := ShotAim.target(player, ctx, _stick(intent))
+		var shot_type := intent.shot_type if not intent.shot_type.is_empty() else _shot_type
 		if _can_kick(player, ctx):
-			Kicks.shoot(self, player, ctx, shot_point, shot_charge)
+			Kicks.shoot(self, player, ctx, shot_point, shot_charge, shot_type)
 		elif possession.holder == null or possession.holder == player:
 			_queue("shot", shot_charge, aim, has_ball)
 			_queued_point = shot_point
+			_queued_shot_type = shot_type
 		is_charging = false
 		shot_charge = 0.0
+		_shot_type = ""
 	if possession.holder == player:
 		if player.ball_in_hands:
 			_in_hands(player, ctx, delta)
@@ -201,7 +209,7 @@ func _play_queued(player: Player, ctx: MatchContext) -> void:
 			else:
 				Kicks.through_ball(self, player, ctx, _queued_aim, _queued_charge)
 		"shot":
-			Kicks.shoot(self, player, ctx, _queued_point, _queued_charge)
+			Kicks.shoot(self, player, ctx, _queued_point, _queued_charge, _queued_shot_type)
 		"clear":
 			Kicks.clear(self, player, ctx, _queued_aim, _queued_charge)
 		"skill":

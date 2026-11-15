@@ -53,14 +53,38 @@ static func through_ball(handling: BallHandling, player: Player, ctx: MatchConte
 		error, ctx), 0.0, target, "pass")
 
 
-## A shot at `target`, a point in the opponent's goal (ShotAim); `charge` 0..1 from the bar.
-static func shoot(handling: BallHandling, player: Player, ctx: MatchContext, target: Vector3, charge: float) -> void:
+## A shot at `target`, a point in the opponent's goal (ShotAim); `charge` 0..1 from the bar;
+## `type` from a slide on SHOOT: "" normal, "low", "chip" or "curl" (ShotTypes).
+static func shoot(handling: BallHandling, player: Player, ctx: MatchContext, target: Vector3, charge: float,
+		type: String = "") -> void:
 	var aim := Steering.flat(target - ctx.ball.position).normalized()
-	var speed := lerpf(_cfg("shot_speed_min", 12.0), _cfg("shot_speed_max", 26.0), charge)
-	speed *= player.stat("shot_speed_mult", 1.0)
-	var lift := lerpf(_cfg("shot_lift_min", 0.5), _cfg("shot_lift_max", 5.5), charge) + red_zone_lift(player, charge, ctx)
-	# Turning while shooting curls the ball the same way.
-	var spin := player.motion.turn_rate * _cfg("shot_curve_from_turn", 0.35)
+	var kick_velocity: Vector3
+	var spin: float
+	var type_error := 1.0
+	if type == "low":
+		var low := ShotTypes.low(player, aim, charge)
+		kick_velocity = low["velocity"]
+		spin = float(low["spin"])
+		type_error = red_zone_mult(charge)
+	elif type == "chip":
+		var chip := ShotTypes.chip(player, ctx, target, charge)
+		kick_velocity = chip["velocity"]
+		spin = float(chip["spin"])
+		type_error = _cfg("shot_chip_error_mult", 1.0)
+	elif type == "curl":
+		var curl := ShotTypes.curl(player, ctx, charge)
+		kick_velocity = curl["velocity"]
+		kick_velocity.y += red_zone_lift(player, charge, ctx)
+		spin = float(curl["spin"])
+		aim = Steering.flat(kick_velocity).normalized()
+		type_error = _cfg("shot_curl_error_mult", 0.7)
+	else:
+		var speed := lerpf(_cfg("shot_speed_min", 12.0), _cfg("shot_speed_max", 26.0), charge)
+		speed *= player.stat("shot_speed_mult", 1.0)
+		var lift := lerpf(_cfg("shot_lift_min", 0.5), _cfg("shot_lift_max", 5.5), charge) + red_zone_lift(player, charge, ctx)
+		kick_velocity = aim * speed + Vector3.UP * lift
+		# Turning while shooting curls the ball the same way.
+		spin = player.motion.turn_rate * _cfg("shot_curve_from_turn", 0.35)
 	# Accuracy: finishing, plus long shots beyond long_shot_distance, worse on the weak foot,
 	# better first-time for players with that special skill.
 	var first_time := ctx.possession.holder != player
@@ -72,7 +96,7 @@ static func shoot(handling: BallHandling, player: Player, ctx: MatchContext, tar
 	if first_time and player.profile != null and player.profile.special_skills.has("first_time_shot"):
 		error *= float(Config.get_value("skills", "first_time_shot_error_mult", 0.6))
 	ctx.stats.shots[player.team.index] += 1
-	kick(handling, player, ctx, KickAccuracy.with_error(aim * speed + Vector3.UP * lift, error, ctx), spin, null, "shot")
+	kick(handling, player, ctx, KickAccuracy.with_error(kick_velocity, error * type_error, ctx), spin, null, "shot")
 
 
 ## SHOOT in our own half: a long, high kick away from our goal, where the stick points; held, the

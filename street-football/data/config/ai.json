@@ -18,7 +18,11 @@
 			"through_tendency": 0.3,
 			"give_go_chance": 0.3,
 			"lofted_tendency": 0.2,
-			"lofted_power_error": 0.12
+			"lofted_power_error": 0.12,
+			"chip_tendency": 0.15,
+			"curl_tendency": 0.1,
+			"low_tendency": 0.2,
+			"shot_power_error": 0.15
 		},
 		"normal": {
 			"decision_interval": 0.28,
@@ -35,7 +39,11 @@
 			"through_tendency": 0.55,
 			"give_go_chance": 0.6,
 			"lofted_tendency": 0.35,
-			"lofted_power_error": 0.07
+			"lofted_power_error": 0.07,
+			"chip_tendency": 0.3,
+			"curl_tendency": 0.2,
+			"low_tendency": 0.25,
+			"shot_power_error": 0.08
 		},
 		"hard": {
 			"decision_interval": 0.15,
@@ -52,7 +60,11 @@
 			"through_tendency": 0.75,
 			"give_go_chance": 0.85,
 			"lofted_tendency": 0.5,
-			"lofted_power_error": 0.04
+			"lofted_power_error": 0.04,
+			"chip_tendency": 0.45,
+			"curl_tendency": 0.3,
+			"low_tendency": 0.3,
+			"shot_power_error": 0.04
 		}
 	},
 	"role_shift": {
@@ -169,5 +181,24 @@
 	"lofted_ai_min_distance": 9.0,
 	"lofted_ai_max_distance": 26.0,
 	"lofted_ai_open_distance": 3.5,
-	"lofted_ai_max_back_frac": 0.1
+	"lofted_ai_max_back_frac": 0.1,
+
+	"_shot_types": "Keeper saves (KeeperSave): difficulty chance x reflexes x placement (center_mult at him .. corner_mult at the edge of his reach) x speed (slow_mult at 10 m/s .. fast_mult at 26 m/s) x high_mult above high_height x (1 - spin_penalty at full spin). Keeper comes off his line as an opponent with the ball closes in: from keeper_out_start_distance to keeper_out_full_distance of the goal center, up to keeper_out_max. AI shot types (AiShots): chip if the keeper is ai_chip_keeper_out off his line, curl from ai_curl_min..max_distance, low within ai_low_max_distance.",
+	"keeper_save_center_mult": 1.2,
+	"keeper_save_corner_mult": 0.6,
+	"keeper_save_slow_mult": 1.1,
+	"keeper_save_fast_mult": 0.8,
+	"keeper_save_high_height": 1.6,
+	"keeper_save_high_mult": 0.75,
+	"keeper_save_spin_penalty": 0.25,
+	"keeper_save_min_chance": 0.03,
+	"keeper_out_start_distance": 10.0,
+	"keeper_out_full_distance": 5.0,
+	"keeper_out_max": 2.5,
+	"ai_chip_keeper_out": 1.8,
+	"ai_chip_min_distance": 6.0,
+	"ai_chip_max_distance": 15.0,
+	"ai_curl_min_distance": 8.0,
+	"ai_curl_max_distance": 16.0,
+	"ai_low_max_distance": 8.0
 }

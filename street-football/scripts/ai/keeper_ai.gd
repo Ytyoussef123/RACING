@@ -1,8 +1,9 @@
 class_name KeeperAI
 extends RefCounted
-## Goalkeeper AI: stays between the ball and the goal, moves across to cover shots,
-## rushes loose balls near goal, saves (catch in his goal area, else parry), then plays it out:
-## a throw to a close teammate, a long kick otherwise (KeeperHands). Numbers: data/config/ai.json.
+## Goalkeeper AI: stays between the ball and the goal (further off his line as a carrier closes
+## in: keeper_out_*), moves across to cover shots, rushes loose balls near goal, saves (KeeperSave:
+## the chance depends on the shot; catch in his goal area, else parry), then plays it out: a throw
+## to a close teammate, a long kick otherwise (KeeperHands). Numbers: data/config/ai.json.
 
 
 static func intent_for(keeper: Player, delta: float, ctx: MatchContext) -> PlayerIntent:
@@ -30,12 +31,19 @@ static func intent_for(keeper: Player, delta: float, ctx: MatchContext) -> Playe
 	if possession.holder == null and keeper.flat_distance_to(ball.position) < Steering.num("keeper_rush_distance", 4.0) \
 			and team.to_frac(ball.position.x, court) < 0.2:
 		return Steering.seek(keeper, ball.position, true)
-	# Otherwise stand on the line between the goal center and the ball.
+	# Otherwise stand on the line between the goal center and the ball, coming off the line as an
+	# opponent with the ball closes in (narrows the angle; a chip can then beat him).
 	var goal_center := Vector3(goal_x, 0.0, 0.0)
 	var to_ball := Steering.flat(ball.position - goal_center)
 	if to_ball.length() < 0.01:
 		to_ball = Vector3(s, 0.0, 0.0)
-	var target := goal_center + to_ball.normalized() * line_offset
+	var out := line_offset
+	if possession.holder != null and possession.holder.team != team:
+		var start := Steering.num("keeper_out_start_distance", 10.0)
+		var full := Steering.num("keeper_out_full_distance", 5.0)
+		var near := clampf((start - to_ball.length()) / maxf(0.1, start - full), 0.0, 1.0)
+		out = lerpf(line_offset, Steering.num("keeper_out_max", 2.5), near)
+	var target := goal_center + to_ball.normalized() * minf(out, maxf(line_offset, to_ball.length() * 0.5))
 	target.z = clampf(target.z, -max_z, max_z)
 	target.x = goal_x + s * maxf(0.4, absf(target.x - goal_x))
 	return Steering.seek(keeper, target, false)
@@ -60,8 +68,7 @@ static func try_save(keeper: Player, ctx: MatchContext) -> void:
 	if ball.position.y > Steering.num("keeper_reach_height", 2.3):
 		return
 	state.last_save_kick = possession.kick_count
-	var save_chance := minf(0.97, keeper.team.tuning.keeper_save_chance * keeper.stat("keeper_save_mult", 1.0))
-	if ctx.rng.randf() >= save_chance:
+	if ctx.rng.randf() >= KeeperSave.chance(keeper, ctx):
 		return
 	ctx.stats.saves[keeper.team.index] += 1
 	keeper.animate_dive(ball.position)

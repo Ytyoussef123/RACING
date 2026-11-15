@@ -109,6 +109,16 @@ jobs:
             exit 1
           fi
 
+      - name: Shot types tests (headless)
+        run: |
+          godot --headless --path "$PROJECT_DIR" res://tests/shot_types_test.tscn --quit-after 3000 2>&1 | tee shot_types.log
+          grep -E "TEST (PASS|FAIL)" shot_types.log || true
+          if ! grep -q "SHOT TYPES TESTS DONE: 0 failure" shot_types.log; then
+            echo "::error::Shot types tests failed or did not finish (see above)."
+            awk '/SCRIPT ERROR|ERROR:/ && !seen[$0]++' shot_types.log | head -30
+            exit 1
+          fi
+
       - name: Progression tests (headless)
         run: |
           godot --headless --path "$PROJECT_DIR" res://tests/progression_test.tscn --quit-after 3000 2>&1 | tee progression.log
