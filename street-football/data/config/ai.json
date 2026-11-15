@@ -173,7 +173,7 @@
 	"run_lane_margin": 2.0,
 	"run_arrive_distance": 1.2,
 	"through_lead_check": 3.0,
-	"through_min_runner_speed": 2.1,
+	"through_min_runner_speed": 1.9,
 	"give_go_seconds": 1.6,
 	"give_go_distance": 7.0,
 	"give_go_center_pull": 0.3,

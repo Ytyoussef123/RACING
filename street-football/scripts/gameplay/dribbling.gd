@@ -141,7 +141,7 @@ func _touch(player: Player, ctx: MatchContext, to_ball: Vector3, dir: Vector3, p
 	elif mode == Mode.SPRINT:
 		extra = _push_for_gap(_cfg("dribble_sprint_gap", 0.55) * closer, ahead, player_along)
 	else:
-		var run_speed := _cfg("run_speed", 3.9) * player.motion.speed_factor
+		var run_speed := _cfg("run_speed", 3.5) * player.motion.speed_factor
 		extra = lerpf(_cfg("dribble_touch_extra_min", 1.2), _cfg("dribble_touch_extra_run", 1.7),
 			clampf(player_along / maxf(0.1, run_speed), 0.0, 1.0)) * closer
 	# Push along the wanted direction, steering the ball back onto the line in front of him.
