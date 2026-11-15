@@ -15,9 +15,37 @@ A dated log, newest entry first: what was done, what was decided and why, and wh
 | 7 | Progression: coins, unlocks, upgrades, save system | Done, waiting for phone test |
 | 8 | Release build: optimized APK, full file review | Not started |
 
-The player-motion work is an extra feature branch between Phase 7 and Phase 8 (`feature/player-motion`, created from `feature/progression`), waiting for the phone test. `feature/broadcast-camera` (created from `feature/player-motion`) adds camera views and also waits for the phone test. `feature/speed-modes` (created from `feature/broadcast-camera`) adds walk, run, sprint and knock-on, and waits for the phone test. `feature/shot-on-target` (created from `feature/speed-modes`) adds shots on target and CLEAR, and waits for the phone test. `feature/keeper-ball` (created from `feature/shot-on-target`) adds the goalkeeper with the ball (hands or feet), and waits for the phone test. `feature/team-movement` (created from `feature/keeper-ball`) adds team movement (creating space), and waits for the phone test. `feature/kick-power` (created from `feature/team-movement`) adds the power bar for every kick, and waits for the phone test. `feature/lofted-pass` (created from `feature/kick-power`) adds lofted passes, and waits for the phone test. `feature/shot-types` (created from `feature/lofted-pass`) adds the shot types, and waits for the phone test. `feature/player-speed` (created from `feature/shot-types`) slows the players down (sprint 5.8, run 3.5), and waits for the phone test. `feature/press-loose-ball` (created from `feature/player-speed`) makes PRESS work on a loose ball, and waits for the phone test. `feature/mixamo-clips` (created from `feature/press-loose-ball`) gives the players the pass and kick movements from Mixamo animations, and waits for the phone test.
+The player-motion work is an extra feature branch between Phase 7 and Phase 8 (`feature/player-motion`, created from `feature/progression`), waiting for the phone test. `feature/broadcast-camera` (created from `feature/player-motion`) adds camera views and also waits for the phone test. `feature/speed-modes` (created from `feature/broadcast-camera`) adds walk, run, sprint and knock-on, and waits for the phone test. `feature/shot-on-target` (created from `feature/speed-modes`) adds shots on target and CLEAR, and waits for the phone test. `feature/keeper-ball` (created from `feature/shot-on-target`) adds the goalkeeper with the ball (hands or feet), and waits for the phone test. `feature/team-movement` (created from `feature/keeper-ball`) adds team movement (creating space), and waits for the phone test. `feature/kick-power` (created from `feature/team-movement`) adds the power bar for every kick, and waits for the phone test. `feature/lofted-pass` (created from `feature/kick-power`) adds lofted passes, and waits for the phone test. `feature/shot-types` (created from `feature/lofted-pass`) adds the shot types, and waits for the phone test. `feature/player-speed` (created from `feature/shot-types`) slows the players down (sprint 5.8, run 3.5), and waits for the phone test. `feature/press-loose-ball` (created from `feature/player-speed`) makes PRESS work on a loose ball, and waits for the phone test. `feature/mixamo-clips` (created from `feature/press-loose-ball`) gives the players the pass and kick movements from Mixamo animations, and waits for the phone test. `feature/mixamo-body` (created from `feature/mixamo-clips`) lets one player wear the Mixamo body (step 1 of 3), and waits for the phone test.
 
 ## Log
+
+### 2026-11-15 — One player wears the Mixamo body (step 1 of 3)
+
+#### Why
+
+- The user found the converted pass not exactly like Mixamo's: our coded body has only 22 joint angles, the wind-up is cut, and the clip is short and blended with the run. They asked whether Mixamo's body can be used too.
+- Plan, and the user said yes to step 1: (1) one player wears the Mixamo body; (2) if they like it, they send the other clips (idle, walk, run, sprint, dribble, tackle, keeper...) and all players are converted; (3) later a proper footballer model with a kit, rigged through Mixamo.
+
+#### Done
+
+- Branch `feature/mixamo-body` (from `feature/mixamo-clips`), commit `c9785a4`.
+- New `scripts/gameplay/model_body.gd` (ModelBody): loads the skinned model `assets/art/players/mixamo/soccer_pass.fbx` (Mixamo's "Y Bot" dummy, 65 bones), sizes it to the player's height, tints it with the kit colour (joints darker). It turns the bones from the same RigPose as the coded body (run, walk, touches, tackle: each joint angle rotates the matching bone from the T-pose). For "pass" and "kick" it plays the real Mixamo animation on the whole skeleton (from `soccer_pass.fbx` and `drop_kick.fbx`), from the contact on, blended in and out, keeping only the height of the hips (the player's place stays the game's).
+- `Player.use_model_body()`, `PlayerAnimator.model`; `TeamFactory` gives the model to one home player.
+- `data/config/body.json`: `model_trial_role` "ATT" (empty = nobody), `model_scene`, `model_clips`, `model_foot_height` 0.03, `model_joint_darken` 0.5. `data/config/animation.json`: `model_clip_start_pass` 0.4 s, `model_clip_start_kick` 2.07 s.
+- Motion study line-up: the jog, pass and two kick poses wear the model. Checked on the CI image: the model loads, is tinted, the kick follow-through plays.
+- CI run 43770030213: green, all suites 0 failures, balance unchanged.
+- Licence: the raw Mixamo FBX files are now in the repo, which is public. Adobe does not allow redistributing them on their own. The user was told; they can make the repo private.
+
+#### Limits
+
+- No face, hair or kit on the dummy. Only one player wears it; everyone else keeps the coded body.
+
+#### Next
+
+- Phone test, not done yet: does the Mixamo body look right.
+- If the user likes it: they send the other clips (step 2), then a proper footballer model (step 3).
+- Decision for the user: make the repo private, or remove the FBX files from it.
+- Nothing merged to main yet.
 
 ### 2026-11-15 — Pass and kick movements from Mixamo clips
 
