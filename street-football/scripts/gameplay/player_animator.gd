@@ -1,6 +1,8 @@
 class_name PlayerAnimator
 extends RefCounted
 ## Procedural animation of the jointed body (PlayerRig), look only. Every frame it builds a RigPose:
+##  - walking (slow) blends into running (faster): smaller swings, nearly straight arms, upright,
+##    the body highest in mid-step instead of in flight;
 ##  - running cycle from the distance covered: thighs and knees (the knee folds in the swing),
 ##    opposite arms with bent elbows, hips and shoulders twisting against each other, bob;
 ##  - idle stance when standing (keepers: ready stance), breathing and weight shift;
@@ -25,6 +27,8 @@ var _prev_forward: float = 0.0
 var _turn_lean: float = 0.0
 ## Angle between where the player goes and where he faces (radians, + = to his right), smoothed.
 var _travel: float = 0.0
+## 1 when walking, 0 when running (from the speed).
+var _walk: float = 0.0
 var _clock: float = 0.0
 var _action: String = ""
 var _action_time: float = 0.0
@@ -72,6 +76,7 @@ func update(delta: float, velocity: Vector3, facing: Vector3, turn_rate: float, 
 	_update_leans(delta, speed, forward, turn_rate)
 	_update_travel(delta, speed, forward, sideways)
 	var sprint := clampf(speed / maxf(1.0, top_speed), 0.0, 1.0)
+	_walk = 1.0 - smoothstep(_n("walk_gait_full_speed", 2.4), _n("run_gait_speed", 3.4), speed)
 	_pose.clear()
 	_running_pose(sprint)
 	_idle_pose()
@@ -130,16 +135,17 @@ func _update_travel(delta: float, speed: float, forward: float, sideways: float)
 
 func _running_pose(sprint: float) -> void:
 	var m := _move
+	var w := _walk
 	var s := sin(_phase)
-	var hip := lerpf(_n("hip_swing_jog", 24.0), _n("hip_swing_sprint", 46.0), sprint) * m
-	var bias := _n("hip_forward_bias", 6.0) * sprint * m
-	var knee_stance := _n("knee_stance", 14.0) * m
-	var knee_swing := lerpf(_n("knee_swing_jog", 60.0), _n("knee_swing_sprint", 105.0), sprint) * m
+	var hip := lerpf(lerpf(_n("hip_swing_jog", 24.0), _n("hip_swing_sprint", 46.0), sprint), _n("walk_hip_degrees", 20.0), w) * m
+	var bias := _n("hip_forward_bias", 6.0) * sprint * m * (1.0 - w)
+	var knee_stance := lerpf(_n("knee_stance", 14.0), _n("walk_knee_stance", 4.0), w) * m
+	var knee_swing := lerpf(lerpf(_n("knee_swing_jog", 60.0), _n("knee_swing_sprint", 105.0), sprint), _n("walk_knee_swing", 50.0), w) * m
 	var knee_offset := deg_to_rad(_n("knee_phase_offset_degrees", 23.0))
-	var arm := lerpf(_n("arm_swing_jog", 20.0), _n("arm_swing_sprint", 50.0), sprint) * m
-	var arm_bias := _n("arm_forward_bias", 6.0) * m
-	var elbow_run := _n("elbow_run", 88.0) * m
-	var elbow_swing := _n("elbow_swing", 18.0) * m
+	var arm := lerpf(lerpf(_n("arm_swing_jog", 20.0), _n("arm_swing_sprint", 50.0), sprint), _n("walk_arm_degrees", 14.0), w) * m
+	var arm_bias := _n("arm_forward_bias", 6.0) * m * (1.0 - w)
+	var elbow_run := lerpf(_n("elbow_run", 88.0), _n("walk_elbow", 16.0), w) * m
+	var elbow_swing := _n("elbow_swing", 18.0) * m * (1.0 - w * 0.6)
 	var arm_out := _n("arm_out_degrees", 7.0)
 	# Part of the travel angle turns the hips, the rest swings the legs sideways.
 	var hips_turn := _travel * _n("travel_hips_share", 0.5) * m
@@ -153,17 +159,19 @@ func _running_pose(sprint: float) -> void:
 		# Each arm swings with the opposite leg; the elbow bends more when it comes forward.
 		var arm_swing := -sin(phase)
 		_pose.blend_arm(leg, arm * arm_swing + arm_bias, arm_out, elbow_run + elbow_swing * maxf(0.0, arm_swing), 1.0)
-	var twist := deg_to_rad(_n("torso_twist_degrees", 8.0)) * s * m
-	var hips_twist := deg_to_rad(_n("hips_twist_degrees", 7.0)) * s * m
+	var twist := deg_to_rad(_n("torso_twist_degrees", 8.0)) * s * m * (1.0 - w * 0.5)
+	var hips_twist := deg_to_rad(_n("hips_twist_degrees", 7.0)) * s * m * (1.0 - w * 0.5)
 	# The chest keeps facing ahead while the hips turn toward the way he goes.
 	_pose.v[RigPose.HIPS_Y] = -hips_twist - hips_turn
 	_pose.v[RigPose.SPINE_Y] = twist + hips_twist + hips_turn
-	var bob := _n("run_bob", 0.045) * (0.4 + 0.6 * sprint)
-	_pose.v[RigPose.ROOT_Y] = (bob * s * s - _n("run_crouch", 0.035) * sprint) * m
+	# Running: highest in flight. Walking: highest in mid-step, lowest with both feet down.
+	var run_bob := _n("run_bob", 0.045) * (0.4 + 0.6 * sprint) * s * s - _n("run_crouch", 0.035) * sprint
+	var walk_bob := _n("walk_bob", 0.025) * (1.0 - s * s)
+	_pose.v[RigPose.ROOT_Y] = lerpf(run_bob, walk_bob, w) * m
 	var accel_lean := clampf(_accel * _n("accel_lean_per_ms2", 0.8), -_n("brake_lean_max_degrees", 9.0),
 		_n("accel_lean_max_degrees", 12.0))
 	_pose.v[RigPose.ROOT_X] = deg_to_rad(accel_lean) * m
-	_pose.v[RigPose.SPINE_X] = deg_to_rad(_n("run_lean_degrees", 10.0) * sprint) * m
+	_pose.v[RigPose.SPINE_X] = deg_to_rad(lerpf(_n("run_lean_degrees", 10.0) * sprint, _n("walk_lean_degrees", 3.0), w)) * m
 	_pose.v[RigPose.ROOT_Z] = -deg_to_rad(_turn_lean)
 
 
@@ -216,7 +224,9 @@ func _touch_layer(delta: float) -> void:
 	else:
 		w = 1.0 - smoothstep(lead + follow * 0.3, total, _touch_time)
 	var through := smoothstep(lead, lead + follow * 0.4, _touch_time)
-	var thigh := _n("touch_thigh_degrees", 40.0) + _n("touch_follow_degrees", 10.0) * through
+	# Walking touches are small pushes with the inside of the foot.
+	var reach_thigh := lerpf(_n("touch_thigh_degrees", 40.0), _n("touch_walk_thigh_degrees", 24.0), _walk)
+	var thigh := reach_thigh + _n("touch_follow_degrees", 10.0) * through * (1.0 - _walk * 0.5)
 	_pose.blend_leg(_touch_side, thigh, _n("touch_knee_degrees", 14.0), 0.0, w)
 
 

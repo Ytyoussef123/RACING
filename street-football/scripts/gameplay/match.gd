@@ -87,7 +87,7 @@ func _physics_process(delta: float) -> void:
 		var intent := _input.read(attacking)
 		_human.update(delta, intent, ctx)
 		human_player = _human.controlled
-		human_player.intent = _assist_human(human_player, intent, attacking, delta)
+		human_player.intent = HumanAssists.apply(human_player, intent, attacking, delta, ctx, _human)
 		_touch.set_defense_layout(not attacking)
 	for team in ctx.teams:
 		team.brain.update(delta, ctx, human_player)
@@ -139,20 +139,6 @@ func _play_events() -> void:
 
 func _anim(key: String, fallback: float) -> float:
 	return float(Config.get_value("animation", key, fallback))
-
-
-## Assists for the human's player: receive assist while a pass comes to him; PRESS and
-## MATCH-UP when his side does not have the ball.
-func _assist_human(player: Player, intent: PlayerIntent, attacking: bool, delta: float) -> PlayerIntent:
-	if attacking:
-		if _human.is_receiving(ctx):
-			return ReceiveAssist.apply(player, intent, ctx)
-		return intent
-	if intent.press_held:
-		return PressAssist.apply(player, intent, delta, ctx)
-	if intent.match_up_held:
-		return MatchUpAssist.apply(player, intent, ctx)
-	return intent
 
 
 ## Fair order: the player who acts first changes every frame.

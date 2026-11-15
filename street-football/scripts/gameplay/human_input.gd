@@ -5,11 +5,16 @@ extends RefCounted
 ##   with the ball:     THROUGH (tap)    SHOOT (hold)   PASS (tap)     SPRINT (hold)
 ##   without the ball:  MATCH-UP (hold)  TACKLE (tap)   SWITCH (tap)   PRESS (hold)
 ## Double-tap the joystick without the ball: shoulder charge. Flick it with the ball: skill move.
+## Speed steps: joystick pushed softly = walk, fully = run, SPRINT = sprint; pulled hard twice with
+## the ball = knock-on mode (until the stick is softened or released, or a pass / shot / skill).
+## Without the ball, PRESS with the joystick moved sprints where it points; PRESS alone presses.
 ## Keyboard, same order: R, Space, E, Shift; WASD / arrows move; Q always switches; F shoulder;
-## C skill move in the direction held.
+## C skill move in the direction held; Ctrl walk; K knock-on.
 
 var _touch: TouchControls
 var _keys_down: Dictionary = {}
+## Knock-on mode is on (started by a double pull).
+var _knock_on: bool = false
 ## Set when the layout turns to attack while SHOOT/TACKLE is still held: that finger must be
 ## lifted before it can start a shot (no accidental shot after winning the ball).
 var _shoot_locked: bool = false
@@ -22,7 +27,14 @@ func _init(touch: TouchControls) -> void:
 
 func read(attacking: bool) -> PlayerIntent:
 	var intent := PlayerIntent.new()
-	intent.move = _move_vector()
+	# Speed steps: the move keeps a full length; walk / run / sprint / knock-on set the speed.
+	var stick := _move_vector()
+	var strength := stick.length()
+	if strength > 0.0:
+		intent.move = stick / strength
+		intent.walk = strength < float(Config.get_value("controls", "walk_threshold", 0.6)) \
+			or Input.is_physical_key_pressed(KEY_CTRL)
+	var double_pull := _touch.consume_stick_double_pull()
 	# Key edges first, then the touch buttons (taps are always consumed so none fires later).
 	var space_tap := _key_tapped(KEY_SPACE)
 	var e_tap := _key_tapped(KEY_E)
@@ -54,12 +66,22 @@ func read(attacking: bool) -> PlayerIntent:
 			intent.skill = Vector3(flick.x, 0.0, flick.y)
 		elif c_tap:
 			intent.skill = intent.move if intent.move.length() > 0.3 else Vector3.RIGHT
+		if double_pull != Vector2.ZERO:
+			_knock_on = true
+		if strength == 0.0 or intent.walk or pass_tap or through_tap or intent.shoot_held \
+				or intent.skill != Vector3.ZERO:
+			_knock_on = false
+		intent.knock_on = _knock_on or (Input.is_physical_key_pressed(KEY_K) and strength > 0.0)
 	else:
+		_knock_on = false
 		intent.tackle_pressed = shoot_tap
 		intent.switch_pressed = intent.switch_pressed or pass_tap
 		intent.press_held = sprint_hold
+		# PRESS with the joystick moved: sprint where it points (alone: the automatic press).
+		intent.sprint = sprint_hold and strength > 0.0
 		intent.match_up_held = through_hold
 		intent.shoulder_pressed = double_tap or f_tap
+	_touch.set_knock_on_active(intent.knock_on)
 	return intent
 
 

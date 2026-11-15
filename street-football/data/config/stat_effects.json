@@ -37,6 +37,7 @@
 	"weak_foot_error_mult": [2.6, 2.0, 1.5, 1.15],
 	"shoulder_balance_weight": 0.3,
 	"energy_recover_per_second": 0.04,
+	"walk_recover_mult": 1.6,
 	"low_energy_threshold": 0.4,
 	"low_energy_speed_mult": 0.85,
 	"sprint_drain_min_speed": 1.0

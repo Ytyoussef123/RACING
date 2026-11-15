@@ -5,6 +5,11 @@ extends RefCounted
 ## Wanted direction on the ground plane, length 0..1.
 var move: Vector3 = Vector3.ZERO
 var sprint: bool = false
+## Soft joystick: the player walks (walk_speed) in the `move` direction, whatever its length.
+var walk: bool = false
+## Knock-on mode, with the ball (joystick pulled hard twice): the ball is pushed a fixed distance
+## ahead and the player runs onto it at full speed, again and again.
+var knock_on: bool = false
 ## True while the shoot button is held (the shot goes on release).
 var shoot_held: bool = false
 ## True only on the frame the pass button was pressed.

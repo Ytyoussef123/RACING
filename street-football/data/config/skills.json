@@ -1,5 +1,5 @@
 {
-	"_note": "Skill moves: flick the joystick with the ball (quick swipe and release). Direction compared to where the player faces: forward (< forward_degrees), back (> back_degrees), otherwise side. Speeds in m/s, times in seconds.",
+	"_note": "Skill moves: flick the joystick with the ball (quick swipe and release). Direction compared to where the player faces: forward (< forward_degrees: rainbow or nutmeg near a defender, else nothing; the knock-on is the joystick double pull, player.json knock_on_*), back (> back_degrees), otherwise side. Speeds in m/s, times in seconds.",
 	"forward_degrees": 50.0,
 	"back_degrees": 130.0,
 	"cooldown": 1.0,
@@ -9,7 +9,6 @@
 	"dribbling_reference": 75.0,
 	"max_success": 0.97,
 	"min_stars": {
-		"knock_on": 1,
 		"step_over": 2,
 		"drag_back": 2,
 		"elastico": 3,
@@ -22,7 +21,6 @@
 	"fool_base": 0.3,
 	"fool_per_star": 0.12,
 	"fool_seconds": 0.55,
-	"knock_on_speed": 6.0,
 	"step_over_side_speed": 3.5,
 	"elastico_side_speed": 4.5,
 	"drag_back_speed": 3.0,
@@ -38,7 +36,6 @@
 	"first_time_shot_error_mult": 0.6,
 	"ai_skill_pressure": 2.0,
 	"retake_block_seconds": {
-		"knock_on": 0.35,
 		"nutmeg": 0.3,
 		"rainbow": 0.5,
 		"step_over": 0.15,

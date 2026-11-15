@@ -34,5 +34,13 @@
 	"tap_max_seconds": 0.25,
 	"double_tap_distance": 0.15,
 	"flick_max_seconds": 0.22,
-	"flick_min_fraction": 0.55
+	"flick_min_fraction": 0.55,
+	"_speed_modes": "Joystick under walk_threshold (after the dead zone) = walk, beyond = run. Double pull = push to the edge (double_pull_out_fraction), back under double_pull_in_fraction, to the edge again within double_pull_seconds, same direction (double_pull_max_degrees): knock-on mode with the ball, until the stick is softened or released.",
+	"walk_threshold": 0.6,
+	"double_pull_out_fraction": 0.9,
+	"double_pull_in_fraction": 0.6,
+	"double_pull_seconds": 0.5,
+	"double_pull_max_degrees": 45.0,
+	"stick_run_color": "#ffd23a",
+	"stick_knock_on_color": "#ff7a1a"
 }

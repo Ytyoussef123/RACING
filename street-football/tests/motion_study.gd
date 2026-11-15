@@ -26,8 +26,10 @@ func run() -> Dictionary:
 	_ctx.ball = _ball.physics
 	_player = _spawn(Roster.player("teo_varmanetti"), "MID", Color(0.85, 0.15, 0.12), false)
 	_player.position = Vector3(-14.0, 0.0, 0.0)
-	await _run_sequence("motion_run_side", false, true)
-	await _run_sequence("motion_sprint_side", true, true)
+	await _run_sequence("motion_walk_side", "walk", true)
+	await _run_sequence("motion_run_side", "run", true)
+	await _run_sequence("motion_sprint_side", "sprint", true)
+	await _run_sequence("motion_knockon_side", "knock_on", true)
 	await _turn_and_shoot("motion_turn_game")
 	_player.queue_free()
 	_ball.queue_free()
@@ -35,15 +37,19 @@ func run() -> Dictionary:
 	return _shots
 
 
-## Runs with the ball along +x (jog or sprint) and takes 16 frames 0.1 s apart.
-func _run_sequence(shot_name: String, sprint: bool, side_view: bool) -> void:
+## Runs with the ball along +x in a speed mode ("walk", "run", "sprint", "knock_on") and takes 16
+## frames 0.1 s apart.
+func _run_sequence(shot_name: String, mode: String, side_view: bool) -> void:
 	_reset_with_ball(Vector3(-15.0, 0.0, 0.0), Vector3.RIGHT)
+	var sprint := mode == "sprint"
+	var walk := mode == "walk"
+	var knock_on := mode == "knock_on"
 	for i in range(30):
-		_step(Vector3.RIGHT, sprint)
+		_step(Vector3.RIGHT, sprint, false, walk, knock_on)
 	var frames: Array[Image] = []
 	for f in range(GRID * GRID):
 		for i in range(6):
-			_step(Vector3.RIGHT, sprint)
+			_step(Vector3.RIGHT, sprint, false, walk, knock_on)
 		_report(shot_name, f)
 		frames.append(await _capture(side_view))
 	_shots[shot_name] = _grid(frames)
@@ -139,10 +145,12 @@ func _report(shot_name: String, frame: int) -> void:
 		Vector2(_player.motion.velocity.x, _player.motion.velocity.z).length(), _ctx.possession.holder == _player])
 
 
-func _step(move: Vector3, sprint: bool, shoot: bool = false) -> void:
+func _step(move: Vector3, sprint: bool, shoot: bool = false, walk: bool = false, knock_on: bool = false) -> void:
 	var intent := PlayerIntent.new()
 	intent.move = move
 	intent.sprint = sprint
+	intent.walk = walk
+	intent.knock_on = knock_on
 	intent.shoot_held = shoot
 	_player.intent = intent
 	DribbleAssist.adjust(_player, _ctx)

@@ -23,6 +23,8 @@ func _ready() -> void:
 	_test_receive_assist_meets_ball()
 	_test_through_pass_leads_receiver()
 	_test_touch_dribbling()
+	_test_turn_grip()
+	_test_double_pull()
 	_test_steal_ball_knocked_ahead()
 	_test_shoulder_charge()
 	_test_skill_moves()
@@ -279,8 +281,10 @@ func _spawn(team: Team, pos: Vector3, facing: Vector3) -> Player:
 	return p
 
 
-## Runs with the ball for 3 s; returns [kept the ball all along, max lead of the ball, touches].
-func _run_with_ball(sprint: bool) -> Array:
+## Runs with the ball for 3 s in a speed mode ("walk", "run", "sprint", "knock_on"); returns
+## [kept the ball all along, max lead of the ball after the first second, touches, average speed
+## after the first second].
+func _run_with_ball(mode: String) -> Array:
 	var team := _make_team(0, 1.0)
 	var player := _spawn(team, Vector3(-12.0, 0.0, 0.0), Vector3.RIGHT)
 	var ctx := MatchContext.new()
@@ -291,10 +295,13 @@ func _run_with_ball(sprint: bool) -> Array:
 	var max_lead := 0.0
 	var touches := 0
 	var last_speed := 0.0
+	var covered := 0.0
 	for i in range(180):
 		var intent := PlayerIntent.new()
 		intent.move = Vector3.RIGHT
-		intent.sprint = sprint
+		intent.walk = mode == "walk"
+		intent.sprint = mode == "sprint"
+		intent.knock_on = mode == "knock_on"
 		player.intent = intent
 		DribbleAssist.adjust(player, ctx)
 		player.move(DT, ctx.court, ctx.possession.holder == player)
@@ -308,21 +315,72 @@ func _run_with_ball(sprint: bool) -> Array:
 		if speed > last_speed + 1.0:
 			touches += 1
 		last_speed = speed
-		max_lead = maxf(max_lead, ctx.ball.position.x - player.position.x)
+		if i >= 60:
+			max_lead = maxf(max_lead, ctx.ball.position.x - player.position.x)
+			covered += player.motion.velocity.x * DT
 	player.queue_free()
-	return [kept, max_lead, touches]
+	return [kept, max_lead, touches, covered / (120.0 * DT)]
 
 
-## Touch dribbling: the ball is knocked ahead and caught again; sprinting knocks it further.
+## Speed modes with the ball: walking keeps it at the feet, running touches it ahead, sprinting
+## keeps it close at speed, the knock-on pushes it a fixed distance ahead and runs onto it faster.
 func _test_touch_dribbling() -> void:
-	var run := _run_with_ball(false)
-	var sprint := _run_with_ball(true)
+	var walk := _run_with_ball("walk")
+	var run := _run_with_ball("run")
+	var sprint := _run_with_ball("sprint")
+	var knock := _run_with_ball("knock_on")
 	_check("touch dribble: keeps the ball when running", bool(run[0]))
 	_check("touch dribble: several touches, ball goes ahead", int(run[2]) >= 2 and float(run[1]) > 0.6,
 		"touches=%d lead=%.2f" % [run[2], run[1]])
 	_check("touch dribble: keeps the ball when sprinting", bool(sprint[0]))
-	_check("touch dribble: sprint touches push the ball further", float(sprint[1]) > float(run[1]) + 0.3,
-		"run lead=%.2f sprint lead=%.2f" % [run[1], sprint[1]])
+	_check("walk dribble: walking pace, ball kept at the feet", bool(walk[0]) and float(walk[3]) > 1.4
+		and float(walk[3]) < 2.6 and float(walk[1]) < 0.65, "speed=%.2f lead=%.2f" % [walk[3], walk[1]])
+	_check("sprint dribble: faster than running, ball still close", float(sprint[1]) < 0.9
+		and float(sprint[3]) > float(run[3]) + 1.0, "lead=%.2f speed=%.2f run speed=%.2f" % [sprint[1], sprint[3], run[3]])
+	_check("knock-on: ball pushed 1 to 1.6 m ahead and caught again", bool(knock[0]) and int(knock[2]) >= 2
+		and float(knock[1]) > 1.0 and float(knock[1]) < 1.6, "touches=%d lead=%.2f" % [knock[2], knock[1]])
+	_check("knock-on: faster than sprint dribbling", float(knock[3]) > float(sprint[3]) + 0.3,
+		"knock-on=%.2f sprint=%.2f" % [knock[3], sprint[3]])
+
+
+## Turning grip: from full sprint a player turns wider than from a walk.
+func _test_turn_grip() -> void:
+	var fast := PlayerMotion.new()
+	fast.reset(Vector3.RIGHT)
+	fast.velocity = Vector3.RIGHT * fast.top_speed(true)
+	var slow := PlayerMotion.new()
+	slow.reset(Vector3.RIGHT)
+	slow.velocity = Vector3.RIGHT * slow.walk_speed()
+	for i in range(9):
+		fast.step(DT, Vector3.BACK, true, false)
+		slow.step(DT, Vector3.BACK, false, false, true)
+	var fast_turn := atan2(fast.velocity.z, fast.velocity.x)
+	var slow_turn := atan2(slow.velocity.z, slow.velocity.x)
+	_check("turning grip: a sprinting player turns wider than a walking one", slow_turn > fast_turn + 0.3,
+		"walk=%.2f sprint=%.2f rad" % [slow_turn, fast_turn])
+
+
+## Joystick double pull: out, back in, out again quickly in the same direction (knock-on); too slow
+## or another direction is not one.
+func _test_double_pull() -> void:
+	var stick := FloatingStick.new()
+	stick.radius = 100.0
+	stick.dead_zone = 0.12
+	stick.begin(0, Vector2.ZERO, 0.0)
+	stick.drag(Vector2(100.0, 0.0), 0.05)
+	stick.drag(Vector2(30.0, 0.0), 0.15)
+	stick.drag(Vector2(100.0, 0.0), 0.3)
+	_check("double pull: quick out, in, out is a double pull", stick.consume_double_pull().x > 0.9)
+	stick.begin(0, Vector2.ZERO, 1.0)
+	stick.drag(Vector2(100.0, 0.0), 1.05)
+	stick.drag(Vector2(30.0, 0.0), 1.2)
+	stick.drag(Vector2(100.0, 0.0), 1.9)
+	_check("double pull: too slow is not a double pull", stick.consume_double_pull() == Vector2.ZERO)
+	stick.begin(0, Vector2.ZERO, 3.0)
+	stick.drag(Vector2(100.0, 0.0), 3.05)
+	stick.drag(Vector2(30.0, 0.0), 3.15)
+	stick.drag(Vector2(0.0, 100.0), 3.3)
+	_check("double pull: another direction is not a double pull", stick.consume_double_pull() == Vector2.ZERO)
 
 
 ## A ball knocked ahead of its dribbler can be stolen; a ball at his feet cannot.
@@ -421,8 +479,8 @@ func _test_skill_moves() -> void:
 	var ctx: MatchContext = s[0]
 	var p: Player = s[1]
 	var move := SkillMoves.perform(p, ctx, Vector3.RIGHT, 0.0)
-	_check("skill: forward flick is a knock-on", move == "knock_on" and ctx.ball.velocity.x >= 6.0
-		and ctx.possession.pass_target == p, "move=%s v=%s" % [move, ctx.ball.velocity])
+	_check("skill: forward flick with nobody close is no move (the knock-on is the double pull)",
+		move == "" and ctx.possession.holder == p, "move=%s" % move)
 	_free_setup(s)
 	s = _skill_setup(["flip_flap"], 0.0)
 	ctx = s[0]
@@ -451,7 +509,7 @@ func _test_skill_moves() -> void:
 	_free_setup(s)
 	s = _skill_setup([], 0.0)
 	ctx = s[0]
-	move = SkillMoves.perform(s[1], ctx, Vector3.RIGHT, 0.999)
+	move = SkillMoves.perform(s[1], ctx, Vector3(0.0, 0.0, 1.0), 0.999)
 	_check("skill: a failed move is a bad touch (ball lost)", move == "failed" and ctx.possession.holder == null,
 		"move=%s" % move)
 	_free_setup(s)

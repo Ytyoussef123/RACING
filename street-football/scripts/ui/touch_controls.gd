@@ -46,6 +46,16 @@ func consume_stick_double_tap() -> bool:
 	return _joystick.consume_double_tap()
 
 
+## Direction of a double pull on the joystick (screen axes), once; ZERO when there was none.
+func consume_stick_double_pull() -> Vector2:
+	return _joystick.consume_double_pull()
+
+
+## Colors the joystick ring while the knock-on mode is on.
+func set_knock_on_active(on: bool) -> void:
+	_joystick.knock_on_active = on
+
+
 func is_held(id: String) -> bool:
 	var button: ActionButton = _buttons.get(id)
 	return button != null and button.is_held()
@@ -88,7 +98,7 @@ func _input(event: InputEvent) -> void:
 	elif event is InputEventScreenDrag:
 		var drag := event as InputEventScreenDrag
 		if drag.index == _joystick.finger:
-			_joystick.drag(drag.position)
+			_joystick.drag(drag.position, _now())
 
 
 func _finger_down(index: int, pos: Vector2) -> void:
@@ -125,6 +135,13 @@ func _layout() -> void:
 	_joystick.double_tap_distance = short_side * _num("double_tap_distance", 0.15)
 	_joystick.flick_max_seconds = _num("flick_max_seconds", 0.22)
 	_joystick.flick_min_fraction = _num("flick_min_fraction", 0.55)
+	_joystick.walk_threshold = _num("walk_threshold", 0.6)
+	_joystick.pull_out = _num("double_pull_out_fraction", 0.9)
+	_joystick.pull_in = _num("double_pull_in_fraction", 0.6)
+	_joystick.double_pull_seconds = _num("double_pull_seconds", 0.5)
+	_joystick.double_pull_max_degrees = _num("double_pull_max_degrees", 45.0)
+	_joystick.run_color = Color.html(str(Config.get_value("controls", "stick_run_color", "#ffd23a")))
+	_joystick.knock_on_color = Color.html(str(Config.get_value("controls", "stick_knock_on_color", "#ff7a1a")))
 	_hit_scale = _num("button_hit_scale", 1.25)
 	for id in BUTTON_IDS:
 		var button: ActionButton = _buttons[id]

@@ -3,7 +3,8 @@ extends RefCounted
 ## Skill moves, done by flicking the joystick with the ball. The flick direction compared to the
 ## player's facing picks the move:
 ##   forward: rainbow flick over a close defender (special skill), nutmeg through a defender right
-##            in front (special skill), otherwise a knock-on (big touch ahead to run onto);
+##            in front (special skill), otherwise nothing (pushing the ball ahead and running onto
+##            it is the knock-on mode: joystick pulled hard twice, see Dribbling);
 ##   side:    elastico / flip-flap (special skill) or step-over: the ball is cut sideways;
 ##   back:    heel-flick pass to a teammate behind (special skill), roulette (special skill) or
 ##            drag-back.
@@ -51,7 +52,7 @@ static func _choose(player: Player, ctx: MatchContext, dir: Vector3, angle: floa
 				return "nutmeg"
 			if d < _num("rainbow_defender_distance", 3.0) and _can(player, "rainbow"):
 				return "rainbow"
-		return "knock_on" if _can(player, "knock_on") else ""
+		return ""
 	if angle > _num("back_degrees", 130.0):
 		if _can(player, "heel_flick") and _teammate_behind(player, ctx, dir) != null:
 			return "heel_flick"
@@ -83,8 +84,6 @@ static func _do(move: String, player: Player, ctx: MatchContext, dir: Vector3) -
 	var blocks: Dictionary = Config.get_value("skills", "retake_block_seconds", {})
 	var block := float(blocks.get(move, 0.15))
 	match move:
-		"knock_on":
-			_play_to_self(player, ctx, facing * (run.length() + _num("knock_on_speed", 6.0)), block)
 		"nutmeg":
 			var victim := _nearest_opponent_ahead(player, ctx)
 			if victim != null:

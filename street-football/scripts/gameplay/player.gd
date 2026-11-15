@@ -137,11 +137,15 @@ func move(delta: float, court: CourtData, dribbling: bool) -> void:
 	ghost_timer = maxf(0.0, ghost_timer - delta)
 	var dir := intent.move
 	var sprint := intent.sprint
+	var walk := intent.walk
+	var knock_on := intent.knock_on and dribbling
 	if stun_timer > 0.0:
 		dir *= _stun_move_factor
 		sprint = false
-	_update_energy(delta, sprint and dir.length() > 0.2)
-	motion.step(delta, dir, sprint, dribbling)
+		walk = false
+		knock_on = false
+	_update_energy(delta, (sprint or knock_on) and dir.length() > 0.2, walk or dir.length() < 0.2)
+	motion.step(delta, dir, sprint, dribbling, walk, knock_on)
 	position += motion.velocity * delta
 	clamp_to_court(court)
 	_update_visual()
@@ -167,14 +171,18 @@ func clamp_to_court(court: CourtData) -> void:
 	position.y = 0.0
 
 
-## Sprinting drains stamina (less for high stamina), otherwise it comes back.
-## Below low_energy_threshold the top speed drops, down to low_energy_speed_mult when empty.
-func _update_energy(delta: float, sprinting: bool) -> void:
+## Sprinting (and the knock-on) drains stamina (less for high stamina), otherwise it comes back,
+## faster when walking or standing (resting). Below low_energy_threshold the top speed drops, down
+## to low_energy_speed_mult when empty.
+func _update_energy(delta: float, sprinting: bool, resting: bool = false) -> void:
 	var moving := Vector2(motion.velocity.x, motion.velocity.z).length() > StatEffects.num("sprint_drain_min_speed", 1.0)
 	if sprinting and moving:
 		energy = maxf(0.0, energy - stat("stamina_drain", 0.06) * delta)
 	else:
-		energy = minf(1.0, energy + StatEffects.num("energy_recover_per_second", 0.04) * delta)
+		var recover := StatEffects.num("energy_recover_per_second", 0.04)
+		if resting:
+			recover *= StatEffects.num("walk_recover_mult", 1.6)
+		energy = minf(1.0, energy + recover * delta)
 	var threshold := maxf(0.01, StatEffects.num("low_energy_threshold", 0.4))
 	motion.energy_mult = lerpf(StatEffects.num("low_energy_speed_mult", 0.85), 1.0, clampf(energy / threshold, 0.0, 1.0))
 
