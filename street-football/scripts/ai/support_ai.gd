@@ -16,8 +16,8 @@ static func intent_for(player: Player, delta: float, ctx: MatchContext, brain: T
 	if player == brain.cover:
 		return Steering.seek(player, _apart(player, cover_point(player.team, ctx), ctx))
 	if player.ai.mark != null:
-		return Steering.seek(player, _apart(player, _mark_point(player, player.ai.mark, ctx), ctx))
-	return Steering.seek(player, _apart(player, FormationPositions.slot_target(player, ctx, false), ctx))
+		return Steering.seek(player, _apart(player, _keep_room(player, _mark_point(player, player.ai.mark, ctx), ctx), ctx))
+	return Steering.seek(player, _apart(player, _keep_room(player, FormationPositions.slot_target(player, ctx, false), ctx), ctx))
 
 
 ## A defending spot kept defend_spacing_min from teammates: two defenders never stand on top of
@@ -25,6 +25,20 @@ static func intent_for(player: Player, delta: float, ctx: MatchContext, brain: T
 static func _apart(player: Player, target: Vector3, ctx: MatchContext) -> Vector3:
 	return AttackShape.spaced(player, target, ctx, Steering.num("defend_spacing_min", 3.0),
 		Steering.num("defend_spacing_push", 1.0))
+
+
+## While a teammate is nearer the ball (he presses it), a marker or zone player stays press_room
+## from the ball, on the same line out from it: never more than two of us around the ball.
+static func _keep_room(player: Player, spot: Vector3, ctx: MatchContext) -> Vector3:
+	var ball := Steering.flat(ctx.ball.position)
+	var room := Steering.num("press_room", 4.5)
+	var away := Steering.flat(spot) - ball
+	var d := away.length()
+	if d >= room or player.team.closest_outfield_to(ctx.ball.position) == player:
+		return spot
+	var dir := away / d if d > 0.01 else \
+		Steering.flat(Vector3(player.team.own_goal_x(ctx.court), 0.0, 0.0) - ball).normalized()
+	return ball + dir * room
 
 
 ## Second defender: between the ball and our goal, cover_defend_depth behind the ball (at most

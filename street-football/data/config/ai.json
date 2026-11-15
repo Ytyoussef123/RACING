@@ -139,6 +139,7 @@
 	"spacing_push": 0.7,
 	"defend_spacing_min": 3.0,
 	"defend_spacing_push": 1.0,
+	"press_room": 4.5,
 	"shape_wall_margin": 1.0,
 	"job_sprint_distance": 4.5,
 	"detour_radius": 3.0,
