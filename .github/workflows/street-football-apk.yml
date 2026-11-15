@@ -89,6 +89,16 @@ jobs:
             exit 1
           fi
 
+      - name: Kick power tests (headless)
+        run: |
+          godot --headless --path "$PROJECT_DIR" res://tests/kick_power_test.tscn --quit-after 3000 2>&1 | tee kick_power.log
+          grep -E "TEST (PASS|FAIL)" kick_power.log || true
+          if ! grep -q "KICK TESTS DONE: 0 failure" kick_power.log; then
+            echo "::error::Kick power tests failed or did not finish (see above)."
+            awk '/SCRIPT ERROR|ERROR:/ && !seen[$0]++' kick_power.log | head -30
+            exit 1
+          fi
+
       - name: Progression tests (headless)
         run: |
           godot --headless --path "$PROJECT_DIR" res://tests/progression_test.tscn --quit-after 3000 2>&1 | tee progression.log

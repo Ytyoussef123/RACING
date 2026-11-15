@@ -18,6 +18,11 @@ var pass_pressed: bool = false
 var through_pressed: bool = false
 ## True only on the frame SHOOT was pressed in our own half: a long clearance.
 var clear_pressed: bool = false
+## Human only: true while PASS, THROUGH, or SHOOT in our own half (CLEAR) is held. The kick goes on
+## release: after a tap with the automatic power, after a longer hold with the power bar's.
+var pass_held: bool = false
+var through_held: bool = false
+var clear_held: bool = false
 ## True only on the frame the joystick is double-tapped with the ball: a keeper holding the ball
 ## in his hands puts it down at his feet.
 var drop_ball: bool = false

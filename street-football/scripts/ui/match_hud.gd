@@ -1,7 +1,8 @@
 class_name MatchHud
 extends Control
-## Match overlay: team names, score and clock, big messages (GOAL!, OUT, FULL TIME), shot power
-## bar, name tag with stamina above the human's player, court name, formation and pause buttons.
+## Match overlay: team names, score and clock, big messages (GOAL!, OUT, FULL TIME), power bar
+## (shot, or a held pass, through pass or clearance) with its red end (player.json kick_red_zone),
+## name tag with stamina above the human's player, court name, formation and pause buttons.
 
 signal pause_pressed
 signal formation_pressed
@@ -24,12 +25,23 @@ signal formation_pressed
 @onready var _menu_button: Button = $MenuButton
 @onready var _formation_button: Button = $FormationButton
 
+## Red end of the power bar (too much power), and the fill color below it.
+var _red_zone: ColorRect
+var _fill_color: Color
+
 
 func _ready() -> void:
 	_menu_button.pressed.connect(func() -> void: pause_pressed.emit())
 	_formation_button.pressed.connect(func() -> void: formation_pressed.emit())
 	hide_message()
 	_power_bar.visible = false
+	_fill_color = _power_fill.color
+	_red_zone = ColorRect.new()
+	_red_zone.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_red_zone.color = UiTheme.color("power_red_zone")
+	_power_bar.add_child(_red_zone)
+	# Drawn above the background and under the fill.
+	_power_bar.move_child(_red_zone, _power_fill.get_index())
 
 
 ## Shows an already translated text in big letters.
@@ -99,7 +111,12 @@ func update_power(charge: float, shown: bool, screen_position: Vector2) -> void:
 	if not shown:
 		return
 	_power_bar.position = screen_position - _power_bar.size * 0.5
-	_power_fill.size = Vector2(_power_bar.size.x * clampf(charge, 0.0, 1.0), _power_bar.size.y)
+	var red_start := float(Config.get_value("player", "kick_red_zone", 0.85))
+	_red_zone.position = Vector2(_power_bar.size.x * red_start, 0.0)
+	_red_zone.size = Vector2(_power_bar.size.x * (1.0 - red_start), _power_bar.size.y)
+	var fill := clampf(charge, 0.0, 1.0)
+	_power_fill.size = Vector2(_power_bar.size.x * fill, _power_bar.size.y)
+	_power_fill.color = UiTheme.color("power_fill_red") if fill > red_start else _fill_color
 
 
 ## Name tag above the human's player; energy 0..1 drawn as a bar (green, then orange, then red).

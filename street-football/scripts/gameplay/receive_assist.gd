@@ -36,6 +36,10 @@ static func apply(player: Player, intent: PlayerIntent, ctx: MatchContext) -> Pl
 	assisted.shoot_held = intent.shoot_held
 	assisted.pass_pressed = intent.pass_pressed
 	assisted.through_pressed = intent.through_pressed
+	assisted.clear_pressed = intent.clear_pressed
+	assisted.pass_held = intent.pass_held
+	assisted.through_held = intent.through_held
+	assisted.clear_held = intent.clear_held
 	var target := intercept_point(player, ctx)
 	var to := Steering.flat(target - player.position)
 	var d := to.length()

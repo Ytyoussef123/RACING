@@ -1,8 +1,11 @@
 class_name BallHandling
 extends RefCounted
 ## What one player does with the ball: take control (or steal a ball knocked too far ahead),
-## dribble (see Dribbling), shoot (hold to charge), pass, through pass, tackle, shoulder charge,
-## and bounce the ball off the body.
+## dribble (see Dribbling), shoot (hold to charge), pass, through pass, clear (the kicks: Kicks),
+## tackle, shoulder charge, and bounce the ball off the body.
+## Power bar: SHOOT fills it from the press (shot_charge_time). PASS, THROUGH and CLEAR held by the
+## human go on release: a tap keeps the automatic power, a hold past kick_tap_seconds fills the bar
+## (kick_charge_time) and the bar sets the power.
 ## Kicks only happen with the ball within reach: a pass, through pass or shot asked when the ball
 ## is a little away is kept (with its aim) and played as soon as the ball is reached: first-time
 ## on an incoming ball, or at the next touch when dribbling.
@@ -12,6 +15,8 @@ extends RefCounted
 var is_charging: bool = false
 ## 0..1 while the shoot button is held.
 var shot_charge: float = 0.0
+## 0..1 while PASS, THROUGH or CLEAR is held past a tap (the bar's power for that kick).
+var kick_charge: float = 0.0
 var dribbling: Dribbling = Dribbling.new()
 
 var _cooldown: float = 0.0
@@ -25,11 +30,17 @@ var _queued_aim: Vector3 = Vector3.ZERO
 ## For a queued shot: the point in the goal it is aimed at (ShotAim).
 var _queued_point: Vector3 = Vector3.ZERO
 var _queue_timer: float = 0.0
+## Kick button held by the human ("pass", "through", "clear" or ""), and for how long.
+var _held_kind: String = ""
+var _held_time: float = 0.0
 
 
 func reset() -> void:
 	is_charging = false
 	shot_charge = 0.0
+	kick_charge = 0.0
+	_held_kind = ""
+	_held_time = 0.0
 	_cooldown = 0.0
 	_tackle_cooldown = 0.0
 	_shoulder_cooldown = 0.0
@@ -48,6 +59,21 @@ func has_queued_kick() -> bool:
 	return not _queued.is_empty()
 
 
+## The power bar above the human's player: the shot charge, or a held pass, through or clear.
+func bar_value() -> float:
+	return shot_charge if is_charging else kick_charge
+
+
+func bar_shown() -> bool:
+	return is_charging or (not _held_kind.is_empty() and _held_time > _cfg("kick_tap_seconds", 0.18))
+
+
+## After any kick (Kicks): the touch rhythm starts again and the ball cannot be retaken at once.
+func after_kick() -> void:
+	dribbling.reset()
+	_cooldown = _cfg("kick_cooldown", 0.35)
+
+
 func update(delta: float, player: Player, ctx: MatchContext) -> void:
 	_tick_timers(delta)
 	var ball := ctx.ball
@@ -57,14 +83,15 @@ func update(delta: float, player: Player, ctx: MatchContext) -> void:
 	var aim := _aim_direction(player, intent)
 	var has_ball := possession.holder == player
 	if intent.pass_pressed:
-		_queue("pass", 0.0, aim, has_ball)
+		_queue("pass", Kicks.AUTO, aim, has_ball)
 	elif intent.through_pressed:
-		_queue("through", 0.0, aim, has_ball)
+		_queue("through", Kicks.AUTO, aim, has_ball)
 	elif intent.clear_pressed:
-		_queue("clear", 0.0, aim, has_ball)
+		_queue("clear", Kicks.AUTO, aim, has_ball)
 	elif intent.skill != Vector3.ZERO and has_ball and _skill_cooldown <= 0.0:
 		_skill_cooldown = float(Config.get_value("skills", "cooldown", 1.0))
 		_queue("skill", 0.0, intent.skill, true)
+	_track_held_kick(intent, delta, aim, has_ball)
 	if intent.shoulder_pressed and not has_ball:
 		if _shoulder_cooldown <= 0.0:
 			_shoulder_cooldown = _cfg("shoulder_cooldown", 1.0)
@@ -81,7 +108,7 @@ func update(delta: float, player: Player, ctx: MatchContext) -> void:
 	elif is_charging:
 		var shot_point := ShotAim.target(player, ctx, _stick(intent))
 		if _can_kick(player, ctx):
-			_shoot(player, ctx, shot_point, shot_charge)
+			Kicks.shoot(self, player, ctx, shot_point, shot_charge)
 		elif possession.holder == null or possession.holder == player:
 			_queue("shot", shot_charge, aim, has_ball)
 			_queued_point = shot_point
@@ -90,7 +117,7 @@ func update(delta: float, player: Player, ctx: MatchContext) -> void:
 	if possession.holder == player:
 		if player.ball_in_hands:
 			_in_hands(player, ctx, delta)
-		elif not dribbling.update(player, ctx, delta, not _queued.is_empty(), is_charging):
+		elif not dribbling.update(player, ctx, delta, not _queued.is_empty(), is_charging or bar_shown()):
 			possession.release(ball)
 			_cooldown = _cfg("kick_cooldown", 0.35)
 	elif possession.holder == null or possession.holder.team != player.team:
@@ -108,7 +135,31 @@ func _in_hands(player: Player, ctx: MatchContext, delta: float) -> void:
 	KeeperHands.hold(player, ctx)
 	player.hands_time += delta
 	if player.hands_time >= _cfg("keeper_hands_seconds", 6.0) and _queued.is_empty():
-		_queue("pass", 0.0, KeeperAI.outlet_direction(player, ctx), true)
+		_queue("pass", Kicks.AUTO, KeeperAI.outlet_direction(player, ctx), true)
+
+
+## PASS, THROUGH or CLEAR held by the human: released after a tap (kick_tap_seconds) the kick
+## gets the automatic power; held longer, the bar fills over kick_charge_time and sets the power.
+## The kick is queued on release and played as soon as the ball is in reach.
+func _track_held_kick(intent: PlayerIntent, delta: float, aim: Vector3, has_ball: bool) -> void:
+	var held := ""
+	if intent.pass_held:
+		held = "pass"
+	elif intent.through_held:
+		held = "through"
+	elif intent.clear_held:
+		held = "clear"
+	var tap := _cfg("kick_tap_seconds", 0.18)
+	if not held.is_empty() and held == _held_kind:
+		_held_time += delta
+	else:
+		if not _held_kind.is_empty():
+			_queue(_held_kind, Kicks.AUTO if _held_time <= tap else kick_charge, aim, has_ball)
+		_held_kind = held
+		_held_time = 0.0
+	kick_charge = 0.0
+	if not _held_kind.is_empty():
+		kick_charge = clampf((_held_time - tap) / maxf(0.01, _cfg("kick_charge_time", 0.6)), 0.0, 1.0)
 
 
 func _tick_timers(delta: float) -> void:
@@ -151,13 +202,13 @@ func _queue(kind: String, charge: float, aim: Vector3, dribbling_now: bool) -> v
 func _play_queued(player: Player, ctx: MatchContext) -> void:
 	match _queued:
 		"pass":
-			_pass(player, ctx, _queued_aim)
+			Kicks.pass_ball(self, player, ctx, _queued_aim, _queued_charge)
 		"through":
-			_through_pass(player, ctx, _queued_aim)
+			Kicks.through_ball(self, player, ctx, _queued_aim, _queued_charge)
 		"shot":
-			_shoot(player, ctx, _queued_point, _queued_charge)
+			Kicks.shoot(self, player, ctx, _queued_point, _queued_charge)
 		"clear":
-			_clear(player, ctx, _queued_aim)
+			Kicks.clear(self, player, ctx, _queued_aim, _queued_charge)
 		"skill":
 			# A flick that makes no move (forward with nobody close) gives the cooldown back.
 			if SkillMoves.perform(player, ctx, _queued_aim).is_empty():
@@ -166,86 +217,6 @@ func _play_queued(player: Player, ctx: MatchContext) -> void:
 	_queue_timer = 0.0
 	is_charging = false
 	shot_charge = 0.0
-
-
-func _pass(player: Player, ctx: MatchContext, aim: Vector3) -> void:
-	var target := PassTargeting.choose(player, aim, ctx)
-	var kick_velocity: Vector3
-	if player.ball_in_hands:
-		kick_velocity = KeeperHands.throw_velocity(player, target, aim)
-	elif target != null:
-		kick_velocity = PassTargeting.pass_velocity(player, target)
-	else:
-		kick_velocity = aim * _cfg("pass_speed", 11.0) + Vector3.UP * _cfg("pass_lift", 0.0)
-	var error := player.stat("keeper_kick_error_degrees" if player.is_keeper else "pass_error_degrees", 0.0)
-	if player.ball_in_hands:
-		error *= _cfg("keeper_throw_error_mult", 0.6)
-	kick_velocity = KickAccuracy.with_error(kick_velocity,
-		error * KickAccuracy.weak_foot_mult(player, aim) * KickAccuracy.pace_mult(player), ctx)
-	ctx.stats.passes[player.team.index] += 1
-	_kick(player, ctx, kick_velocity, 0.0, target, "pass")
-
-
-## Ground pass into the space in front of the receiver, toward the opponent's goal.
-func _through_pass(player: Player, ctx: MatchContext, aim: Vector3) -> void:
-	var target := PassTargeting.choose(player, aim, ctx)
-	var error := player.stat("keeper_kick_error_degrees" if player.is_keeper else "through_error_degrees", 0.0)
-	error *= KickAccuracy.weak_foot_mult(player, aim) * KickAccuracy.pace_mult(player)
-	ctx.stats.passes[player.team.index] += 1
-	if player.ball_in_hands:
-		var long_kick := KeeperHands.long_kick_velocity(player, target, aim)
-		_kick(player, ctx, KickAccuracy.with_error(long_kick, error, ctx), 0.0, target, "pass")
-		return
-	if target == null:
-		_kick(player, ctx, KickAccuracy.with_error(aim * _cfg("through_space_speed", 10.0), error, ctx), 0.0, null, "pass")
-		return
-	_kick(player, ctx, KickAccuracy.with_error(PassTargeting.through_velocity(player, target, ctx), error, ctx), 0.0, target, "pass")
-
-
-## A shot at `target`, a point in the opponent's goal (ShotAim).
-func _shoot(player: Player, ctx: MatchContext, target: Vector3, charge: float) -> void:
-	var aim := Steering.flat(target - ctx.ball.position).normalized()
-	var speed := lerpf(_cfg("shot_speed_min", 12.0), _cfg("shot_speed_max", 26.0), charge)
-	speed *= player.stat("shot_speed_mult", 1.0)
-	var lift := lerpf(_cfg("shot_lift_min", 0.5), _cfg("shot_lift_max", 5.5), charge)
-	# Turning while shooting curls the ball the same way.
-	var spin := player.motion.turn_rate * _cfg("shot_curve_from_turn", 0.35)
-	# Accuracy: finishing, plus long shots beyond long_shot_distance, worse on the weak foot,
-	# better first-time for players with that special skill.
-	var first_time := ctx.possession.holder != player
-	var goal := Vector3(player.team.target_goal_x(ctx.court), 0.0, 0.0)
-	var beyond := maxf(0.0, player.flat_distance_to(goal) - StatEffects.num("long_shot_distance", 12.0))
-	var error := player.stat("shot_error_degrees", 0.0) + beyond * player.stat("long_shot_error_per_meter", 0.0)
-	error *= KickAccuracy.weak_foot_mult(player, aim) * KickAccuracy.pace_mult(player) \
-		* KickAccuracy.shot_angle_mult(player, ctx, aim)
-	if first_time and player.profile != null and player.profile.special_skills.has("first_time_shot"):
-		error *= float(Config.get_value("skills", "first_time_shot_error_mult", 0.6))
-	ctx.stats.shots[player.team.index] += 1
-	_kick(player, ctx, KickAccuracy.with_error(aim * speed + Vector3.UP * lift, error, ctx), spin, null, "shot")
-
-
-## SHOOT in our own half: a long, high kick away from our goal, where the stick points.
-func _clear(player: Player, ctx: MatchContext, aim: Vector3) -> void:
-	var dir := Steering.flat(aim).normalized()
-	if dir.x * player.team.attack_sign < 0.0:
-		dir.x = -dir.x
-	var error := player.stat("through_error_degrees", 0.0) * _cfg("clear_error_mult", 1.5)
-	error *= KickAccuracy.weak_foot_mult(player, dir) * KickAccuracy.pace_mult(player)
-	var kick := dir * _cfg("clear_speed", 17.0) + Vector3.UP * _cfg("clear_lift", 6.5)
-	_kick(player, ctx, KickAccuracy.with_error(kick, error, ctx), 0.0, null, "clear")
-
-
-func _kick(player: Player, ctx: MatchContext, kick_velocity: Vector3, spin: float, target: Player,
-		kind: String) -> void:
-	player.ball_in_hands = false
-	ctx.possession.kicked(player, target, ctx.ball, kind)
-	player.animate("kick", 1.0, player.flat_distance_to(ctx.ball.position))
-	ctx.emit_event("shot" if kind == "shot" else "pass", ctx.ball.position, kick_velocity.length())
-	ctx.ball.kick(kick_velocity, spin)
-	# The ball leaves his foot: his own body does not deflect it (kicks across the body).
-	player.ghost_timer = maxf(player.ghost_timer, _cfg("kick_pass_through_seconds", 0.15))
-	dribbling.reset()
-	_cooldown = _cfg("kick_cooldown", 0.35)
 
 
 ## Ball low enough, close enough and not too fast to control (ball control, jump), or to cut

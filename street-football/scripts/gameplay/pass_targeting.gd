@@ -44,11 +44,13 @@ static func _score(passer: Player, mate: Player, cos_angle: float, dist: float, 
 	return score
 
 
-## Ground pass toward where the receiver will be, faster for longer passes.
-static func pass_velocity(passer: Player, target: Player) -> Vector3:
+## Ground pass toward where the receiver will be, faster for longer passes; with `speed` given
+## (the power bar, >= 0) at that speed instead.
+static func pass_velocity(passer: Player, target: Player, speed: float = -1.0) -> Vector3:
 	var d := passer.flat_distance_to(target.position)
-	var speed := clampf(_cfg("pass_speed_base", 6.0) + d * _cfg("pass_speed_per_meter", 0.55),
-		_cfg("pass_speed_min", 7.0), _cfg("pass_speed_max", 16.0))
+	if speed < 0.0:
+		speed = clampf(_cfg("pass_speed_base", 6.0) + d * _cfg("pass_speed_per_meter", 0.55),
+			_cfg("pass_speed_min", 7.0), _cfg("pass_speed_max", 16.0))
 	var lead := target.motion.velocity * (d / speed) * _cfg("pass_lead_factor", 0.8)
 	var to := Vector3(target.position.x + lead.x - passer.position.x, 0.0, target.position.z + lead.z - passer.position.z)
 	var dir := to.normalized() if to.length() > 0.01 else passer.motion.facing
@@ -56,8 +58,9 @@ static func pass_velocity(passer: Player, target: Player) -> Vector3:
 
 
 ## Through pass: aimed at the space a few meters in front of the receiver, mostly toward the
-## opponent's goal and partly along his run, kept inside the court.
-static func through_velocity(passer: Player, target: Player, ctx: MatchContext) -> Vector3:
+## opponent's goal and partly along his run, kept inside the court; `lead` (the power bar, >= 0)
+## replaces through_lead_distance.
+static func through_velocity(passer: Player, target: Player, ctx: MatchContext, lead_distance: float = -1.0) -> Vector3:
 	var court := ctx.court
 	var forward := Vector3(passer.team.attack_sign, 0.0, 0.0)
 	var run := Steering.flat(target.motion.velocity)
@@ -66,7 +69,8 @@ static func through_velocity(passer: Player, target: Player, ctx: MatchContext) 
 	var lead_dir := forward * w + run_dir * (1.0 - w)
 	lead_dir = lead_dir.normalized() if lead_dir.length() > 0.01 else forward
 	# Vision: better players play the ball further into the receiver's run.
-	var lead := _cfg("through_lead_distance", 4.0) * passer.stat("through_lead_mult", 1.0)
+	var lead := (lead_distance if lead_distance >= 0.0 else _cfg("through_lead_distance", 4.0)) \
+		* passer.stat("through_lead_mult", 1.0)
 	var spot := target.position + lead_dir * lead
 	var margin := _cfg("through_wall_margin", 1.0)
 	spot.x = clampf(spot.x, -court.half_length + margin, court.half_length - margin)

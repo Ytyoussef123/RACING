@@ -24,7 +24,9 @@
 		"accent_2": "#ffd61a",
 		"accent_3": "#20c4d8",
 		"good": "#4fd16b",
-		"bad": "#ff4f4f"
+		"bad": "#ff4f4f",
+		"power_red_zone": "#ff2a1a70",
+		"power_fill_red": "#ff2a1a"
 	},
 	"font_sizes": {
 		"title": 112,

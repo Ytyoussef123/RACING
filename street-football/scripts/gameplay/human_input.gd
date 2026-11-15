@@ -2,8 +2,10 @@ class_name HumanInput
 extends RefCounted
 ## Turns the touch controls (and the keyboard, for testing on a PC) into a PlayerIntent.
 ## The four buttons change meaning with possession, like eFootball:
-##   with the ball:     THROUGH (tap)    SHOOT (hold)   PASS (tap)     SPRINT (hold)
-##   without the ball:  MATCH-UP (hold)  TACKLE (tap)   SWITCH (tap)   PRESS (hold)
+##   with the ball:     THROUGH (tap/hold)  SHOOT (hold)   PASS (tap/hold)  SPRINT (hold)
+##   without the ball:  MATCH-UP (hold)     TACKLE (tap)   SWITCH (tap)     PRESS (hold)
+## PASS, THROUGH and CLEAR (SHOOT in our own half) kick on release: a tap with the automatic
+## power, a longer hold with the power bar's (BallHandling).
 ## Double-tap the joystick without the ball: shoulder charge. Flick it with the ball: skill move.
 ## Speed steps: joystick pushed softly = walk, fully = run, SPRINT = sprint; pulled hard twice with
 ## the ball = knock-on mode (until the stick is softened or released, or a pass / shot / skill).
@@ -15,10 +17,11 @@ var _touch: TouchControls
 var _keys_down: Dictionary = {}
 ## Knock-on mode is on (started by a double pull).
 var _knock_on: bool = false
-## Set when the layout turns to attack while SHOOT/TACKLE is still held: that finger must be
-## lifted before it can start a shot (no accidental shot after winning the ball).
-var _shoot_locked: bool = false
-var _was_attacking: bool = true
+## What each kick button meant when it was pressed ("" while it is up): a press keeps that meaning
+## until the finger is lifted, so winning or losing the ball, or crossing the halfway line, never
+## turns a held button into another kick (no accidental shot after a tackle, no shot from a held
+## clearance, no clearance fired by crossing the line).
+var _pressed_as: Dictionary = {"shoot": "", "pass": "", "through": ""}
 
 
 func _init(touch: TouchControls) -> void:
@@ -50,24 +53,19 @@ func read(attacking: bool, clearing: bool = false) -> PlayerIntent:
 	var through_tap := _touch.consume_press("through") or r_tap
 	_touch.consume_press("sprint")
 	var shoot_hold := _touch.is_held("shoot") or Input.is_physical_key_pressed(KEY_SPACE)
+	var pass_hold := _touch.is_held("pass") or Input.is_physical_key_pressed(KEY_E)
 	var through_hold := _touch.is_held("through") or Input.is_physical_key_pressed(KEY_R)
 	var sprint_hold := _touch.is_held("sprint") or Input.is_physical_key_pressed(KEY_SHIFT)
-	if attacking and not _was_attacking and shoot_hold:
-		_shoot_locked = true
-	# A SHOOT held for a clearance must be lifted before it can start a shot.
-	if clearing and shoot_hold:
-		_shoot_locked = true
-	if not shoot_hold:
-		_shoot_locked = false
-	_was_attacking = attacking
+	var shoot_as := _pressed_kind("shoot", shoot_tap, shoot_hold,
+		("clear" if clearing else "shot") if attacking else "tackle")
+	var pass_as := _pressed_kind("pass", pass_tap, pass_hold, "pass" if attacking else "switch")
+	var through_as := _pressed_kind("through", through_tap, through_hold, "through" if attacking else "match_up")
 	intent.switch_pressed = q_tap
 	if attacking:
-		if clearing:
-			intent.clear_pressed = shoot_tap
-		else:
-			intent.shoot_held = (shoot_hold or shoot_tap) and not _shoot_locked
-		intent.pass_pressed = pass_tap
-		intent.through_pressed = through_tap
+		intent.clear_held = shoot_as == "clear"
+		intent.shoot_held = shoot_as == "shot"
+		intent.pass_held = pass_as == "pass"
+		intent.through_held = through_as == "through"
 		intent.sprint = sprint_hold
 		# Keeper with the ball in his hands: a double tap puts it down at his feet.
 		intent.drop_ball = double_tap
@@ -78,7 +76,7 @@ func read(attacking: bool, clearing: bool = false) -> PlayerIntent:
 		if double_pull != Vector2.ZERO:
 			_knock_on = true
 		if strength == 0.0 or intent.walk or pass_tap or through_tap or intent.shoot_held \
-				or intent.skill != Vector3.ZERO:
+				or intent.clear_held or intent.skill != Vector3.ZERO:
 			_knock_on = false
 		intent.knock_on = _knock_on or (Input.is_physical_key_pressed(KEY_K) and strength > 0.0)
 	else:
@@ -92,6 +90,16 @@ func read(attacking: bool, clearing: bool = false) -> PlayerIntent:
 		intent.shoulder_pressed = double_tap or f_tap
 	_touch.set_knock_on_active(intent.knock_on)
 	return intent
+
+
+## What `button` means for this press: set on the press (to `now`), kept while it is held, "" once
+## it is up. A tap shorter than a frame still counts for that frame.
+func _pressed_kind(button: String, pressed: bool, held: bool, now: String) -> String:
+	if pressed and str(_pressed_as[button]).is_empty():
+		_pressed_as[button] = now
+	elif not pressed and not held:
+		_pressed_as[button] = ""
+	return str(_pressed_as[button])
 
 
 func _move_vector() -> Vector3:

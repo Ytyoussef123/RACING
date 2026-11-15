@@ -76,24 +76,33 @@ static func clamp_to_area(keeper: Player, court: CourtData) -> void:
 			keeper.motion.velocity.z = 0.0
 
 
-## Throw: a short, low, accurate ball from the hands, to a teammate or along the aim.
-static func throw_velocity(keeper: Player, target: Player, aim: Vector3) -> Vector3:
+## Throw: a short, low, accurate ball from the hands, to a teammate or along the aim; `power` from
+## the bar (Kicks.AUTO for a tap) sets its speed (keeper_throw_power_speed_*).
+static func throw_velocity(keeper: Player, target: Player, aim: Vector3, power: float = -1.0) -> Vector3:
+	var speed := Kicks.by_power(power, Kicks.AUTO, _num("keeper_throw_power_speed_min", 6.0),
+		_num("keeper_throw_power_speed_max", 16.0))
 	var flat: Vector3
 	if target != null:
-		flat = PassTargeting.pass_velocity(keeper, target)
+		flat = PassTargeting.pass_velocity(keeper, target, speed)
 		flat.y = 0.0
 	else:
-		flat = aim * _num("pass_speed", 11.0)
+		flat = aim * (speed if speed >= 0.0 else _num("pass_speed", 11.0))
 	return flat + Vector3.UP * _num("keeper_throw_lift", 1.5)
 
 
-## Long kick from the hands: high, landing near the teammate (or far along the aim).
-static func long_kick_velocity(keeper: Player, target: Player, aim: Vector3) -> Vector3:
+## Long kick from the hands: high, landing near the teammate (or far along the aim); with `power`
+## from the bar it lands keeper_long_kick_power_distance_* away, toward him (or along the aim).
+static func long_kick_velocity(keeper: Player, target: Player, aim: Vector3, power: float = -1.0) -> Vector3:
 	var lift := _num("keeper_long_kick_lift", 7.0)
+	var flight := 2.0 * lift / maxf(1.0, float(Config.get_value("ball", "gravity", 9.81)))
+	if power >= 0.0:
+		var dir := Steering.flat(target.position - keeper.position) if target != null else Steering.flat(aim)
+		var land := lerpf(_num("keeper_long_kick_power_distance_min", 10.0),
+			_num("keeper_long_kick_power_distance_max", 32.0), clampf(power, 0.0, 1.0))
+		return dir.normalized() * (land / flight) + Vector3.UP * lift
 	if target == null:
 		return aim * _num("keeper_long_kick_space_speed", 16.0) + Vector3.UP * lift
 	var to := Steering.flat(target.position - keeper.position)
-	var flight := 2.0 * lift / maxf(1.0, float(Config.get_value("ball", "gravity", 9.81)))
 	var speed := clampf(to.length() * _num("keeper_long_kick_landing", 0.9) / flight,
 		_num("keeper_long_kick_speed_min", 8.0), _num("keeper_long_kick_speed_max", 20.0))
 	return to.normalized() * speed + Vector3.UP * lift

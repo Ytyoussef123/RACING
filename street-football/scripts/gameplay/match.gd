@@ -216,7 +216,7 @@ func _update_hud(human_player: Player) -> void:
 		return
 	var head := human_player.global_position + Vector3(0.0, POWER_BAR_HEIGHT, 0.0)
 	var on_screen := not _camera.is_position_behind(head)
-	_hud.update_power(human_player.handling.shot_charge, on_screen and human_player.handling.is_charging,
+	_hud.update_power(human_player.handling.bar_value(), on_screen and human_player.handling.bar_shown(),
 		_camera.unproject_position(head))
 	var tag_point := human_player.global_position + Vector3(0.0, human_player.height + TAG_HEIGHT_OFFSET, 0.0)
 	_hud.update_player_tag(_tag_text(human_player), human_player.energy,
