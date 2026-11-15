@@ -69,7 +69,11 @@
 	"touch_follow_seconds": 0.16,
 	"touch_phase_steer_max_degrees": 110.0,
 
-	"kick_seconds": 0.3,
+	"_clips": "Kick and pass play recorded clips (data/animations/kick.json, pass.json): their length in seconds, and how fast they blend in and out (share of the clip).",
+	"kick_seconds": 0.6,
+	"pass_seconds": 0.5,
+	"clip_blend_in": 0.08,
+	"clip_blend_out": 0.6,
 	"kick_contact_thigh": 30.0,
 	"kick_contact_knee": 25.0,
 	"kick_follow_thigh": 78.0,

@@ -76,7 +76,7 @@ func update_look(delta: float) -> void:
 ## side: +1 right / -1 left (dive and shoulder direction); kicks use the preferred foot.
 ## reach: for a kick, how far the ball is (the body lunges toward a far ball).
 func animate(action: String, side: float = 1.0, reach: float = 0.0) -> void:
-	if action == "kick":
+	if action == "kick" or action == "pass":
 		side = -1.0 if preferred_foot == "left" else 1.0
 	_animator.play(action, side, reach)
 

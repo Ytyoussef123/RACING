@@ -86,8 +86,8 @@ func _turn_and_shoot(shot_name: String) -> void:
 ## of the first three heads (face, hair).
 func _lineup(shot_name: String) -> void:
 	var team_ids: Array = Roster.team_ids()
-	var poses := ["idle", "keeper", "jog", "sprint", "kick", "touch", "tackle", "dive"]
-	var freeze_at := {"kick": 0.05, "touch": 0.1, "tackle": 0.15, "dive": 0.25}
+	var poses := ["idle", "keeper", "jog", "pass", "kick", "kick_late", "tackle", "dive"]
+	var freeze_at := {"pass": 0.12, "kick": 0.08, "kick_late": 0.22, "tackle": 0.15, "dive": 0.25}
 	var bodies: Array[Player] = []
 	for i in range(poses.size()):
 		var team: TeamData = Roster.team(str(team_ids[i % team_ids.size()]))
@@ -100,17 +100,15 @@ func _lineup(shot_name: String) -> void:
 	for i in range(bodies.size()):
 		if poses[i] == "jog":
 			bodies[i].motion.velocity = Vector3.BACK * 2.6
-		elif poses[i] == "sprint":
-			bodies[i].motion.velocity = Vector3.BACK * 5.6
 	for i in range(30):
 		for p in bodies:
 			p.update_look(DT)
 	for i in range(bodies.size()):
 		match poses[i]:
-			"kick":
-				bodies[i].animate("kick", 1.0, 0.8)
-			"touch":
-				bodies[i].animate_touch(1.0, 0.1)
+			"kick", "kick_late":
+				bodies[i].animate("kick", 1.0, 0.6)
+			"pass":
+				bodies[i].animate("pass", 1.0, 0.6)
 			"tackle":
 				bodies[i].animate("tackle")
 			"dive":

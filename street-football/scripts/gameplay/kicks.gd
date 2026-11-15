@@ -144,7 +144,7 @@ static func kick(handling: BallHandling, player: Player, ctx: MatchContext, kick
 		target: Player, kind: String) -> void:
 	player.ball_in_hands = false
 	ctx.possession.kicked(player, target, ctx.ball, kind)
-	player.animate("kick", 1.0, player.flat_distance_to(ctx.ball.position))
+	player.animate("pass" if kind == "pass" else "kick", 1.0, player.flat_distance_to(ctx.ball.position))
 	ctx.emit_event("shot" if kind == "shot" else "pass", ctx.ball.position, kick_velocity.length())
 	ctx.ball.kick(kick_velocity, spin)
 	# The ball leaves his foot: his own body does not deflect it (kicks across the body).

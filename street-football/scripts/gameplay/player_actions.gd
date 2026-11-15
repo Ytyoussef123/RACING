@@ -8,8 +8,11 @@ extends RefCounted
 
 static func apply(p: RigPose, action: String, t: float, side: float, reach: float, cfg: Dictionary) -> void:
 	match action:
-		"kick":
-			_kick(p, t, side, reach, cfg)
+		"kick", "pass":
+			if PoseClips.has(action):
+				_clip_kick(p, action, t, side, reach, cfg)
+			else:
+				_kick(p, t, side, reach, cfg)
 		"tackle":
 			_tackle(p, t, side, cfg)
 		"shoulder":
@@ -35,6 +38,15 @@ static func _kick(p: RigPose, t: float, side: float, reach: float, cfg: Dictiona
 	p.blend_arm(side, -30.0, _n(cfg, "kick_arm_out", 55.0) * 0.5, 25.0, w)
 	p.blend(RigPose.SPINE_X, -deg_to_rad(_n(cfg, "kick_lean_back_degrees", 9.0)), w)
 	p.blend(RigPose.ROOT_X, 0.0, w)
+	var lunge := clampf(reach - _n(cfg, "kick_foot_reach", 0.6), 0.0, _n(cfg, "kick_lunge_max", 0.25))
+	p.add(RigPose.ROOT_FWD, lunge * w * (1.0 - smoothstep(0.1, 0.7, t)))
+
+
+## A recorded kick or pass (PoseClips "kick" / "pass"): it starts as the ball leaves the foot and
+## fades back into the run; a far ball still makes the body lunge.
+static func _clip_kick(p: RigPose, clip: String, t: float, side: float, reach: float, cfg: Dictionary) -> void:
+	var w := RigPose.envelope(t, _n(cfg, "clip_blend_in", 0.08), _n(cfg, "clip_blend_out", 0.6))
+	PoseClips.apply(p, clip, t, side, w)
 	var lunge := clampf(reach - _n(cfg, "kick_foot_reach", 0.6), 0.0, _n(cfg, "kick_lunge_max", 0.25))
 	p.add(RigPose.ROOT_FWD, lunge * w * (1.0 - smoothstep(0.1, 0.7, t)))
 
