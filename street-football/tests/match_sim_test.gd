@@ -9,7 +9,7 @@ extends Node
 
 const MATCH_SCENE := preload("res://scenes/match/match.tscn")
 const MATCH_SECONDS := 150.0
-const SEEDS: Array[int] = [11, 22, 33]
+const SEEDS: Array[int] = [11, 22, 33, 44, 55, 66]
 const MIN_TOTAL_GOALS := 3
 const STUCK_SECONDS := 8.0
 const SAFETY_SECONDS_PER_MATCH := 400.0
