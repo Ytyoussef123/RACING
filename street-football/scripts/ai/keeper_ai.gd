@@ -1,7 +1,8 @@
 class_name KeeperAI
 extends RefCounted
 ## Goalkeeper AI: stays between the ball and the goal, moves across to cover shots,
-## rushes loose balls near goal, saves (catch or parry), then passes out. Numbers: data/config/ai.json.
+## rushes loose balls near goal, saves (catch in his goal area, else parry), then plays it out:
+## a throw to a close teammate, a long kick otherwise (KeeperHands). Numbers: data/config/ai.json.
 
 
 static func intent_for(keeper: Player, delta: float, ctx: MatchContext) -> PlayerIntent:
@@ -65,18 +66,21 @@ static func try_save(keeper: Player, ctx: MatchContext) -> void:
 	ctx.stats.saves[keeper.team.index] += 1
 	keeper.animate_dive(ball.position)
 	ctx.emit_event("save", ball.position, speed)
-	if speed <= keeper.stat("keeper_catch_speed", Steering.num("keeper_catch_speed", 18.0)):
-		ball.place(keeper.position + keeper.motion.facing * 0.5 + Vector3.UP * ball.radius)
+	# He catches only in his own goal area (with his hands); elsewhere he blocks it away.
+	if speed <= keeper.stat("keeper_catch_speed", Steering.num("keeper_catch_speed", 18.0)) \
+			and KeeperHands.in_area(keeper, ctx):
 		possession.take(keeper, ball)
+		KeeperHands.take(keeper, ctx)
 	else:
 		var spread := Steering.num("keeper_parry_spread", 3.0)
-		ball.kick(Vector3(-ball.velocity.x * 0.35, Steering.num("keeper_parry_lift", 2.5),
-			ball.velocity.z * 0.4 + ctx.rng.randf_range(-spread, spread)), 0.0)
+		ball.kick(Vector3(-ball.velocity.x * Steering.num("keeper_parry_back", 0.35), Steering.num("keeper_parry_lift", 2.5),
+			ball.velocity.z * Steering.num("keeper_parry_side", 0.4) + ctx.rng.randf_range(-spread, spread)), 0.0)
 		possession.touched(keeper)
-		keeper.handling.block_control(0.4)
+		keeper.handling.block_control(Steering.num("keeper_parry_block_seconds", 0.4))
 
 
-## Holding the ball: wait a moment, then pass to the most open teammate.
+## Holding the ball: wait a moment, then play it to the most open teammate: a throw when he is
+## close, a long kick from the hands otherwise (a pass with the feet after a back-pass).
 static func _distribute(keeper: Player, delta: float, ctx: MatchContext) -> PlayerIntent:
 	var state := keeper.ai
 	var intent := PlayerIntent.new()
@@ -84,25 +88,35 @@ static func _distribute(keeper: Player, delta: float, ctx: MatchContext) -> Play
 	if state.hold_timer < Steering.num("keeper_hold_seconds", 1.0):
 		return intent
 	state.hold_timer = 0.0
-	var target := _best_outlet(keeper, ctx)
-	if target != null:
-		intent.move = Steering.flat(target.position - keeper.position).normalized()
+	var target := best_outlet(keeper, ctx)
+	intent.move = outlet_direction(keeper, ctx, target)
+	var far := target == null or keeper.flat_distance_to(target.position) > Steering.num("keeper_throw_max_distance", 14.0)
+	if keeper.ball_in_hands and far:
+		intent.through_pressed = true
 	else:
-		intent.move = Vector3(keeper.team.attack_sign, 0.0, 0.0)
-	intent.pass_pressed = true
+		intent.pass_pressed = true
 	return intent
 
 
-static func _best_outlet(keeper: Player, ctx: MatchContext) -> Player:
+## Direction to play the ball out: toward the best outlet, else straight up the court.
+static func outlet_direction(keeper: Player, ctx: MatchContext, target: Player = null) -> Vector3:
+	if target == null:
+		target = best_outlet(keeper, ctx)
+	if target != null:
+		return Steering.flat(target.position - keeper.position).normalized()
+	return Vector3(keeper.team.attack_sign, 0.0, 0.0)
+
+
+static func best_outlet(keeper: Player, ctx: MatchContext) -> Player:
 	var best: Player = null
 	var best_open := -INF
 	for mate in keeper.team.outfield():
 		var d := keeper.flat_distance_to(mate.position)
-		if d < 3.0 or d > 20.0:
+		if d < Steering.num("keeper_outlet_min_distance", 3.0) or d > Steering.num("keeper_outlet_max_distance", 26.0):
 			continue
 		var open := keeper.team.opponent.nearest_distance_to(mate.position)
 		if not CarrierAI.lane_clear(keeper.position, mate.position, keeper.team.opponent):
-			open -= 5.0
+			open -= Steering.num("keeper_outlet_blocked_penalty", 5.0)
 		if open > best_open:
 			best_open = open
 			best = mate

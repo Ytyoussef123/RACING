@@ -16,6 +16,8 @@ extends RefCounted
 
 ## Keepers stand in a ready stance.
 var keeper: bool = false
+## A keeper holding the ball in his hands: both arms in front.
+var holding: bool = false
 
 var _rig: PlayerRig
 var _pose: RigPose = RigPose.new()
@@ -87,6 +89,9 @@ func update(delta: float, velocity: Vector3, facing: Vector3, turn_rate: float, 
 		PlayerActions.apply(_pose, _action, t, _side, _reach, _cfg)
 		if t >= 1.0:
 			_action = ""
+	if holding:
+		for side in [-1.0, 1.0]:
+			_pose.blend_arm(side, _n("hold_arm_forward", 55.0), _n("hold_arm_out", 14.0), _n("hold_elbow", 70.0), 1.0)
 	# The head stays level when the body leans.
 	_pose.v[RigPose.NECK_X] = -(_pose.v[RigPose.ROOT_X] + _pose.v[RigPose.SPINE_X]) * _n("head_stabilize", 0.7)
 	_rig.apply(_pose)

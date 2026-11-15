@@ -44,6 +44,9 @@
 	"walk_lean_degrees": 3.0,
 	"walk_bob": 0.025,
 	"touch_walk_thigh_degrees": 24.0,
+	"hold_arm_forward": 55.0,
+	"hold_arm_out": 14.0,
+	"hold_elbow": 70.0,
 	"travel_smoothing": 12.0,
 	"travel_hips_share": 0.5,
 

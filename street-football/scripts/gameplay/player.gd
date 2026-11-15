@@ -32,6 +32,9 @@ var weak_foot: int = 4
 var sheet: Dictionary = {}
 ## Stamina left, 0..1: sprinting uses it, the rest of the time it comes back.
 var energy: float = 1.0
+## Keeper only: the ball is in his hands (KeeperHands), and for how long (seconds).
+var ball_in_hands: bool = false
+var hands_time: float = 0.0
 
 var _stun_move_factor: float
 ## Jointed body (look only): joints and meshes built under Body/Pose.
@@ -65,6 +68,7 @@ func _process(delta: float) -> void:
 func update_look(delta: float) -> void:
 	_rig.refresh()
 	_animator.keeper = is_keeper
+	_animator.holding = ball_in_hands
 	_animator.update(delta, motion.velocity, motion.facing, motion.turn_rate, motion.top_speed(true))
 
 
@@ -126,6 +130,9 @@ func reset_to(ground_position: Vector3, facing: Vector3) -> void:
 	motion.reset(facing)
 	intent = PlayerIntent.new()
 	stun_timer = 0.0
+	ghost_timer = 0.0
+	ball_in_hands = false
+	hands_time = 0.0
 	handling.reset()
 	ai.reset()
 	_update_visual()
@@ -147,6 +154,8 @@ func move(delta: float, court: CourtData, dribbling: bool) -> void:
 	_update_energy(delta, (sprint or knock_on) and dir.length() > 0.2, walk or dir.length() < 0.2)
 	motion.step(delta, dir, sprint, dribbling, walk, knock_on)
 	position += motion.velocity * delta
+	if ball_in_hands:
+		KeeperHands.clamp_to_area(self, court)
 	clamp_to_court(court)
 	_update_visual()
 

@@ -18,6 +18,9 @@ var pass_pressed: bool = false
 var through_pressed: bool = false
 ## True only on the frame SHOOT was pressed in our own half: a long clearance.
 var clear_pressed: bool = false
+## True only on the frame the joystick is double-tapped with the ball: a keeper holding the ball
+## in his hands puts it down at his feet.
+var drop_ball: bool = false
 ## True only on the frame a tackle is tried.
 var tackle_pressed: bool = false
 ## True only on the frame the human asks to switch player.

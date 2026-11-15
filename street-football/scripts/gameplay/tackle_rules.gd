@@ -37,15 +37,10 @@ static func success_chance(tackler: Player, carrier: Player) -> float:
 	return clampf(chance, 0.05, 0.95)
 
 
-## A keeper holding the ball inside his own goal area cannot be tackled.
-static func is_protected(carrier: Player, ctx: MatchContext) -> bool:
-	if not carrier.is_keeper:
-		return false
-	var court := ctx.court
-	var depth := court.number("goal_area_depth", 3.0)
-	var half_w := court.number("goal_area_width", 7.0) * 0.5
-	var from_line := absf(carrier.position.x - carrier.team.own_goal_x(court))
-	return from_line <= depth and absf(carrier.position.z) <= half_w
+## A keeper with the ball in his hands (always inside his goal area) cannot be tackled; with the
+## ball at his feet he can, like anyone.
+static func is_protected(carrier: Player, _ctx: MatchContext) -> bool:
+	return carrier.ball_in_hands
 
 
 static func _cfg(key: String, fallback: float) -> float:

@@ -88,11 +88,27 @@ func update(delta: float, player: Player, ctx: MatchContext) -> void:
 		is_charging = false
 		shot_charge = 0.0
 	if possession.holder == player:
-		if not dribbling.update(player, ctx, delta, not _queued.is_empty(), is_charging):
+		if player.ball_in_hands:
+			_in_hands(player, ctx, delta)
+		elif not dribbling.update(player, ctx, delta, not _queued.is_empty(), is_charging):
 			possession.release(ball)
 			_cooldown = _cfg("kick_cooldown", 0.35)
 	elif possession.holder == null or possession.holder.team != player.team:
-		_bounce_off_body(player, ctx)
+		BodyBounce.apply(player, ctx)
+	if player.ball_in_hands and possession.holder != player:
+		player.ball_in_hands = false
+
+
+## Keeper with the ball in his hands: hold it, put it down on a double tap, throw it when the
+## time in his hands is up (keeper_hands_seconds).
+func _in_hands(player: Player, ctx: MatchContext, delta: float) -> void:
+	if player.intent.drop_ball:
+		KeeperHands.drop(player, ctx)
+		return
+	KeeperHands.hold(player, ctx)
+	player.hands_time += delta
+	if player.hands_time >= _cfg("keeper_hands_seconds", 6.0) and _queued.is_empty():
+		_queue("pass", 0.0, KeeperAI.outlet_direction(player, ctx), true)
 
 
 func _tick_timers(delta: float) -> void:
@@ -110,6 +126,8 @@ func _try_take(player: Player, ctx: MatchContext) -> void:
 	if _cooldown > 0.0 or player.stun_timer > 0.0 or player.ghost_timer > 0.0 or not _can_take(player, ctx):
 		return
 	var holder := ctx.possession.holder
+	# Decided before the take (it forgets who passed last): a keeper's hands, not on a back-pass.
+	var hands := KeeperHands.may_handle(player, ctx)
 	if holder == null:
 		ctx.possession.take(player, ctx.ball)
 	elif Dribbling.can_steal(player, ctx):
@@ -117,6 +135,10 @@ func _try_take(player: Player, ctx: MatchContext) -> void:
 		holder.handling.dribbling.reset()
 		ctx.possession.take(player, ctx.ball)
 		ctx.stats.balls_won[player.team.index] += 1
+	else:
+		return
+	if hands:
+		KeeperHands.take(player, ctx)
 
 
 func _queue(kind: String, charge: float, aim: Vector3, dribbling_now: bool) -> void:
@@ -149,11 +171,15 @@ func _play_queued(player: Player, ctx: MatchContext) -> void:
 func _pass(player: Player, ctx: MatchContext, aim: Vector3) -> void:
 	var target := PassTargeting.choose(player, aim, ctx)
 	var kick_velocity: Vector3
-	if target != null:
+	if player.ball_in_hands:
+		kick_velocity = KeeperHands.throw_velocity(player, target, aim)
+	elif target != null:
 		kick_velocity = PassTargeting.pass_velocity(player, target)
 	else:
 		kick_velocity = aim * _cfg("pass_speed", 11.0) + Vector3.UP * _cfg("pass_lift", 0.0)
 	var error := player.stat("keeper_kick_error_degrees" if player.is_keeper else "pass_error_degrees", 0.0)
+	if player.ball_in_hands:
+		error *= _cfg("keeper_throw_error_mult", 0.6)
 	kick_velocity = KickAccuracy.with_error(kick_velocity,
 		error * KickAccuracy.weak_foot_mult(player, aim) * KickAccuracy.pace_mult(player), ctx)
 	ctx.stats.passes[player.team.index] += 1
@@ -166,6 +192,10 @@ func _through_pass(player: Player, ctx: MatchContext, aim: Vector3) -> void:
 	var error := player.stat("keeper_kick_error_degrees" if player.is_keeper else "through_error_degrees", 0.0)
 	error *= KickAccuracy.weak_foot_mult(player, aim) * KickAccuracy.pace_mult(player)
 	ctx.stats.passes[player.team.index] += 1
+	if player.ball_in_hands:
+		var long_kick := KeeperHands.long_kick_velocity(player, target, aim)
+		_kick(player, ctx, KickAccuracy.with_error(long_kick, error, ctx), 0.0, target, "pass")
+		return
 	if target == null:
 		_kick(player, ctx, KickAccuracy.with_error(aim * _cfg("through_space_speed", 10.0), error, ctx), 0.0, null, "pass")
 		return
@@ -207,6 +237,7 @@ func _clear(player: Player, ctx: MatchContext, aim: Vector3) -> void:
 
 func _kick(player: Player, ctx: MatchContext, kick_velocity: Vector3, spin: float, target: Player,
 		kind: String) -> void:
+	player.ball_in_hands = false
 	ctx.possession.kicked(player, target, ctx.ball, kind)
 	player.animate("kick", 1.0, player.flat_distance_to(ctx.ball.position))
 	ctx.emit_event("shot" if kind == "shot" else "pass", ctx.ball.position, kick_velocity.length())
@@ -215,27 +246,6 @@ func _kick(player: Player, ctx: MatchContext, kick_velocity: Vector3, spin: floa
 	player.ghost_timer = maxf(player.ghost_timer, _cfg("kick_pass_through_seconds", 0.15))
 	dribbling.reset()
 	_cooldown = _cfg("kick_cooldown", 0.35)
-
-
-func _bounce_off_body(player: Player, ctx: MatchContext) -> void:
-	var ball := ctx.ball
-	if ball.position.y > player.height or player.ghost_timer > 0.0:
-		return
-	var d := Vector2(ball.position.x - player.position.x, ball.position.z - player.position.z)
-	var min_dist := player.radius + ball.radius
-	var dist := d.length()
-	if dist >= min_dist or dist < 0.0001:
-		return
-	var n := d / dist
-	ball.position.x = player.position.x + n.x * min_dist
-	ball.position.z = player.position.z + n.y * min_dist
-	var rel := Vector2(ball.velocity.x - player.motion.velocity.x, ball.velocity.z - player.motion.velocity.z)
-	var vn := rel.dot(n)
-	if vn < 0.0:
-		var e := _cfg("body_restitution", 0.3)
-		ball.velocity.x -= (1.0 + e) * vn * n.x
-		ball.velocity.z -= (1.0 + e) * vn * n.y
-		ctx.possession.touched(player)
 
 
 ## Ball low enough, close enough and not too fast to control (ball control, jump), or to cut
@@ -259,6 +269,8 @@ func _can_kick(player: Player, ctx: MatchContext) -> bool:
 	var holder := ctx.possession.holder
 	if holder != null and holder != player:
 		return false
+	if player.ball_in_hands:
+		return true
 	var ball := ctx.ball
 	if ball.position.y > _cfg("kick_max_ball_height", 1.0):
 		return false

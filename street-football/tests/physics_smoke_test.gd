@@ -30,6 +30,7 @@ func _ready() -> void:
 	_test_steal_ball_knocked_ahead()
 	_test_shoulder_charge()
 	_test_skill_moves()
+	_test_keeper_hands()
 	print("TESTS DONE: %d failure(s)" % _failures)
 	get_tree().quit(1 if _failures > 0 else 0)
 
@@ -577,6 +578,82 @@ func _test_skill_moves() -> void:
 	_check("skill: a failed move is a bad touch (ball lost)", move == "failed" and ctx.possession.holder == null,
 		"move=%s" % move)
 	_free_setup(s)
+
+
+## Goalkeeper with the ball: hands in his area (safe, kept in the area, thrown or kicked long,
+## put down with a double tap, thrown after 6 s); a back-pass is played with the feet.
+func _test_keeper_hands() -> void:
+	var home := _make_team(0, 1.0)
+	var away := _make_team(1, -1.0)
+	home.opponent = away
+	away.opponent = home
+	var ctx := MatchContext.new()
+	ctx.court = CourtData.load_court("cage_concrete")
+	var goal_x := home.own_goal_x(ctx.court)
+	var keeper := _spawn(home, Vector3(goal_x + 1.0, 0.0, 0.0), Vector3.RIGHT)
+	keeper.is_keeper = true
+	home.keeper = keeper
+	var mate := _spawn(home, Vector3(goal_x + 9.0, 0.0, 2.0), Vector3.LEFT)
+	ctx.ball = _new_ball(Vector3(goal_x + 1.5, ball_radius(), 0.0), Vector3.ZERO)
+	keeper.intent = PlayerIntent.new()
+	keeper.handling.update(DT, keeper, ctx)
+	keeper.handling.update(DT, keeper, ctx)
+	_check("keeper: a ball he picks up in his area is in his hands", keeper.ball_in_hands
+		and ctx.possession.holder == keeper and ctx.ball.position.y > 0.7, "y=%.2f" % ctx.ball.position.y)
+	_check("keeper: with the ball in his hands nobody can tackle him", TackleRules.is_protected(keeper, ctx))
+	for i in range(120):
+		var walk := PlayerIntent.new()
+		walk.move = Vector3.RIGHT
+		keeper.intent = walk
+		keeper.move(DT, ctx.court, true)
+		keeper.handling.update(DT, keeper, ctx)
+	var depth := ctx.court.number("goal_area_depth", 3.0)
+	_check("keeper: with the ball in his hands he stays in his area", keeper.ball_in_hands
+		and keeper.position.x - goal_x <= depth + 0.01, "from line=%.2f" % (keeper.position.x - goal_x))
+	var kick := PlayerIntent.new()
+	kick.move = Vector3.RIGHT
+	kick.through_pressed = true
+	keeper.intent = kick
+	keeper.handling.update(DT, keeper, ctx)
+	_check("keeper: a long kick from his hands goes high and far", ctx.possession.holder == null
+		and ctx.ball.velocity.y > 5.0 and ctx.ball.velocity.x > 6.0, "v=%s" % ctx.ball.velocity)
+	# A back-pass from a teammate: played with the feet, and then he can be tackled.
+	_reset_keeper(keeper, ctx, goal_x)
+	ctx.possession.kicked(mate, keeper, ctx.ball, "pass")
+	keeper.handling.update(DT, keeper, ctx)
+	_check("keeper: a back-pass is played with his feet", ctx.possession.holder == keeper and not keeper.ball_in_hands)
+	_check("keeper: with the ball at his feet he can be tackled", not TackleRules.is_protected(keeper, ctx))
+	# In his hands again, then a double tap puts the ball down.
+	_reset_keeper(keeper, ctx, goal_x)
+	keeper.handling.update(DT, keeper, ctx)
+	var drop := PlayerIntent.new()
+	drop.drop_ball = true
+	keeper.intent = drop
+	keeper.handling.update(DT, keeper, ctx)
+	_check("keeper: a double tap puts the ball down at his feet", not keeper.ball_in_hands
+		and ctx.possession.holder == keeper and ctx.ball.position.y < 0.3, "y=%.2f" % ctx.ball.position.y)
+	# Held too long: after 6 s he throws it to the teammate.
+	_reset_keeper(keeper, ctx, goal_x)
+	var thrown := false
+	for i in range(int(6.6 / DT)):
+		keeper.intent = PlayerIntent.new()
+		keeper.handling.update(DT, keeper, ctx)
+		if ctx.possession.holder != keeper and i > 1:
+			thrown = true
+			break
+	_check("keeper: after 6 s in his hands he throws the ball", thrown and ctx.ball.velocity.x > 0.0,
+		"v=%s" % ctx.ball.velocity)
+	keeper.queue_free()
+	mate.queue_free()
+
+
+## Keeper back in front of his goal with a loose ball at his feet, nobody's pass on record.
+func _reset_keeper(keeper: Player, ctx: MatchContext, goal_x: float) -> void:
+	keeper.reset_to(Vector3(goal_x + 1.0, 0.0, 0.0), Vector3.RIGHT)
+	keeper.intent = PlayerIntent.new()
+	ctx.possession = Possession.new()
+	ctx.possession.stats = ctx.stats
+	ctx.ball.place(Vector3(goal_x + 1.5, ball_radius(), 0.0))
 
 
 func ball_radius() -> float:

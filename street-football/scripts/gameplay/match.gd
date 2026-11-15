@@ -90,7 +90,7 @@ func _physics_process(delta: float) -> void:
 		_human.update(delta, intent, ctx)
 		human_player = _human.controlled
 		human_player.intent = HumanAssists.apply(human_player, intent, attacking, delta, ctx, _human)
-		_touch.set_defense_layout(not attacking, clearing)
+		_touch.set_defense_layout(not attacking, clearing, human_player.ball_in_hands)
 	for team in ctx.teams:
 		team.brain.update(delta, ctx, human_player)
 	var playing := flow.state == MatchFlow.State.PLAYING
@@ -227,7 +227,8 @@ func _update_hud(human_player: Player) -> void:
 func _tag_text(player: Player) -> String:
 	if player.profile == null:
 		return ""
-	return "%d  %s  %d" % [player.number, player.display_name, Ratings.overall(player.profile, player.role)]
+	var tag := "%d  %s  %d" % [player.number, player.display_name, Ratings.overall(player.profile, player.role)]
+	return tag + "  " + tr("HUD_HANDS") if player.ball_in_hands else tag
 
 
 func _on_formation_pressed() -> void:

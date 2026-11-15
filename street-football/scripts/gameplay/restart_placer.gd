@@ -52,6 +52,9 @@ static func apply_restart(ctx: MatchContext, plan: Dictionary) -> void:
 	ctx.ball.place(spot + Vector3.UP * ctx.ball.radius)
 	taker.reset_to(spot - into * 0.6, into)
 	ctx.possession.take(taker, ctx.ball)
+	# Goal kick: the keeper starts with the ball in his hands.
+	if taker.is_keeper:
+		KeeperHands.take(taker, ctx)
 	var clear := float(Config.get_value("match", "restart_clear_distance", 3.0))
 	for opp in team.opponent.players:
 		var to := Steering.flat(opp.position - spot)

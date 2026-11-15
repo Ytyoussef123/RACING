@@ -30,11 +30,12 @@ func update(delta: float, intent: PlayerIntent, ctx: MatchContext) -> void:
 	var possession := ctx.possession
 	var holder := possession.holder
 	var ball_pos := ctx.ball.position
-	if holder != null and holder.team == team and not holder.is_keeper:
+	# Our keeper too: with the ball he is ours to play (throw, kick, or with his feet).
+	if holder != null and holder.team == team:
 		select(holder)
 		return
 	var target := possession.pass_target
-	if holder == null and target != null and target.team == team and not target.is_keeper:
+	if holder == null and target != null and target.team == team:
 		select(target)
 		return
 	if intent.switch_pressed:

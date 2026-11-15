@@ -69,6 +69,8 @@ func read(attacking: bool, clearing: bool = false) -> PlayerIntent:
 		intent.pass_pressed = pass_tap
 		intent.through_pressed = through_tap
 		intent.sprint = sprint_hold
+		# Keeper with the ball in his hands: a double tap puts it down at his feet.
+		intent.drop_ball = double_tap
 		if flick != Vector2.ZERO:
 			intent.skill = Vector3(flick.x, 0.0, flick.y)
 		elif c_tap:
