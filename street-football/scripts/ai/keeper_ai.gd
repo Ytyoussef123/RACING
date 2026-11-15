@@ -72,6 +72,8 @@ static func try_save(keeper: Player, ctx: MatchContext) -> void:
 		return
 	state.last_save_kick = possession.kick_count
 	if ctx.rng.randf() >= KeeperSave.chance(keeper, ctx):
+		# Beaten: the ball goes past him (his body does not block it as a second save).
+		keeper.ghost_timer = maxf(keeper.ghost_timer, Steering.num("keeper_beaten_ghost_seconds", 0.3))
 		return
 	ctx.stats.saves[keeper.team.index] += 1
 	keeper.animate_dive(ball.position)

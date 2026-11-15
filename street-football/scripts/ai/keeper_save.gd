@@ -5,7 +5,8 @@ extends RefCounted
 ##   placement: how far from him it will pass (keeper_save_center_mult at him .. corner_mult at the
 ##              edge of his reach);
 ##   speed:     keeper_save_slow_mult at 10 m/s .. fast_mult at 26 m/s;
-##   height:    keeper_save_high_mult when it passes above keeper_save_high_height (top corners);
+##   height:    keeper_save_high_mult when it passes above keeper_save_high_height (top corners),
+##              keeper_save_low_mult below keeper_save_low_height (he has to get down);
 ##   curl:      minus keeper_save_spin_penalty at full spin.
 ## A chip over his head never comes within his reach (KeeperAI.try_save checks the height).
 ## Numbers: data/config/ai.json (keeper_save_*).
@@ -22,7 +23,9 @@ static func chance(keeper: Player, ctx: MatchContext) -> float:
 	mult *= lerpf(Steering.num("keeper_save_slow_mult", 1.1), Steering.num("keeper_save_fast_mult", 0.8), fast)
 	if cross.y > Steering.num("keeper_save_high_height", 1.6):
 		mult *= Steering.num("keeper_save_high_mult", 0.75)
-	mult *= 1.0 - minf(1.0, absf(ball.spin)) * Steering.num("keeper_save_spin_penalty", 0.25)
+	elif cross.y < Steering.num("keeper_save_low_height", 0.4):
+		mult *= Steering.num("keeper_save_low_mult", 0.85)
+	mult *= 1.0 - minf(1.0, absf(ball.spin)) * Steering.num("keeper_save_spin_penalty", 0.45)
 	return clampf(base * mult, Steering.num("keeper_save_min_chance", 0.03), 0.97)
 
 
