@@ -398,13 +398,17 @@ func _test_touch_dribbling() -> void:
 	_check("touch dribble: several touches, ball goes ahead", int(run[2]) >= 2 and float(run[1]) > 0.6,
 		"touches=%d lead=%.2f" % [run[2], run[1]])
 	_check("touch dribble: keeps the ball when sprinting", bool(sprint[0]))
-	_check("walk dribble: walking pace, ball kept at the feet", bool(walk[0]) and float(walk[3]) > 1.4
-		and float(walk[3]) < 2.6 and float(walk[1]) < 0.8, "speed=%.2f lead=%.2f" % [walk[3], walk[1]])
+	# Walking pace with the ball: the walk speed slowed by dribbling (player.json), give or take 30 %.
+	var walk_pace := float(Config.get_value("player", "walk_speed", 1.55)) \
+		* float(Config.get_value("player", "dribble_speed_factor", 0.92))
+	_check("walk dribble: walking pace, ball kept at the feet", bool(walk[0]) and float(walk[3]) > walk_pace * 0.7
+		and float(walk[3]) < walk_pace * 1.3 and float(walk[1]) < 0.8,
+		"speed=%.2f pace=%.2f lead=%.2f" % [walk[3], walk_pace, walk[1]])
 	_check("sprint dribble: faster than running, ball still close", float(sprint[1]) < 1.0
-		and float(sprint[3]) > float(run[3]) + 1.0, "lead=%.2f speed=%.2f run speed=%.2f" % [sprint[1], sprint[3], run[3]])
+		and float(sprint[3]) > float(run[3]) * 1.2, "lead=%.2f speed=%.2f run speed=%.2f" % [sprint[1], sprint[3], run[3]])
 	_check("knock-on: ball pushed 1 to 1.6 m ahead and caught again", bool(knock[0]) and int(knock[2]) >= 2
 		and float(knock[1]) > 1.0 and float(knock[1]) < 1.6, "touches=%d lead=%.2f" % [knock[2], knock[1]])
-	_check("knock-on: faster than sprint dribbling", float(knock[3]) > float(sprint[3]) + 0.3,
+	_check("knock-on: faster than sprint dribbling", float(knock[3]) > float(sprint[3]) * 1.04,
 		"knock-on=%.2f sprint=%.2f" % [knock[3], sprint[3]])
 
 

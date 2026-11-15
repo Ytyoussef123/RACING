@@ -37,14 +37,14 @@ var _dribble_turn_mult: float = 1.0
 
 
 func _init() -> void:
-	_run_speed = _cfg("run_speed", 5.5)
-	_sprint_speed = _cfg("sprint_speed", 7.8)
+	_run_speed = _cfg("run_speed", 3.9)
+	_sprint_speed = _cfg("sprint_speed", 5.5)
 	_dribble_factor = _cfg("dribble_speed_factor", 0.92)
 	_acceleration = _cfg("acceleration", 22.0)
 	_deceleration = _cfg("deceleration", 28.0)
 	_turn_speed = deg_to_rad(_cfg("turn_speed_degrees", 720.0))
 	_dribble_turn_speed = deg_to_rad(_cfg("dribble_turn_speed_degrees", 540.0))
-	_walk_speed = _cfg("walk_speed", 2.2)
+	_walk_speed = _cfg("walk_speed", 1.55)
 	_grip_walk = _cfg("turn_grip_walk", 1.3)
 	_grip_sprint = _cfg("turn_grip_sprint", 0.6)
 	_knock_on_factor = _cfg("knock_on_speed_factor", 1.0)

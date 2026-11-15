@@ -99,9 +99,9 @@ func _lineup(shot_name: String) -> void:
 		bodies.append(p)
 	for i in range(bodies.size()):
 		if poses[i] == "jog":
-			bodies[i].motion.velocity = Vector3.BACK * 4.0
+			bodies[i].motion.velocity = Vector3.BACK * 2.8
 		elif poses[i] == "sprint":
-			bodies[i].motion.velocity = Vector3.BACK * 7.5
+			bodies[i].motion.velocity = Vector3.BACK * 5.3
 	for i in range(30):
 		for p in bodies:
 			p.update_look(DT)

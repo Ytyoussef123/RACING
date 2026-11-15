@@ -190,7 +190,7 @@ func _test_through_pass_to_runner() -> void:
 	var carrier := _home.players[2]
 	var att_p := _home.players[4]
 	att_p.ai.run_left = 2.0
-	att_p.motion.velocity = Vector3(6.0, 0.0, 0.0)
+	att_p.motion.velocity = Vector3(5.0, 0.0, 0.0)
 	_home.tuning.through_tendency = 1.0
 	var intent := CarrierAI._decide(carrier, _ctx)
 	_home.tuning.through_tendency = AiTuning.for_difficulty("normal").through_tendency

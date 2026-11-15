@@ -72,13 +72,13 @@ func update(delta: float, velocity: Vector3, facing: Vector3, turn_rate: float, 
 	var speed := Vector2(velocity.x, velocity.z).length()
 	var forward := velocity.x * facing.x + velocity.z * facing.z
 	var sideways := velocity.z * facing.x - velocity.x * facing.z
-	var target_move := smoothstep(_n("move_blend_min_speed", 0.15), _n("move_blend_full_speed", 1.6), speed)
+	var target_move := smoothstep(_n("move_blend_min_speed", 0.15), _n("move_blend_full_speed", 1.1), speed)
 	_move = move_toward(_move, target_move, delta * _n("move_blend_rate", 6.0))
 	_advance_phase(delta, speed, forward)
 	_update_leans(delta, speed, forward, turn_rate)
 	_update_travel(delta, speed, forward, sideways)
 	var sprint := clampf(speed / maxf(1.0, top_speed), 0.0, 1.0)
-	_walk = 1.0 - smoothstep(_n("walk_gait_full_speed", 2.4), _n("run_gait_speed", 3.4), speed)
+	_walk = 1.0 - smoothstep(_n("walk_gait_full_speed", 1.7), _n("run_gait_speed", 2.4), speed)
 	_pose.clear()
 	_running_pose(sprint)
 	_idle_pose()

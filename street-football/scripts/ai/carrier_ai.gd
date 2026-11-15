@@ -179,7 +179,7 @@ static func _runner(player: Player, ctx: MatchContext) -> Player:
 	for mate in team.outfield():
 		if mate == player or (mate.ai.run_left <= 0.0 and mate.ai.go_left <= 0.0):
 			continue
-		if Steering.flat(mate.motion.velocity).length() < Steering.num("through_min_runner_speed", 3.0):
+		if Steering.flat(mate.motion.velocity).length() < Steering.num("through_min_runner_speed", 2.1):
 			continue
 		if team.to_frac(mate.position.x, court) <= my_frac:
 			continue
