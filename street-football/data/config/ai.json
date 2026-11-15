@@ -184,8 +184,8 @@
 	"lofted_ai_max_back_frac": 0.1,
 
 	"_shot_types": "Keeper saves (KeeperSave): difficulty chance x reflexes x placement (center_mult at him .. corner_mult at the edge of his reach) x speed (slow_mult at 10 m/s .. fast_mult at 26 m/s) x high_mult above high_height x (1 - spin_penalty at full spin). Keeper comes off his line as an opponent with the ball closes in: from keeper_out_start_distance to keeper_out_full_distance of the goal center, up to keeper_out_max. AI shot types (AiShots): chip if the keeper is ai_chip_keeper_out off his line, curl from ai_curl_min..max_distance, low within ai_low_max_distance.",
-	"keeper_save_center_mult": 1.2,
-	"keeper_save_corner_mult": 0.6,
+	"keeper_save_center_mult": 1.1,
+	"keeper_save_corner_mult": 0.55,
 	"keeper_save_slow_mult": 1.1,
 	"keeper_save_fast_mult": 0.8,
 	"keeper_save_high_height": 1.6,
