@@ -12,8 +12,8 @@ static func choose(player: Player, ctx: MatchContext, dist_to_goal: float) -> St
 	var keeper_out := 0.0
 	if keeper != null:
 		keeper_out = absf(keeper.position.x - player.team.target_goal_x(ctx.court))
-	if keeper_out >= Steering.num("ai_chip_keeper_out", 1.5) \
-			and dist_to_goal >= Steering.num("ai_chip_min_distance", 8.0) \
+	if keeper_out >= Steering.num("ai_chip_keeper_out", 1.4) \
+			and dist_to_goal >= Steering.num("ai_chip_min_distance", 5.0) \
 			and dist_to_goal <= Steering.num("ai_chip_max_distance", 15.0) and ctx.rng.randf() < tuning.chip_tendency:
 		return "chip"
 	if dist_to_goal >= Steering.num("ai_curl_min_distance", 8.0) and dist_to_goal <= Steering.num("ai_curl_max_distance", 16.0) \
