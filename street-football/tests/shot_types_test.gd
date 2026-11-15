@@ -213,12 +213,12 @@ func _test_keeper_comes_out() -> void:
 		"near=%.2f far=%.2f" % [near, far])
 
 
-## How far off his line the keeper stands after 1.5 s with an attacker holding the ball at `at`.
+## How far off his line the keeper stands after 3 s with an attacker holding the ball at `at`.
 func _keeper_line_distance(at: Vector3) -> float:
 	var setup := _setup(at)
 	var ctx: MatchContext = setup[0]
 	var keeper: Player = setup[4]
-	for i in range(90):
+	for i in range(180):
 		keeper.intent = KeeperAI.intent_for(keeper, DT, ctx)
 		keeper.move(DT, ctx.court, false)
 	return ctx.court.half_length - keeper.position.x
