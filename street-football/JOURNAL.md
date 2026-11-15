@@ -15,9 +15,51 @@ A dated log, newest entry first: what was done, what was decided and why, and wh
 | 7 | Progression: coins, unlocks, upgrades, save system | Done, waiting for phone test |
 | 8 | Release build: optimized APK, full file review | Not started |
 
-The player-motion work is an extra feature branch between Phase 7 and Phase 8 (`feature/player-motion`, created from `feature/progression`), waiting for the phone test. `feature/broadcast-camera` (created from `feature/player-motion`) adds camera views and also waits for the phone test. `feature/speed-modes` (created from `feature/broadcast-camera`) adds walk, run, sprint and knock-on, and waits for the phone test. `feature/shot-on-target` (created from `feature/speed-modes`) adds shots on target and CLEAR, and waits for the phone test. `feature/keeper-ball` (created from `feature/shot-on-target`) adds the goalkeeper with the ball (hands or feet), and waits for the phone test. `feature/team-movement` (created from `feature/keeper-ball`) adds team movement (creating space), and waits for the phone test. `feature/kick-power` (created from `feature/team-movement`) adds the power bar for every kick, and waits for the phone test. `feature/lofted-pass` (created from `feature/kick-power`) adds lofted passes, and waits for the phone test.
+The player-motion work is an extra feature branch between Phase 7 and Phase 8 (`feature/player-motion`, created from `feature/progression`), waiting for the phone test. `feature/broadcast-camera` (created from `feature/player-motion`) adds camera views and also waits for the phone test. `feature/speed-modes` (created from `feature/broadcast-camera`) adds walk, run, sprint and knock-on, and waits for the phone test. `feature/shot-on-target` (created from `feature/speed-modes`) adds shots on target and CLEAR, and waits for the phone test. `feature/keeper-ball` (created from `feature/shot-on-target`) adds the goalkeeper with the ball (hands or feet), and waits for the phone test. `feature/team-movement` (created from `feature/keeper-ball`) adds team movement (creating space), and waits for the phone test. `feature/kick-power` (created from `feature/team-movement`) adds the power bar for every kick, and waits for the phone test. `feature/lofted-pass` (created from `feature/kick-power`) adds lofted passes, and waits for the phone test. `feature/shot-types` (created from `feature/lofted-pass`) adds the shot types, and waits for the phone test.
 
 ## Log
+
+### 2026-11-15 — Shot types (step 3)
+
+#### Why
+
+- Planning talk with the user. Decisions: the power bar decides only the power; a slide on SHOOT decides the type: slide up = chip ("like Panenka"), left or right = curled shot that always curls toward the far post (Q4: any side), down = low shot always on the ground, no slide = normal shot (depends on the player's skills). For the curled shot the user described: good power goes in the corner, a bit too much hits the post or bar and comes back, too much goes over, too little makes a weak curve and the keeper takes it. The good-power zone depends on the player. No type label next to the bar (Q5 no). The keeper's save depends on the shot itself (speed, corner, height, curve, whether he is off his line); a hard shot can be pushed out (rebound).
+- Later: Blitz shot, tackles, slide tackle, fouls, volleys, penalties.
+
+#### Done
+
+- Gesture: press SHOOT, slide the finger (more up/down than sideways = chip/low; more sideways = curl; at least `button_slide_fraction` 0.5 of the radius), release. The slide is read while held and as the finger is lifted; the type read during the hold is kept for the release. Keys on a PC: V chip, B curled shot, N low shot (each also works as SHOOT; hold for power). Clearances (SHOOT in our own half) ignore the slide. The bar sets only the power (`shot_charge_time` 0.9 s as before).
+- Normal shot (no slide): unchanged.
+- Low shot: along the ground, speed 11 to 24 m/s by the bar, never over the bar; more aim error in the red end.
+- Chip: a lob aimed at the ShotAim point, coming down 4 to 24 m away by the bar, apex 2.6 + 0.06 per meter (clamped 2.8 to 4.2 m), well above a keeper's reach. Its ideal power brings it through the goal line at 1.2 m from any distance. Too little power: comes down short; right: drops under the bar; too much: over the bar.
+- Curled shot: aimed 0.5 m inside the far post (the post opposite the shooter; from the middle, the post away from the keeper) at 1.3 m height, spin 0.8 bending it back. The launch direction is found on simulated flights so that at the ideal power it starts wide of the far post and curls back inside it. Ideal power 0.3 + 0.025 per meter, clamped 0.35 to 0.85. Right power: in the corner; a bit too much: faster, less curl, higher (post or bar); too much: over the bar; too little: slower, more curl, into the middle where the keeper is.
+- Good-power zone by the player (`ShotTypes.skilled`): the power the shot really gets is the ideal plus the bar's distance from it times the finisher's error over 3 degrees, clamped 0.5 to 1.3. A good finisher's mistake counts half, a poor one's 1.3 times. Used by the chip and the curl.
+- Keeper saves (new `scripts/ai/keeper_save.gd`, `KeeperSave.chance`): one roll when the shot comes within his reach: difficulty chance (easy 0.4, normal 0.6, hard 0.68, was 0.75) x reflexes x placement (1.65 at him to 0.85 at the edge of his reach) x speed (1.1 at 10 m/s to 0.9 at 26 m/s) x height (0.75 above 1.6 m, 0.85 below 0.4 m) x (1 - 0.45 x spin); clamped 0.03 to 0.97. A hard shot is still parried (rebound) above the catch speed. A ball already behind the keeper (0.3 m; a chip over his head) cannot be saved. A beaten keeper is ghosted for 0.3 s: the ball goes past him; before, his body blocked it as a hidden second save.
+- The keeper comes off his line as an opponent with the ball closes in: from 8 m to 4 m from the goal center, up to 1.8 m (never more than half the distance to the ball).
+- AI (new `scripts/ai/ai_shots.gd`, `AiShots`): a chip when the keeper is 1.4 m or more off his line and the goal is 5 to 15 m away (tendency easy 0.1, normal 0.2, hard 0.3); a curled shot from 8 to 16 m (0.1 / 0.2 / 0.3); a low shot within 8 m (0.2 / 0.25 / 0.3); otherwise the normal shot. A chip or curl gets its ideal power give or take `shot_power_error` (0.15 / 0.08 / 0.04), kept below the red end.
+- New `scripts/gameplay/shot_types.gd` (`ShotTypes`: low, chip, chip_ideal_power, curl, curl_target, curl_ideal_power, far_side, skilled). Changed: `kicks.gd`, `lofted_kick.gd` (`velocity_with_apex`), `ball_handling.gd`, `player_intent.gd`, `human_input.gd`, `receive_assist.gd`, `possession.gd` (`last_shot_type`), `keeper_ai.gd`, `carrier_ai.gd`, `ai_player_state.gd`, `ai_tuning.gd`, `player.json`, `ai.json`.
+- Tests: new `tests/shot_types_test.gd` (+ `.tscn`), 19 checks, and CI step "Shot types tests (headless)" printing `SHOT TYPES TESTS DONE: N failure(s)`. `tests/match_sim_test.gd` prints MATCH SHOT TYPES.
+- Branch `feature/shot-types`, final commit `ee8884b`.
+
+#### Numbers
+
+- CI run on `ee8884b`: all suites pass. Balance (6 AI matches, per match: goals / shots / saves; before the branch 4.17 / 27.5 / 14.5), in order:
+  - `f32a1fd` first version: 2.33 / 28.7 / 13.2 (short AI chips flew over; a chip could be "saved" behind the keeper).
+  - `d9129e5` chip crosses the line at 1.2 m, no save behind the keeper, fewer AI chips: 3.00 / 29.3 / 12.2.
+  - `8c4cb11` save multipliers 1.1 / 0.55: 2.83 / 28.2 / 12.2.
+  - `faefa44` per-type diagnosis: normal shots missed 45 % (32 % before): the keeper came out too far (2.5 m).
+  - `beb4243` keeper comes out less (1.8 m from 8 m): 4.00 / 29.7 / 11.5, but AI low shots 0 goals in 29 and curls 0 in 6 (his body blocked the ball after a failed save).
+  - `a174bcf` beaten keeper lets the ball through, low x0.85, spin penalty 0.45: 8.50 / 28.3 / 11.5 (the body block had been a big hidden save).
+  - `e16e4b1` save roll retuned (center 1.45, corner 0.75, fast 0.9, hard 0.68): 6.17 / 27.0 / 12.7.
+  - `86ecb21` center 1.65, corner 0.85: 4.83 / 31.0 / 17.2.
+  - `ee8884b` AI chips from 5 m with the keeper 1.4 m out (it never chipped before): 4.83 / 27.5 / 17.3 (final).
+- By type over 6 matches (shots, saved, goals): normal 114, 80, 13; low 20, 11, 4; chip 7, 5, 0; curl 16, 8, 4; other goals (rebounds, deflections) 8. Passes about 54 per team per match.
+- Commits `594437d` and `3ad5bf5` only fixed the come-out test timing.
+
+#### Next
+
+- Phone test, not done yet: each slide on SHOOT (up chip, left or right curl, down low) with too little, right and too much power; a chip when the keeper comes out; curls from both sides; the keeper saving shots at him more than in the corners. Nothing merged to main yet.
+- Later: Blitz shot, tackles, slide tackle, fouls, volleys, penalties.
 
 ### 2026-11-15 — Lofted pass and lofted through ball (step 2)
 
