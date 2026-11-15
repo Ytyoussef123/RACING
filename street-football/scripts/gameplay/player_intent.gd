@@ -23,6 +23,12 @@ var clear_pressed: bool = false
 var pass_held: bool = false
 var through_held: bool = false
 var clear_held: bool = false
+## With PASS / THROUGH: the ball goes in the air (the human slid the finger up on the button, or
+## the AI chose it). Its length comes from the power bar (or kick_power).
+var pass_lofted: bool = false
+var through_lofted: bool = false
+## AI only: the power of this frame's PASS / THROUGH press, 0..1 (-1: automatic).
+var kick_power: float = -1.0
 ## True only on the frame the joystick is double-tapped with the ball: a keeper holding the ball
 ## in his hands puts it down at his feet.
 var drop_ball: bool = false

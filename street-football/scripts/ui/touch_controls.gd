@@ -70,6 +70,18 @@ func consume_press(id: String) -> bool:
 	return button != null and button.consume_press()
 
 
+## Direction the finger slid on button `id` (held, or at its release; screen axes, length 1), or
+## ZERO when it moved less than button_slide_fraction of the button's radius.
+func slide_direction(id: String) -> Vector2:
+	var button: ActionButton = _buttons.get(id)
+	if button == null:
+		return Vector2.ZERO
+	var slide := button.slide()
+	if slide.length() < button.radius * _num("button_slide_fraction", 0.5):
+		return Vector2.ZERO
+	return slide.normalized()
+
+
 ## Shows the defense labels (TACKLE, SWITCH, PRESS, MATCH-UP) or the attack labels.
 ## Button labels: defense, attack, attack in our own half (SHOOT = CLEAR), or our keeper with
 ## the ball in his hands (THROW, LONG KICK, CLEAR).
@@ -107,6 +119,10 @@ func _input(event: InputEvent) -> void:
 		var drag := event as InputEventScreenDrag
 		if drag.index == _joystick.finger:
 			_joystick.drag(drag.position, _now())
+		for id in BUTTON_IDS:
+			var button: ActionButton = _buttons[id]
+			if button.finger == drag.index:
+				button.drag(drag.position)
 
 
 func _finger_down(index: int, pos: Vector2) -> void:
@@ -116,7 +132,7 @@ func _finger_down(index: int, pos: Vector2) -> void:
 	for id in BUTTON_IDS:
 		var button: ActionButton = _buttons[id]
 		if not button.is_held() and button.contains(pos, _hit_scale):
-			button.press(index)
+			button.press(index, pos)
 			return
 
 

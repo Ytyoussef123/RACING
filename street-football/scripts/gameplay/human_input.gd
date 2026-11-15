@@ -5,13 +5,14 @@ extends RefCounted
 ##   with the ball:     THROUGH (tap/hold)  SHOOT (hold)   PASS (tap/hold)  SPRINT (hold)
 ##   without the ball:  MATCH-UP (hold)     TACKLE (tap)   SWITCH (tap)     PRESS (hold)
 ## PASS, THROUGH and CLEAR (SHOOT in our own half) kick on release: a tap with the automatic
-## power, a longer hold with the power bar's (BallHandling).
+## power, a longer hold with the power bar's (BallHandling). PASS or THROUGH with the finger slid
+## up on the button: the ball goes in the air (lofted pass, lofted through ball).
 ## Double-tap the joystick without the ball: shoulder charge. Flick it with the ball: skill move.
 ## Speed steps: joystick pushed softly = walk, fully = run, SPRINT = sprint; pulled hard twice with
 ## the ball = knock-on mode (until the stick is softened or released, or a pass / shot / skill).
 ## Without the ball, PRESS with the joystick moved sprints where it points; PRESS alone presses.
 ## Keyboard, same order: R, Space, E, Shift; WASD / arrows move; Q always switches; F shoulder;
-## C skill move in the direction held; Ctrl walk; K knock-on.
+## C skill move in the direction held; Ctrl walk; K knock-on; T lofted pass, G lofted through ball.
 
 var _touch: TouchControls
 var _keys_down: Dictionary = {}
@@ -49,12 +50,16 @@ func read(attacking: bool, clearing: bool = false) -> PlayerIntent:
 	var flick := _touch.consume_stick_flick()
 	var c_tap := _key_tapped(KEY_C)
 	var shoot_tap := _touch.consume_press("shoot") or space_tap
-	var pass_tap := _touch.consume_press("pass") or e_tap
-	var through_tap := _touch.consume_press("through") or r_tap
+	var t_tap := _key_tapped(KEY_T)
+	var g_tap := _key_tapped(KEY_G)
+	var pass_tap := _touch.consume_press("pass") or e_tap or t_tap
+	var through_tap := _touch.consume_press("through") or r_tap or g_tap
 	_touch.consume_press("sprint")
 	var shoot_hold := _touch.is_held("shoot") or Input.is_physical_key_pressed(KEY_SPACE)
-	var pass_hold := _touch.is_held("pass") or Input.is_physical_key_pressed(KEY_E)
-	var through_hold := _touch.is_held("through") or Input.is_physical_key_pressed(KEY_R)
+	var pass_hold := _touch.is_held("pass") or Input.is_physical_key_pressed(KEY_E) \
+		or Input.is_physical_key_pressed(KEY_T)
+	var through_hold := _touch.is_held("through") or Input.is_physical_key_pressed(KEY_R) \
+		or Input.is_physical_key_pressed(KEY_G)
 	var sprint_hold := _touch.is_held("sprint") or Input.is_physical_key_pressed(KEY_SHIFT)
 	var shoot_as := _pressed_kind("shoot", shoot_tap, shoot_hold,
 		("clear" if clearing else "shot") if attacking else "tackle")
@@ -66,6 +71,8 @@ func read(attacking: bool, clearing: bool = false) -> PlayerIntent:
 		intent.shoot_held = shoot_as == "shot"
 		intent.pass_held = pass_as == "pass"
 		intent.through_held = through_as == "through"
+		intent.pass_lofted = _slid_up("pass") or Input.is_physical_key_pressed(KEY_T)
+		intent.through_lofted = _slid_up("through") or Input.is_physical_key_pressed(KEY_G)
 		intent.sprint = sprint_hold
 		# Keeper with the ball in his hands: a double tap puts it down at his feet.
 		intent.drop_ball = double_tap
@@ -90,6 +97,11 @@ func read(attacking: bool, clearing: bool = false) -> PlayerIntent:
 		intent.shoulder_pressed = double_tap or f_tap
 	_touch.set_knock_on_active(intent.knock_on)
 	return intent
+
+
+## The finger slid up on `button` (more up than sideways): held, or as it was lifted.
+func _slid_up(button: String) -> bool:
+	return _touch != null and _touch.slide_direction(button).y < -0.7
 
 
 ## What `button` means for this press: set on the press (to `now`), kept while it is held, "" once

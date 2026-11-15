@@ -19,6 +19,10 @@ var skill_tendency: float = 0.15
 var run_rate: float = 0.5
 var through_tendency: float = 0.55
 var give_go_chance: float = 0.6
+## Ball in the air to a far, open teammate when no ground pass is on: chance per decision, and how
+## far off its power can be (0..1 of the bar).
+var lofted_tendency: float = 0.35
+var lofted_power_error: float = 0.07
 
 
 static func for_difficulty(difficulty_name: String) -> AiTuning:
@@ -39,4 +43,6 @@ static func for_difficulty(difficulty_name: String) -> AiTuning:
 	t.run_rate = float(d.get("run_rate", t.run_rate))
 	t.through_tendency = float(d.get("through_tendency", t.through_tendency))
 	t.give_go_chance = float(d.get("give_go_chance", t.give_go_chance))
+	t.lofted_tendency = float(d.get("lofted_tendency", t.lofted_tendency))
+	t.lofted_power_error = float(d.get("lofted_power_error", t.lofted_power_error))
 	return t

@@ -16,7 +16,9 @@
 			"skill_tendency": 0.05,
 			"run_rate": 0.25,
 			"through_tendency": 0.3,
-			"give_go_chance": 0.3
+			"give_go_chance": 0.3,
+			"lofted_tendency": 0.2,
+			"lofted_power_error": 0.12
 		},
 		"normal": {
 			"decision_interval": 0.28,
@@ -31,7 +33,9 @@
 			"skill_tendency": 0.15,
 			"run_rate": 0.5,
 			"through_tendency": 0.55,
-			"give_go_chance": 0.6
+			"give_go_chance": 0.6,
+			"lofted_tendency": 0.35,
+			"lofted_power_error": 0.07
 		},
 		"hard": {
 			"decision_interval": 0.15,
@@ -46,7 +50,9 @@
 			"skill_tendency": 0.3,
 			"run_rate": 0.8,
 			"through_tendency": 0.75,
-			"give_go_chance": 0.85
+			"give_go_chance": 0.85,
+			"lofted_tendency": 0.5,
+			"lofted_power_error": 0.04
 		}
 	},
 	"role_shift": {
@@ -159,5 +165,9 @@
 	"give_go_seconds": 1.6,
 	"give_go_distance": 7.0,
 	"give_go_center_pull": 0.3,
-	"give_go_side_step": 2.0
+	"give_go_side_step": 2.0,
+	"lofted_ai_min_distance": 9.0,
+	"lofted_ai_max_distance": 26.0,
+	"lofted_ai_open_distance": 3.5,
+	"lofted_ai_max_back_frac": 0.1
 }

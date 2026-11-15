@@ -9,6 +9,7 @@
 	"joystick_radius": 0.13,
 	"joystick_dead_zone": 0.12,
 	"button_hit_scale": 1.25,
+	"button_slide_fraction": 0.5,
 	"shoot_position": [
 		0.925,
 		0.5

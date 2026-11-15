@@ -12,6 +12,7 @@
 		"dribble_touch_extra_mult": {"stat": "dribbling", "low": 1.25, "high": 0.8},
 		"dribble_exposed_distance": {"stat": "tight_possession", "low": 0.65, "high": 1.0},
 		"control_radius": {"stat": "ball_control", "low": 0.8, "high": 1.0},
+		"air_control_chance": {"stat": "ball_control", "low": 0.55, "high": 0.95},
 		"control_max_relative_speed": {"stat": "ball_control", "low": 14.0, "high": 19.0},
 		"intercept_radius": {"stat": "interception", "low": 0.8, "high": 1.05},
 		"control_max_ball_height": {"stat": "jump", "low": 0.5, "high": 0.8},

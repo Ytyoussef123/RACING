@@ -99,6 +99,16 @@ jobs:
             exit 1
           fi
 
+      - name: Lofted pass tests (headless)
+        run: |
+          godot --headless --path "$PROJECT_DIR" res://tests/lofted_pass_test.tscn --quit-after 3000 2>&1 | tee lofted.log
+          grep -E "TEST (PASS|FAIL)" lofted.log || true
+          if ! grep -q "LOFTED TESTS DONE: 0 failure" lofted.log; then
+            echo "::error::Lofted pass tests failed or did not finish (see above)."
+            awk '/SCRIPT ERROR|ERROR:/ && !seen[$0]++' lofted.log | head -30
+            exit 1
+          fi
+
       - name: Progression tests (headless)
         run: |
           godot --headless --path "$PROJECT_DIR" res://tests/progression_test.tscn --quit-after 3000 2>&1 | tee progression.log

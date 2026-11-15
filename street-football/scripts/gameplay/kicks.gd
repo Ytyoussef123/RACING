@@ -1,7 +1,7 @@
 class_name Kicks
 extends RefCounted
-## The kicks: pass (and the keeper's throw from his hands), through pass (and his long kick), shot
-## and clearance, with their speed, lift, spin and accuracy.
+## The kicks: pass (and the keeper's throw from his hands), through pass (and his long kick), shot,
+## clearance, and the lofted pass / lofted through ball, with their speed, lift, spin and accuracy.
 ## `power` is 0..1 from the power bar when the button was held, or AUTO for a tap (and for the
 ## AI): the game picks the strength by itself, as before the power bar.
 ## In the red end of the bar (kick_red_zone..1) a pass or clearance is harder to place, and a shot
@@ -88,6 +88,31 @@ static func clear(handling: BallHandling, player: Player, ctx: MatchContext, aim
 	var lift := by_power(power, _cfg("clear_lift", 6.5), _cfg("clear_power_lift_min", 4.0),
 		_cfg("clear_power_lift_max", 7.5))
 	kick(handling, player, ctx, KickAccuracy.with_error(dir * speed + Vector3.UP * lift, error, ctx), 0.0, null, "clear")
+
+
+## A ball in the air (PASS or THROUGH with the finger slid up): toward the teammate on the stick's
+## side, where he will be when it comes down (a through ball: the space in front of him), landing
+## as far as the bar says (LoftedKick). AUTO (no power given) lands it at him.
+static func lofted(handling: BallHandling, player: Player, ctx: MatchContext, aim: Vector3, power: float,
+		through: bool) -> void:
+	var target := PassTargeting.choose(player, aim, ctx)
+	var dir := Steering.flat(aim).normalized()
+	var auto_distance := LoftedKick.distance_for(0.5)
+	if target != null:
+		var spot := PassTargeting.through_spot(player, target, ctx) if through else target.position
+		if not through:
+			var flight := LoftedKick.flight_time(player.flat_distance_to(spot))
+			spot += Steering.flat(target.motion.velocity) * flight * _cfg("pass_lead_factor", 0.8)
+		var to := Steering.flat(spot - ctx.ball.position)
+		if to.length() > 0.01:
+			dir = to.normalized()
+			auto_distance = to.length()
+	var distance := by_power(power, auto_distance, LoftedKick.distance_for(0.0), LoftedKick.distance_for(1.0))
+	var error := player.stat("keeper_kick_error_degrees" if player.is_keeper else "through_error_degrees", 0.0)
+	error *= KickAccuracy.weak_foot_mult(player, dir) * KickAccuracy.pace_mult(player) * red_zone_mult(power)
+	ctx.stats.passes[player.team.index] += 1
+	var kick_velocity := LoftedKick.velocity(ctx.ball.position, dir, distance)
+	kick(handling, player, ctx, KickAccuracy.with_error(kick_velocity, error, ctx), 0.0, target, "pass")
 
 
 static func kick(handling: BallHandling, player: Player, ctx: MatchContext, kick_velocity: Vector3, spin: float,

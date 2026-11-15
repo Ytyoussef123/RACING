@@ -1,8 +1,9 @@
 class_name CarrierAI
 extends RefCounted
 ## AI for the player with the ball: shoot when in range, play a through pass to a teammate
-## running in behind, pass when pressed or a teammate is better placed, otherwise dribble toward
-## goal around defenders. Numbers: data/config/ai.json.
+## running in behind, pass when pressed or a teammate is better placed (in the air to a far, open
+## teammate when no ground pass is on: LoftedAI), otherwise dribble toward goal around defenders.
+## Numbers: data/config/ai.json.
 
 
 static func intent_for(player: Player, delta: float, ctx: MatchContext) -> PlayerIntent:
@@ -53,6 +54,10 @@ static func _decide(player: Player, ctx: MatchContext) -> PlayerIntent:
 			intent.pass_pressed = true
 			state.action = AiPlayerState.Action.NONE
 			return intent
+		var far := LoftedAI.target(player, ctx)
+		if far != null and ctx.rng.randf() < tuning.lofted_tendency:
+			state.action = AiPlayerState.Action.NONE
+			return LoftedAI.intent(player, far, ctx)
 	state.action = AiPlayerState.Action.DRIBBLE
 	return null
 

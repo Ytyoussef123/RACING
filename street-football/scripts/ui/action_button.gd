@@ -10,19 +10,38 @@ var label_key: String = ""
 var finger: int = -1
 
 var _presses: int = 0
+## Where the finger went down and where it is now; how far it had slid when it was lifted.
+var _press_pos: Vector2 = Vector2.ZERO
+var _finger_pos: Vector2 = Vector2.ZERO
+var _last_slide: Vector2 = Vector2.ZERO
 
 
 func contains(pos: Vector2, hit_scale: float) -> bool:
 	return pos.distance_to(center) <= radius * hit_scale
 
 
-func press(index: int) -> void:
+func press(index: int, pos: Vector2 = Vector2.ZERO) -> void:
 	finger = index
 	_presses += 1
+	_press_pos = pos
+	_finger_pos = pos
+	_last_slide = Vector2.ZERO
+
+
+func drag(pos: Vector2) -> void:
+	_finger_pos = pos
 
 
 func release() -> void:
+	if finger >= 0:
+		_last_slide = _finger_pos - _press_pos
 	finger = -1
+
+
+## How far the finger slid since the press (screen pixels): while held, or at its release (until
+## the next press).
+func slide() -> Vector2:
+	return _finger_pos - _press_pos if finger >= 0 else _last_slide
 
 
 func is_held() -> bool:
