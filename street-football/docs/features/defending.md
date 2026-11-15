@@ -1,14 +1,14 @@
 # Defending
 
-Last change: 2026-11-15, PRESS with the joystick moved = sprint where it points (branch `feature/speed-modes`, commit `a89cab9`)
+Last change: 2026-11-15, tackle protection now = the carrier has the ball in his hands (branch `feature/keeper-ball`, commit `346d461`). Before that: 2026-11-15, PRESS with the joystick moved = sprint where it points (branch `feature/speed-modes`, commit `a89cab9`)
 
 ## What it does now
 - When your team does not have the ball, the four buttons switch to the defense layout: THROUGH -> MATCH-UP, SHOOT -> TACKLE, PASS -> SWITCH, SPRINT -> PRESS (eFootball-style "Dash & Pressure"). Keyboard: R, Space, E (switch: Q), Shift.
 - PRESS (hold SPRINT on defense): the selected player goes to take the ball by himself: sprints goal-side of the carrier, then to the ball, auto-tackles in reach. On a loose ball he sprints to where he can meet it.
 - PRESS with the joystick moved = sprint where the stick points; PRESS alone = the automatic press above (user decision 2026-11-15). The code is in `scripts/gameplay/human_assists.gd` (`HumanAssists`), out of `match.gd`.
 - MATCH-UP (hold): shadows the carrier goal-side at `match_up_contain_distance` (1.6 m), follows his moves, no auto tackle (tap TACKLE).
-- TACKLE: in reach (`tackle_reach` 1.3 m) a chance to knock the ball loose (`tackle_success` 0.55, from tackling and the carrier's balance). A miss slows the tackler. Tackling when nobody has the ball does not stun. A keeper holding the ball in his goal area cannot be tackled.
-- Shoulder charge: double-tap the joystick when your side does not have the ball (keyboard F). Within `shoulder_reach` 1.4 m: win and the carrier is pushed, off balance, cannot retake the ball for a moment and the ball comes loose; lose and the charger bounces off and is slowed. Too far: a small lunge and a short slowdown. Decided by strength (plus a little balance): chance = 0.5 + strength difference x 0.01, clamped 0.15 to 0.85. The keeper is protected in his goal area.
+- TACKLE: in reach (`tackle_reach` 1.3 m) a chance to knock the ball loose (`tackle_success` 0.55, from tackling and the carrier's balance). A miss slows the tackler. Tackling when nobody has the ball does not stun. A keeper with the ball in his HANDS cannot be tackled; with the ball at his feet he can be tackled anywhere, even in his area (`TackleRules.is_protected` = the carrier has the ball in his hands; before: any keeper inside his area).
+- Shoulder charge: double-tap the joystick when your side does not have the ball (keyboard F). Within `shoulder_reach` 1.4 m: win and the carrier is pushed, off balance, cannot retake the ball for a moment and the ball comes loose; lose and the charger bounces off and is slowed. Too far: a small lunge and a short slowdown. Decided by strength (plus a little balance): chance = 0.5 + strength difference x 0.01, clamped 0.15 to 0.85. A keeper with the ball in his hands is protected.
 - Automatic switch: when defending, control jumps to a teammate who is clearly closer. SWITCH jumps to the teammate nearest the ball.
 - Balls won (tackles, shoulder charges, steals) are counted in the match stats.
 
@@ -22,6 +22,7 @@ Last change: 2026-11-15, PRESS with the joystick moved = sprint where it points 
 - Tests: `tests/physics_smoke_test.gd`: "shoulder charge: about half the duels won at equal strength", "shoulder charge: out of reach keeps the ball with the carrier", "shoulder charge: the stronger player has more chance", steal checks. `tests/stats_test.tscn`: tackling and balance, strength in shoulder duels.
 
 ## History (newest first)
+- 2026-11-15: `TackleRules.is_protected` = the carrier has the ball in his hands (before: any keeper inside his area). With the ball at his feet the keeper can be tackled anywhere. The double tap on defense is still the shoulder charge (the ball-drop double tap is attack only). Why: user request, the keeper with the ball in hands or at feet. Branch `feature/keeper-ball`, commit `346d461`. Test: "keeper: with the ball in his hands nobody can tackle him", "keeper: with the ball at his feet he can be tackled".
 - 2026-11-15: PRESS with the joystick moved = sprint where it points; PRESS alone = automatic press as before. Code moved to `HumanAssists` (`scripts/gameplay/human_assists.gd`). Why: user decision, part of the speed modes. Branch `feature/speed-modes`, commit `a89cab9`.
 - 2026-11-14: Phase 6: tackle and shoulder events feed sounds and effects (scuff, dust puffs), tackle lean and shoulder lean animations. Branch `feature/polish`, commit `cff05f4`.
 - 2026-11-14: Phase 4: tackling, balance and strength stats drive success; shoulder duel uses strength plus a little balance; match stats count balls won. Branch `feature/player-stats`, commits `d4786b9`, `f613738`.
@@ -35,7 +36,7 @@ Last change: 2026-11-15, PRESS with the joystick moved = sprint where it points 
 - PRESS with the joystick moved is a plain sprint where it points (user decision, 2026-11-15); only PRESS alone is the automatic press.
 - Shoulder charge on a joystick double tap, decided by strength (and a little balance), as the user asked. Do not make it a fixed chance.
 - Labels and meaning of the four buttons switch with possession (`HumanControl.is_attacking`); SWITCH is the PASS button on defense.
-- A keeper holding the ball in his goal area cannot be tackled or shoulder-charged.
+- A keeper with the ball in his hands cannot be tackled or shoulder-charged; with the ball at his feet he can (user decision, 2026-11-15; before, any keeper in his area was protected).
 - MATCH-UP does not auto-tackle (tap TACKLE).
 
 ## How to check after a change

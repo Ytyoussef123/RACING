@@ -1,6 +1,6 @@
 # Passing and receiving
 
-Last change: 2026-11-15, kick accuracy moved to `KickAccuracy`, the kicked ball passes through the kicker (branch `feature/shot-on-target`, commits `436f156`, `acc04df`). Before that: 2026-11-15, pass error depends on the speed mode (branch `feature/speed-modes`, commit `a89cab9`). Before that: 2026-11-14, kick buffer while dribbling: kicks only played with the ball in reach (branch `feature/five-v-five`, commit `1d96a5e`).
+Last change: 2026-11-15, keeper throw and long kick from the hands, back-pass rule (branch `feature/keeper-ball`, commit `346d461`). Before that: 2026-11-15, kick accuracy moved to `KickAccuracy`, the kicked ball passes through the kicker (branch `feature/shot-on-target`, commits `436f156`, `acc04df`). Before that: 2026-11-15, pass error depends on the speed mode (branch `feature/speed-modes`, commit `a89cab9`). Before that: 2026-11-14, kick buffer while dribbling: kicks only played with the ball in reach (branch `feature/five-v-five`, commit `1d96a5e`).
 
 ## What it does now
 - PASS (tap): the ball goes to the teammate on the joystick's side, even if he is not exactly on the line (pass assist). Cone 70 degrees, scored mostly by angle, small penalty for a blocked lane. If nobody is in the cone, the teammate closest to the joystick direction is chosen, up to 120 degrees; beyond that, no pass. The ball goes to where the receiver is running (`pass_lead_factor`).
@@ -13,16 +13,24 @@ Last change: 2026-11-15, kick accuracy moved to `KickAccuracy`, the kicked ball 
 - Kicks are only played with the ball within reach (`kick_reach` 1.1 m, ball not higher than `kick_max_ball_height`). A pass, through pass or shot asked a little early is queued (kick buffer, `kick_buffer_seconds` 0.5 s, or 1.2 s while dribbling with the aim chosen at the press) and played when the ball is reached. No kicking from a distance.
 - Control switches to the receiver when a pass leaves for a teammate. A pass deflected by the other team stops being a pass (`Possession.touched`).
 - On defense the PASS button becomes SWITCH (see `defending.md`).
+- Keeper with the ball in his HANDS (rules in `ai.md`):
+  - PASS = throw: pass speed by distance, plus `keeper_throw_lift` 1.5, error x `keeper_throw_error_mult` 0.6 (`KeeperHands.throw_velocity`).
+  - THROUGH = long kick: lift `keeper_long_kick_lift` 7 m/s, speed chosen so the ball lands `keeper_long_kick_landing` 0.9 of the way to the teammate, between `keeper_long_kick_speed_min` 8 and `keeper_long_kick_speed_max` 20 m/s; with no teammate, `keeper_long_kick_space_speed` 16 m/s into space (`KeeperHands.long_kick_velocity`).
+  - SHOOT = clear (the existing CLEAR).
+  - A kick from the hands is always allowed (`_can_kick` is true for a ball in the hands) and clears `ball_in_hands` (`_kick`).
+- Back-pass rule: a ball he receives from a teammate's pass can only be played with his feet (`KeeperHands.may_handle` is false when the last kick was a "pass" by a teammate). Other balls in his area (shots, clearances, loose balls) can be caught.
 
 ## Where it lives
 - Code: `scripts/gameplay/pass_targeting.gd` (PassTargeting): `choose`, `_score`, `pass_velocity`, `through_velocity`.
 - Code: `scripts/gameplay/receive_assist.gd` (ReceiveAssist): `intercept_point`, `apply`.
-- Code: `scripts/gameplay/ball_handling.gd` (BallHandling): `_pass`, `_through_pass`, `_queue`, `_play_queued`, `_can_kick`, `_with_error`. `scripts/gameplay/possession.gd` (Possession): `kicked`, `touched`.
+- Code: `scripts/gameplay/ball_handling.gd` (BallHandling): `_pass`, `_through_pass`, `_queue`, `_play_queued`, `_can_kick`, `_with_error`, `_try_take`, `_in_hands`. `scripts/gameplay/keeper_hands.gd` (KeeperHands): `in_area`, `may_handle`, `take`, `hold`, `drop`, `clamp_to_area`, `throw_velocity`, `long_kick_velocity`. `scripts/gameplay/possession.gd` (Possession): `kicked`, `touched`.
 - Numbers: `data/config/player.json` -> `pass_*` (`pass_cone_degrees` 70, `pass_assist_max_degrees` 120, `pass_angle_weight` 3.0, `pass_distance_weight` 0.04, `pass_blocked_penalty` 0.8, `pass_speed_base` 6.0, `pass_speed_per_meter` 0.55, `pass_speed_min` 7, `pass_speed_max` 16, `pass_lead_factor` 0.8, `pass_target_min_distance` 1.5, `pass_target_max_distance` 24); `through_*` (`through_lead_distance` 4, `through_forward_weight` 0.6, `through_speed_min` 7, `through_speed_max` 15, ...); `receive_*` (`receive_prediction_seconds` 2.0, `receive_speed_margin` 0.85, `receive_arrive_distance` 0.8, `receive_sprint_distance` 2.5); `kick_reach` 1.1, `kick_buffer_seconds` 0.5, `kick_buffer_dribble_seconds` 1.2, `kick_cooldown` 0.35.
+- Numbers: `data/config/player.json` -> keeper hands: `keeper_hands_seconds` 6, `keeper_hands_height` 1.0, `keeper_hands_forward` 0.3, `keeper_hands_line_margin` 0.3, `keeper_throw_lift` 1.5, `keeper_throw_error_mult` 0.6, `keeper_long_kick_lift` 7, `keeper_long_kick_landing` 0.9, `keeper_long_kick_speed_min` 8, `keeper_long_kick_speed_max` 20, `keeper_long_kick_space_speed` 16. `keeper_throw_max_distance` 14 is in `ai.json`.
 - Numbers: `data/config/stat_effects.json` -> `pass_error_degrees`, `through_error_degrees`, `through_lead_mult`.
 - Tests: `tests/physics_smoke_test.gd`: "pass assist: teammate 50 degrees off the line", "pass assist: fallback to the closest direction", "pass assist: no pass backwards past the limit", "receive assist: meeting point is on the ball's path", "receive assist: receiver controls the pass", "through pass: aimed ahead of the receiver", "through pass: speed within limits". `tests/stats_test.tscn`: passing stats.
 
 ## History (newest first)
+- 2026-11-15: keeper with the ball in his hands: PASS = throw, THROUGH = long kick, SHOOT = clear; back-pass rule (a teammate's pass = feet only); `_pass` and `_through_pass` handle the hands case, `_in_hands` drops the ball on `intent.drop_ball` and queues a throw after 6 s. Why: user request, accepted with the back-pass rule and the 6 s limit. Branch `feature/keeper-ball`, commit `346d461`. Tests: "keeper: a long kick from his hands goes high and far", "keeper: a back-pass is played with his feet", "keeper: after 6 s in his hands he throws the ball".
 - 2026-11-15: kick accuracy moved from `BallHandling` to `KickAccuracy` (`with_error`, `weak_foot_mult`, `pace_mult`); after any kick the ball passes through the kicker for 0.15 s. Why: `BallHandling` had to stay under ~300 lines; a pass or shot back across the kicker's body hit his own collision circle and bounced away. Branch `feature/shot-on-target`, commits `436f156`, `acc04df`.
 - 2026-11-15: pass error by speed mode (x0.85 walking, x1.15 sprinting, x1.2 knock-on). Why: the user's design of the speed modes. Branch `feature/speed-modes`, commit `a89cab9`.
 - 2026-11-14: kicks need the ball within `kick_reach`; a kick asked while the ball is ahead waits up to 1.2 s with the aim chosen at the press, and `DribbleAssist` runs the player onto the ball. User feedback (touch dribbling request). Branch `feature/five-v-five`, commit `1d96a5e`.
@@ -39,6 +47,7 @@ Last change: 2026-11-15, kick accuracy moved to `KickAccuracy`, the kicked ball 
 - A pass deflected by the other team stops being a pass (`Possession.touched`).
 
 - The kicked ball passes through the kicker for `kick_pass_through_seconds` 0.15 s; without it a pass across his own body bounces off him.
+- Back-pass rule: a teammate's pass to the keeper is played with his feet, never caught (user decision, 2026-11-15).
 
 ## How to check after a change
 - CI: `tests/physics_smoke_test.tscn` checks listed above, `tests/stats_test.tscn`.

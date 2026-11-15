@@ -36,7 +36,8 @@ Match:
 - Your team is orange (keeper yellow) and attacks to the right. The AI team is cyan (keeper purple, formation 1-2-1).
 - Top: score and clock, court name under it. PAUSE (top-left) opens the pause menu: RESUME, FORMATION (changes your formation) or QUIT MATCH.
 - The team that conceded kicks off. At FULL TIME the results screen opens.
-- Rules: one player controls the ball at a time. A tackle in reach has a chance to knock the ball loose; a miss slows the tackler briefly. A keeper holding the ball in his goal area can't be tackled. Players push each other apart.
+- Rules: one player controls the ball at a time. A tackle in reach has a chance to knock the ball loose; a miss slows the tackler briefly. A keeper holding the ball in his hands can't be tackled. Players push each other apart.
+- Your keeper protects the goal by himself. When he has the ball you control him. In his HANDS (name tag shows "(HANDS)") he cannot leave his area: THROW (PASS) to a teammate, LONG BALL (THROUGH), or CLEAR (SHOOT); after 6 seconds he throws by himself. Double tap the joystick to put the ball down at his feet; then he plays like a normal player and can leave the area (and be tackled). He catches only inside his area, and a teammate's pass back to him must be played with his feet (back-pass rule). The opponent keeper follows the same rules; goal kicks start with the ball in the keeper's hands.
 
 Touch (phone):
 

@@ -15,9 +15,45 @@ A dated log, newest entry first: what was done, what was decided and why, and wh
 | 7 | Progression: coins, unlocks, upgrades, save system | Done, waiting for phone test |
 | 8 | Release build: optimized APK, full file review | Not started |
 
-The player-motion work is an extra feature branch between Phase 7 and Phase 8 (`feature/player-motion`, created from `feature/progression`), waiting for the phone test. `feature/broadcast-camera` (created from `feature/player-motion`) adds camera views and also waits for the phone test. `feature/speed-modes` (created from `feature/broadcast-camera`) adds walk, run, sprint and knock-on, and waits for the phone test. `feature/shot-on-target` (created from `feature/speed-modes`) adds shots on target and CLEAR, and waits for the phone test.
+The player-motion work is an extra feature branch between Phase 7 and Phase 8 (`feature/player-motion`, created from `feature/progression`), waiting for the phone test. `feature/broadcast-camera` (created from `feature/player-motion`) adds camera views and also waits for the phone test. `feature/speed-modes` (created from `feature/broadcast-camera`) adds walk, run, sprint and knock-on, and waits for the phone test. `feature/shot-on-target` (created from `feature/speed-modes`) adds shots on target and CLEAR, and waits for the phone test. `feature/keeper-ball` (created from `feature/shot-on-target`) adds the goalkeeper with the ball (hands or feet), and waits for the phone test.
 
 ## Log
+
+### 2026-11-15 — Goalkeeper with the ball: hands or feet
+
+#### Why
+
+- The user asked that the keeper keeps protecting the goal automatically, but when he has the ball the user controls him like a player, in two cases: ball in his HANDS (he caught it): he can move but cannot leave his box, and can pass or throw from the box; ball at his FEET: he plays like a normal player and can leave the box.
+- I proposed these rules and he accepted them ("complete everything"): back-pass rule (a teammate's pass = feet only), 6 s limit in the hands then an automatic throw, a joystick double tap to put the ball down to the feet, catching only inside his area (outside he blocks it away), goal kicks start in his hands, a "(HANDS)" mark on his name tag, the same rules for the opponent keeper, and the area kept at its current size (`goal_area_depth` 3.5 m and `goal_area_width` 8 m on `cage_concrete` and `open_lot`; 3.2 m and 7.5 m on `rooftop_cage` and `beach_sand`).
+
+#### Done
+
+- New `scripts/gameplay/keeper_hands.gd` (`KeeperHands`): `in_area`, `may_handle` (in his area and not a back-pass), `take`, `hold` (ball at `keeper_hands_height` 1.0 m, `keeper_hands_forward` 0.3 m in front, never closer than `keeper_hands_line_margin` 0.3 m to his goal line), `drop` (ball to his feet at `dribble_distance`), `clamp_to_area`, `throw_velocity` (pass speed by distance + `keeper_throw_lift` 1.5, error x `keeper_throw_error_mult` 0.6), `long_kick_velocity` (lift `keeper_long_kick_lift` 7 m/s, lands `keeper_long_kick_landing` 0.9 of the way to the teammate, 8 to 20 m/s; 16 m/s into space with no teammate).
+- `Player.ball_in_hands`, `Player.hands_time`; `Player.move` clamps to the area while in hands; the body holds both arms in front (`animation.json` -> `hold_arm_forward`, `hold_arm_out`, `hold_elbow`).
+- `BallHandling`: `_try_take` decides hands before taking; `_in_hands` holds the ball, drops it on `intent.drop_ball`, queues a throw to the best outlet after `keeper_hands_seconds` 6; `_can_kick` is always true for a ball in the hands; `_pass` from the hands = throw; `_through_pass` = long kick; SHOOT = clear; `_kick` clears `ball_in_hands`.
+- `TackleRules.is_protected` = the carrier has the ball in his hands (before: any keeper inside his area). At his feet the keeper can be tackled anywhere.
+- `KeeperAI.try_save` catches only inside his area, else parries/blocks; `_distribute` throws to a teammate within `keeper_throw_max_distance` 14 m, else a long kick, a foot pass after a back-pass; `best_outlet` and `outlet_direction` are public. Hard-coded numbers moved to `ai.json`: `keeper_outlet_min_distance` 3, `keeper_outlet_max_distance` 26 (was 20), `keeper_outlet_blocked_penalty` 5, `keeper_parry_back` 0.35, `keeper_parry_side` 0.4, `keeper_parry_block_seconds` 0.4.
+- `RestartPlacer.apply_restart`: a goal kick starts with the ball in the keeper's hands.
+- `HumanControl`: the human controls his keeper whenever the keeper has the ball (and when a back-pass is coming to him); on defense the keeper stays automatic.
+- `HumanInput`: `intent.drop_ball` (`PlayerIntent.drop_ball`) = joystick double tap in attack; on defense the double tap is still the shoulder charge.
+- Labels with our keeper holding the ball: THROW, LONG BALL, CLEAR, SPRINT (`TouchControls.HANDS_LABELS`, `set_defense_layout(defense, clearing, hands)`); name tag "(HANDS)" / "(MAINS)" (`HUD_HANDS`).
+- `scripts/gameplay/body_bounce.gd` (`BodyBounce.apply`): the ball bouncing off bodies moved out of `BallHandling` (file size rule). `Player.reset_to` also clears `ghost_timer`.
+- Branch `feature/keeper-ball`, commit `346d461`.
+
+#### Numbers
+
+- `data/config/player.json`: `keeper_hands_seconds` 6, `keeper_hands_height` 1.0, `keeper_hands_forward` 0.3, `keeper_hands_line_margin` 0.3, `keeper_throw_lift` 1.5, `keeper_throw_error_mult` 0.6, `keeper_long_kick_lift` 7, `keeper_long_kick_landing` 0.9, `keeper_long_kick_speed_min` 8, `keeper_long_kick_speed_max` 20, `keeper_long_kick_space_speed` 16.
+- `data/config/ai.json`: `keeper_throw_max_distance` 14, `keeper_outlet_*` and `keeper_parry_*` (see Done).
+
+#### Checked
+
+- New physics tests, all pass: "keeper: a ball he picks up in his area is in his hands", "keeper: with the ball in his hands nobody can tackle him", "keeper: with the ball in his hands he stays in his area", "keeper: a long kick from his hands goes high and far", "keeper: a back-pass is played with his feet", "keeper: with the ball at his feet he can be tackled", "keeper: a double tap puts the ball down at his feet", "keeper: after 6 s in his hands he throws the ball".
+- Balance over 6 AI matches: 4.17 goals, 27.8 shots, 15.3 saves per match (was 4.67 / 30.3 / 16.2).
+
+#### Next
+
+- Phone test: the keeper in his hands and at his feet, the double tap, the 6 s throw, the back-pass.
+- Team movement (creating space), as agreed with the user.
 
 ### 2026-11-15 — Shots on target and CLEAR
 

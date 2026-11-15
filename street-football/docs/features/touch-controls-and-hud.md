@@ -1,6 +1,6 @@
 # Touch controls and match HUD
 
-Last change: 2026-11-15, SHOOT becomes CLEAR in our own half (branch `feature/shot-on-target`, commit `436f156`). Before that: 2026-11-15, joystick speed steps (walk / run), double pull = knock-on, PRESS with the stick = sprint (branch `feature/speed-modes`, commit `a89cab9`)
+Last change: 2026-11-15, labels for our keeper with the ball in his hands, double tap drops the ball, "(HANDS)" tag (branch `feature/keeper-ball`, commit `346d461`). Before that: 2026-11-15, SHOOT becomes CLEAR in our own half (branch `feature/shot-on-target`, commit `436f156`). Before that: 2026-11-15, joystick speed steps (walk / run), double pull = knock-on, PRESS with the stick = sprint (branch `feature/speed-modes`, commit `a89cab9`)
 
 ## What it does now
 - Floating joystick on the left part of the screen (it appears under the thumb). Four buttons in an eFootball-style diamond on the right.
@@ -8,7 +8,9 @@ Last change: 2026-11-15, SHOOT becomes CLEAR in our own half (branch `feature/sh
 - Defense layout otherwise: MATCH-UP top-left, TACKLE top-right, SWITCH bottom-left, PRESS bottom-right (the SPRINT button becomes PRESS).
 - SHOOT is held to charge, with a power bar above the player. Other buttons: tap or hold as in the README.
 - CLEAR: with the ball in our own half (`clear_zone_frac` 0.5 of the court, from our goal) the SHOOT button is labelled CLEAR (`BTN_CLEAR`, "CLEAR" / "DÉGAGER"); a tap kicks the ball long and high (`player.json` -> `clear_speed` 17, `clear_lift` 6.5, `clear_error_mult` 1.5 on the through-pass error) where the stick points, but never back toward our goal. A SHOOT held for a clearance must be lifted before it can start a shot.
-- Double tap on the joystick when our side does not have the ball = shoulder charge.
+- Our keeper with the ball in his HANDS: the labels become THROW (`BTN_THROW`, "THROW" / "LANCER", on PASS), LONG BALL (`BTN_LONG_KICK`, "LONG BALL" / "BALLON LONG", on THROUGH), CLEAR (SHOOT) and SPRINT (`TouchControls.HANDS_LABELS`, `set_defense_layout(defense, clearing, hands)`). With the ball at his feet the normal labels show.
+- Name tag: the controlled keeper holding the ball in his hands shows "(HANDS)" / "(MAINS)" (`HUD_HANDS`).
+- Double tap on the joystick when our side does not have the ball = shoulder charge. In attack it is `intent.drop_ball`: the keeper puts the ball down at his feet (`PlayerIntent.drop_ball`, set in `HumanInput`).
 - Flick of the joystick with the ball (quick swipe and release, under 0.22 s) = skill move.
 - Joystick steps: under `walk_threshold` 0.6 (stick value after the dead zone) = walk, beyond = run; `HumanInput` keeps the move at full length and sets `intent.walk`. The ring turns yellow in the run zone (`stick_run_color`) and orange in knock-on mode (`stick_knock_on_color`).
 - Double pull = knock-on (with the ball): out beyond `double_pull_out_fraction` 0.9, back under `double_pull_in_fraction` 0.6, out again within `double_pull_seconds` 0.5 of the first push, within `double_pull_max_degrees` 45; the thumb stays on the screen. From a run you need two fresh pulls, so easing off and on does not trigger it (`FloatingStick._track_pulls`, `consume_double_pull`).
@@ -31,6 +33,7 @@ Last change: 2026-11-15, SHOOT becomes CLEAR in our own half (branch `feature/sh
 - Tests: `tests/ui_flow_test.gd` (settings: button size), `tests/physics_smoke_test.gd` (shoulder charge, pass and receive behavior); look checked with `tests/screenshot_tour.gd` (match HUD). `tests/physics_smoke_test.gd`: "clear: long and high, away from our own goal", "double pull: quick out, in, out is a double pull", "double pull: too slow is not a double pull", "double pull: another direction is not a double pull".
 
 ## History (newest first)
+- 2026-11-15: keeper with the ball in his hands: labels THROW / LONG BALL / CLEAR / SPRINT (`HANDS_LABELS`, `set_defense_layout(defense, clearing, hands)`), "(HANDS)" on the name tag (`HUD_HANDS`), joystick double tap in attack = `intent.drop_ball` (on defense it is still the shoulder charge). Why: user request, the human controls his keeper when he has the ball. Branch `feature/keeper-ball`, commit `346d461`.
 - 2026-11-15: SHOOT is labelled CLEAR in our own half (`clear_zone_frac` 0.5): a tap kicks long and high, never back toward our goal. Why: the user agreed to this item from the video's HUD list. Branch `feature/shot-on-target`, commit `436f156`.
 - 2026-11-15: speed modes on the joystick: soft push = walk (`walk_threshold`), full = run, ring colors as a cue, double pull = knock-on, Ctrl / K on keyboard; on defense PRESS with the stick moved = sprint where it points; human assists moved from `match.gd` to `HumanAssists`. Why: the user's design of walk, run, sprint and knock-on; the gesture is his choice (thumb stays on the screen, edge, back a little, edge again quickly). Branch `feature/speed-modes`, commit `a89cab9`.
 - 2026-11-14: Skill moves on a joystick flick (`consume_stick_flick`, keyboard C); move names pop above the player with `show_callout`. Proposal made without an extra button (the direction picks the move); it waits for the user's opinion. Branch `feature/polish`, commits `16fa679`.
@@ -48,7 +51,7 @@ Last change: 2026-11-15, SHOOT becomes CLEAR in our own half (branch `feature/sh
 ## Do not undo
 - The button layout follows the eFootball mobile layout (attack: shoot, pass, through, sprint; defense: the SPRINT button becomes PRESS, plus match-up, tackle, switch). The user asked for it with screenshots.
 - Button positions and sizes are screen fractions in `controls.json` (not pixels), so they fit every phone.
-- Double tap on the joystick = shoulder charge on defense; joystick flick = skill move.
+- Double tap on the joystick = shoulder charge on defense; joystick flick = skill move. In attack the double tap is the keeper's ball drop (it must not trigger a shoulder charge).
 - Class names are `FloatingStick` and `ActionButton`: a class named `VirtualJoystick` clashed with a Godot 4.7 built-in class (naming trap in `CLAUDE.md`). Do not name a method like a built-in signal either (`draw` -> `render`).
 - The double pull with the thumb on the screen is the user's chosen gesture for the knock-on (2026-11-15). The quick swipe with the thumb lifted stays the skill flick.
 - Touch controls handle every finger themselves (reliable multi-touch).
