@@ -15,9 +15,36 @@ A dated log, newest entry first: what was done, what was decided and why, and wh
 | 7 | Progression: coins, unlocks, upgrades, save system | Done, waiting for phone test |
 | 8 | Release build: optimized APK, full file review | Not started |
 
-The player-motion work is an extra feature branch between Phase 7 and Phase 8 (`feature/player-motion`, created from `feature/progression`), waiting for the phone test. `feature/broadcast-camera` (created from `feature/player-motion`) adds camera views and also waits for the phone test. `feature/speed-modes` (created from `feature/broadcast-camera`) adds walk, run, sprint and knock-on, and waits for the phone test. `feature/shot-on-target` (created from `feature/speed-modes`) adds shots on target and CLEAR, and waits for the phone test. `feature/keeper-ball` (created from `feature/shot-on-target`) adds the goalkeeper with the ball (hands or feet), and waits for the phone test. `feature/team-movement` (created from `feature/keeper-ball`) adds team movement (creating space), and waits for the phone test. `feature/kick-power` (created from `feature/team-movement`) adds the power bar for every kick, and waits for the phone test. `feature/lofted-pass` (created from `feature/kick-power`) adds lofted passes, and waits for the phone test. `feature/shot-types` (created from `feature/lofted-pass`) adds the shot types, and waits for the phone test. `feature/player-speed` (created from `feature/shot-types`) slows the players down (sprint 5.8, run 3.5), and waits for the phone test. `feature/press-loose-ball` (created from `feature/player-speed`) makes PRESS work on a loose ball, and waits for the phone test.
+The player-motion work is an extra feature branch between Phase 7 and Phase 8 (`feature/player-motion`, created from `feature/progression`), waiting for the phone test. `feature/broadcast-camera` (created from `feature/player-motion`) adds camera views and also waits for the phone test. `feature/speed-modes` (created from `feature/broadcast-camera`) adds walk, run, sprint and knock-on, and waits for the phone test. `feature/shot-on-target` (created from `feature/speed-modes`) adds shots on target and CLEAR, and waits for the phone test. `feature/keeper-ball` (created from `feature/shot-on-target`) adds the goalkeeper with the ball (hands or feet), and waits for the phone test. `feature/team-movement` (created from `feature/keeper-ball`) adds team movement (creating space), and waits for the phone test. `feature/kick-power` (created from `feature/team-movement`) adds the power bar for every kick, and waits for the phone test. `feature/lofted-pass` (created from `feature/kick-power`) adds lofted passes, and waits for the phone test. `feature/shot-types` (created from `feature/lofted-pass`) adds the shot types, and waits for the phone test. `feature/player-speed` (created from `feature/shot-types`) slows the players down (sprint 5.8, run 3.5), and waits for the phone test. `feature/press-loose-ball` (created from `feature/player-speed`) makes PRESS work on a loose ball, and waits for the phone test. `feature/mixamo-clips` (created from `feature/press-loose-ball`) gives the players the pass and kick movements from Mixamo animations, and waits for the phone test.
 
 ## Log
+
+### 2026-11-15 — Pass and kick movements from Mixamo clips
+
+#### Why
+
+- The user sent two Mixamo animations (Soccer Pass, Goalkeeper Drop Kick; mixamo.com, free for use in games; Mixamo's own dummy character, not shipped) and asked to give these movements to the players.
+
+#### Done
+
+- Branch `feature/mixamo-clips` (from `feature/press-loose-ball`), commit `5f8b1ab`.
+- New `tools/mixamo_to_clip.py` (+ `tools/fbx_parse.py`, needs numpy): reads the binary FBX, computes the skeleton per frame, keeps only joint angles for our jointed body (the 22 channels of RigPose). Cut from just before the contact frame (the fastest foot) to 0.45 s (pass) / 0.55 s (kick) after it, mirrored to be right-footed. Output: `data/animations/pass.json` (16 frames) and `kick.json` (18 frames), 30 fps. The FBX files are not in the repo.
+- New `scripts/gameplay/pose_clips.gd` (PoseClips): loads and caches clips, blends a frame into the pose, mirrors for left-footed players.
+- `PlayerActions`: actions "kick" and "pass" play the clip (fallback: the old coded kick pose if the clip file is missing), keeping the lunge toward a far ball. `Kicks.kick` plays "pass" for passes (pass, through, lofted, keeper passes) and "kick" for shots and clearances.
+- `data/config/animation.json`: `kick_seconds` 0.3 -> 0.6, new `pass_seconds` 0.5, `clip_blend_in` 0.08, `clip_blend_out` 0.6.
+- Motion study line-up poses are now: idle, keeper, jog, pass, kick (early), kick (late), tackle, dive (sprint and touch left the line-up).
+- CI run 43767854513: green, all suites 0 failures. Balance unchanged: 2.33 goals / 17.3 shots / 11.0 saves per match. The pass and the kick follow-through look right on the CI images.
+
+#### Also recorded
+
+- The user sent 3D player models; none usable yet: no skeleton in the Sketchfab files; one had a real club kit; a rigged one was a real player's likeness. Refused: fictional content only, and the repo is public. The Mixamo route is proven; the user will decide later.
+
+#### Next
+
+- Phone test, not done yet: pass and kick look.
+- The clip starts when the ball leaves the foot (no wind-up before the kick). A wind-up while the button is held is a possible next step.
+- Asked by the user: discuss pitch size and goal size (now 36 x 22 m).
+- Nothing merged to main yet.
 
 ### 2026-11-15 — Sprint 5.8 / run 3.5, and PRESS on a loose ball
 
