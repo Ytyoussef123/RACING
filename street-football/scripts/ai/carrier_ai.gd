@@ -1,7 +1,8 @@
 class_name CarrierAI
 extends RefCounted
-## AI for the player with the ball: shoot when in range, pass when pressed or a teammate is
-## better placed, otherwise dribble toward goal around defenders. Numbers: data/config/ai.json.
+## AI for the player with the ball: shoot when in range, play a through pass to a teammate
+## running in behind, pass when pressed or a teammate is better placed, otherwise dribble toward
+## goal around defenders. Numbers: data/config/ai.json.
 
 
 static func intent_for(player: Player, delta: float, ctx: MatchContext) -> PlayerIntent:
@@ -29,6 +30,13 @@ static func _decide(player: Player, ctx: MatchContext) -> PlayerIntent:
 	if dist_to_goal < tuning.shoot_range and frac > Steering.num("shot_min_frac", 0.6) and _good_shot(player, ctx, dist_to_goal):
 		_start_shot(player, ctx, dist_to_goal)
 		return _continue_shot(player, 0.0)
+	var runner := _runner(player, ctx)
+	if runner != null and ctx.rng.randf() < tuning.through_tendency:
+		var through := PlayerIntent.new()
+		through.move = Steering.flat(runner.position - player.position).normalized()
+		through.through_pressed = true
+		state.action = AiPlayerState.Action.NONE
+		return through
 	var pressure := team.opponent.nearest_distance_to(player.position)
 	var stars := player.profile.skill_moves if player.profile != null else 2
 	if pressure < float(Config.get_value("skills", "ai_skill_pressure", 2.0)) \
@@ -153,6 +161,28 @@ static func _dribble_intent(player: Player, ctx: MatchContext) -> PlayerIntent:
 	return intent
 
 
+## A teammate on a run in behind or a give-and-go that a through pass can find: moving fast,
+## further up than the carrier, in passing range, with a clear lane to the space in front of him.
+static func _runner(player: Player, ctx: MatchContext) -> Player:
+	var team := player.team
+	var court := ctx.court
+	var my_frac := team.to_frac(player.position.x, court)
+	var ahead := Vector3(team.attack_sign, 0.0, 0.0) * Steering.num("through_lead_check", 3.0)
+	for mate in team.outfield():
+		if mate == player or (mate.ai.run_left <= 0.0 and mate.ai.go_left <= 0.0):
+			continue
+		if Steering.flat(mate.motion.velocity).length() < Steering.num("through_min_runner_speed", 3.0):
+			continue
+		if team.to_frac(mate.position.x, court) <= my_frac:
+			continue
+		var d := player.flat_distance_to(mate.position)
+		if d < Steering.num("pass_min_distance", 3.0) or d > Steering.num("run_max_pass_distance", 20.0):
+			continue
+		if lane_clear(player.position, mate.position + ahead, team.opponent):
+			return mate
+	return null
+
+
 ## Best open teammate further up the court with a clear lane, or null.
 static func best_pass(player: Player, ctx: MatchContext) -> Player:
 	var team := player.team
@@ -166,11 +196,11 @@ static func best_pass(player: Player, ctx: MatchContext) -> Player:
 		var d := player.flat_distance_to(mate.position)
 		if d < Steering.num("pass_min_distance", 3.0) or d > Steering.num("pass_max_distance", 20.0):
 			continue
-		var openness := minf(team.opponent.nearest_distance_to(mate.position), 5.0)
+		var openness := minf(team.opponent.nearest_distance_to(mate.position), Steering.num("pass_open_cap", 5.0))
 		var progress := team.to_frac(mate.position.x, court) - my_frac
-		var score := progress * 3.0 + openness * 0.3
+		var score := progress * Steering.num("pass_progress_weight", 3.0) + openness * Steering.num("pass_open_weight", 0.3)
 		if not lane_clear(player.position, mate.position, team.opponent):
-			score -= 5.0
+			score -= Steering.num("pass_blocked_score", 5.0)
 		if score > best_score:
 			best_score = score
 			best = mate

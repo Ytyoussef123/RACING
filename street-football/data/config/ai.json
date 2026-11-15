@@ -13,7 +13,10 @@
 			"tackle_attempt_chance": 0.25,
 			"tackle_success_bonus": -0.15,
 			"keeper_save_chance": 0.4,
-			"skill_tendency": 0.05
+			"skill_tendency": 0.05,
+			"run_rate": 0.25,
+			"through_tendency": 0.3,
+			"give_go_chance": 0.3
 		},
 		"normal": {
 			"decision_interval": 0.28,
@@ -25,7 +28,10 @@
 			"tackle_attempt_chance": 0.45,
 			"tackle_success_bonus": 0.0,
 			"keeper_save_chance": 0.6,
-			"skill_tendency": 0.15
+			"skill_tendency": 0.15,
+			"run_rate": 0.5,
+			"through_tendency": 0.55,
+			"give_go_chance": 0.6
 		},
 		"hard": {
 			"decision_interval": 0.15,
@@ -37,7 +43,10 @@
 			"tackle_attempt_chance": 0.7,
 			"tackle_success_bonus": 0.1,
 			"keeper_save_chance": 0.75,
-			"skill_tendency": 0.3
+			"skill_tendency": 0.3,
+			"run_rate": 0.8,
+			"through_tendency": 0.75,
+			"give_go_chance": 0.85
 		}
 	},
 	"role_shift": {
@@ -91,5 +100,55 @@
 	"keeper_parry_spread": 3.0,
 	"shot_min_goal_angle_degrees": 9.0,
 	"shot_close_distance": 6.0,
-	"shot_lane_width": 0.5
+	"shot_lane_width": 0.5,
+	"pass_open_cap": 5.0,
+	"pass_progress_weight": 3.0,
+	"pass_open_weight": 0.3,
+	"pass_blocked_score": 5.0,
+
+	"_team_movement": "Players without the ball while their side has it get a job (AttackRoles): support next to the carrier, forward high and wide (runs in behind the last defender), cover behind the ball. Per difficulty: run_rate (runs per second when possible), through_tendency, give_go_chance.",
+	"role_keep_bonus": 3.0,
+	"role_job_bonus": 2.0,
+	"role_jobs": {
+		"DEF": "cover",
+		"MID": "support",
+		"WING": "forward",
+		"ATT": "forward"
+	},
+	"support_distance": 6.0,
+	"support_angles": [45.0, 90.0, 135.0],
+	"support_forward_weight": 0.8,
+	"support_wall_weight": 1.0,
+	"support_open_weight": 0.4,
+	"support_lane_bonus": 2.0,
+	"support_crowd_distance": 5.0,
+	"support_crowd_weight": 0.5,
+	"support_keep_bonus": 0.6,
+	"forward_gap": 1.0,
+	"forward_min_ahead": 3.0,
+	"forward_width": 0.6,
+	"forward_side_switch_z": 2.5,
+	"cover_attack_depth": 10.0,
+	"cover_min_frac": 0.15,
+	"cover_z_follow": 0.3,
+	"cover_defend_depth": 4.5,
+	"cover_min_goal_distance": 7.0,
+	"spacing_min": 5.0,
+	"spacing_push": 0.7,
+	"shape_wall_margin": 1.0,
+	"run_seconds": 2.4,
+	"run_cooldown": 2.5,
+	"run_depth": 3.0,
+	"run_max_frac": 0.88,
+	"run_min_space": 5.0,
+	"run_facing_min": 0.2,
+	"run_max_pass_distance": 20.0,
+	"run_center_pull": 0.4,
+	"run_lane_margin": 2.0,
+	"run_arrive_distance": 1.2,
+	"through_lead_check": 3.0,
+	"through_min_runner_speed": 3.0,
+	"give_go_seconds": 1.6,
+	"give_go_distance": 7.0,
+	"give_go_center_pull": 0.3
 }

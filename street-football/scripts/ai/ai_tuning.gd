@@ -14,6 +14,11 @@ var tackle_success_bonus: float = 0.0
 var keeper_save_chance: float = 0.6
 ## Chance per decision to try a skill move when pressed (scaled by the player's skill stars).
 var skill_tendency: float = 0.15
+## Team movement: runs in behind per second (when the forward may run), chance per decision to
+## play a through pass to a runner, chance that a passer runs forward after his pass.
+var run_rate: float = 0.5
+var through_tendency: float = 0.55
+var give_go_chance: float = 0.6
 
 
 static func for_difficulty(difficulty_name: String) -> AiTuning:
@@ -31,4 +36,7 @@ static func for_difficulty(difficulty_name: String) -> AiTuning:
 	t.tackle_success_bonus = float(d.get("tackle_success_bonus", t.tackle_success_bonus))
 	t.keeper_save_chance = float(d.get("keeper_save_chance", t.keeper_save_chance))
 	t.skill_tendency = float(d.get("skill_tendency", t.skill_tendency))
+	t.run_rate = float(d.get("run_rate", t.run_rate))
+	t.through_tendency = float(d.get("through_tendency", t.through_tendency))
+	t.give_go_chance = float(d.get("give_go_chance", t.give_go_chance))
 	return t

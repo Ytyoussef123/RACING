@@ -1,23 +1,35 @@
 class_name SupportAI
 extends RefCounted
-## AI for players without the ball: chase, mark, receive a pass, or hold the formation slot
-## (getting open when a defender is close). Numbers: data/config/ai.json.
+## AI for players without the ball: receive a pass; with the ball on our side, take the job
+## given by the team brain (AttackShape); without it, chase, cover behind the chaser, mark, or
+## hold the formation slot. Numbers: data/config/ai.json.
 
 
 static func intent_for(player: Player, delta: float, ctx: MatchContext, brain: TeamBrain) -> PlayerIntent:
 	var possession := ctx.possession
-	var team := player.team
-	var attacking := possession.holder != null and possession.holder.team == team
 	if possession.holder == null and possession.pass_target == player:
 		return Steering.seek(player, ReceiveAssist.intercept_point(player, ctx))
+	if AttackRoles.in_possession(player.team, ctx):
+		return AttackShape.intent_for(player, ctx, brain)
 	if player == brain.chaser:
 		return _chase(player, delta, ctx)
-	if not attacking and player.ai.mark != null:
+	if player == brain.cover:
+		return Steering.seek(player, cover_point(player.team, ctx))
+	if player.ai.mark != null:
 		return Steering.seek(player, _mark_point(player, player.ai.mark, ctx))
-	var target := FormationPositions.slot_target(player, ctx, attacking)
-	if attacking:
-		target = _get_open(player, target, team)
-	return Steering.seek(player, target)
+	return Steering.seek(player, FormationPositions.slot_target(player, ctx, false))
+
+
+## Second defender: between the ball and our goal, cover_defend_depth behind the ball (at most
+## half way to the goal), so a carrier who beats the chaser meets him next.
+static func cover_point(team: Team, ctx: MatchContext) -> Vector3:
+	var own_goal := Vector3(team.own_goal_x(ctx.court), 0.0, 0.0)
+	var ball := Steering.flat(ctx.ball.position)
+	var to_goal := own_goal - ball
+	var d := to_goal.length()
+	if d < 0.01:
+		return own_goal
+	return ball + to_goal / d * minf(Steering.num("cover_defend_depth", 4.5), d * 0.5)
 
 
 static func _chase(player: Player, delta: float, ctx: MatchContext) -> PlayerIntent:
@@ -45,14 +57,3 @@ static func _mark_point(player: Player, opponent: Player, ctx: MatchContext) -> 
 	if to_goal.length() < 0.01:
 		return opponent.position
 	return opponent.position + to_goal.normalized() * player.stat("mark_distance", Steering.num("mark_distance", 1.5))
-
-
-## Moves the target away from the nearest defender so the player can receive a pass.
-static func _get_open(player: Player, target: Vector3, team: Team) -> Vector3:
-	var open_dist := Steering.num("get_open_distance", 2.5)
-	for opp in team.opponent.players:
-		var to := Steering.flat(target - opp.position)
-		var d := to.length()
-		if d < open_dist and d > 0.01:
-			return target + to / d * Steering.num("get_open_shift", 1.5)
-	return target

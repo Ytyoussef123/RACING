@@ -79,6 +79,16 @@ jobs:
             exit 1
           fi
 
+      - name: Team AI tests (headless)
+        run: |
+          godot --headless --path "$PROJECT_DIR" res://tests/team_ai_test.tscn --quit-after 3000 2>&1 | tee team_ai.log
+          grep -E "TEST (PASS|FAIL)" team_ai.log || true
+          if ! grep -q "TEAM AI TESTS DONE: 0 failure" team_ai.log; then
+            echo "::error::Team AI tests failed or did not finish (see above)."
+            awk '/SCRIPT ERROR|ERROR:/ && !seen[$0]++' team_ai.log | head -30
+            exit 1
+          fi
+
       - name: Progression tests (headless)
         run: |
           godot --headless --path "$PROJECT_DIR" res://tests/progression_test.tscn --quit-after 3000 2>&1 | tee progression.log
