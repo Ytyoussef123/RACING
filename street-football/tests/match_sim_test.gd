@@ -12,6 +12,12 @@ const MATCH_SECONDS := 150.0
 const SEEDS: Array[int] = [11, 22, 33, 44, 55, 66]
 const MIN_TOTAL_GOALS := 3
 const STUCK_SECONDS := 8.0
+## Team spacing sample: every SPACING_SAMPLE_SECONDS of play, the distance from each outfielder
+## to his nearest teammate, and whether CROWD_COUNT or more of a side are within CROWD_RADIUS of
+## the ball (players bunched around it).
+const SPACING_SAMPLE_SECONDS := 0.5
+const CROWD_RADIUS := 4.0
+const CROWD_COUNT := 3
 const SAFETY_SECONDS_PER_MATCH := 400.0
 
 var _match: Node
@@ -30,6 +36,11 @@ var _score_mismatch := false
 var _failures := 0
 var _total_shots := 0
 var _total_saves := 0
+var _sample_timer := 0.0
+var _spacing_sum := 0.0
+var _spacing_count := 0
+var _crowd_samples := 0
+var _side_samples := 0
 
 
 func _ready() -> void:
@@ -77,8 +88,31 @@ func _physics_process(delta: float) -> void:
 	for p in ctx.all_players:
 		if absf(p.position.x) > court.half_length + 0.01 or absf(p.position.z) > court.half_width + 0.01:
 			_out_of_bounds = true
+	_sample_timer += delta
+	if _sample_timer >= SPACING_SAMPLE_SECONDS and _match.flow.state == MatchFlow.State.PLAYING:
+		_sample_timer = 0.0
+		_sample_spacing(ctx)
 	if _finished or _elapsed > SAFETY_SECONDS_PER_MATCH:
 		_end_match()
+
+
+func _sample_spacing(ctx: MatchContext) -> void:
+	for team in ctx.teams:
+		var outfield := team.outfield()
+		var near_ball := 0
+		for p in outfield:
+			var nearest := INF
+			for q in outfield:
+				if q != p:
+					nearest = minf(nearest, p.flat_distance_to(q.position))
+			if nearest < INF:
+				_spacing_sum += nearest
+				_spacing_count += 1
+			if p.flat_distance_to(ctx.ball.position) < CROWD_RADIUS:
+				near_ball += 1
+		_side_samples += 1
+		if near_ball >= CROWD_COUNT:
+			_crowd_samples += 1
 
 
 func _on_full_time(home: int, away: int) -> void:
@@ -108,6 +142,8 @@ func _report() -> void:
 	var n := float(SEEDS.size())
 	print("MATCH BALANCE: %.2f goals, %.1f shots, %.1f saves per %d-second match, longest stuck ball %.1f s"
 		% [_total_goals / n, _total_shots / n, _total_saves / n, int(MATCH_SECONDS), _max_stuck])
+	print("MATCH SPACING: %.1f m from each outfielder to his nearest teammate, %.0f %% of the time 3+ players of a side near the ball"
+		% [_spacing_sum / maxf(1.0, float(_spacing_count)), 100.0 * _crowd_samples / maxf(1.0, float(_side_samples))])
 	_check("every match reaches full time", _all_finished)
 	_check("goals are scored", _total_goals >= MIN_TOTAL_GOALS, "total=%d" % _total_goals)
 	_check("score matches goals", not _score_mismatch)
