@@ -236,8 +236,10 @@ func _test_defense_cover_and_marks() -> void:
 	var cover := SupportAI.cover_point(_home, _ctx)
 	_check("defense: the cover stands between the ball and our goal", cover.x < _ctx.ball.position.x - 3.0
 		and absf(cover.z) < 1.0, "cover=%s" % cover)
-	_check("defense: the most dangerous opponent is marked first", _home.players[3].ai.mark == _away.players[1]
-		and _home.players[4].ai.mark == _away.players[2], "marks=%s / %s" % [_home.players[3].ai.mark, _home.players[4].ai.mark])
+	var marked := [_home.players[3].ai.mark, _home.players[4].ai.mark]
+	_check("defense: the two most dangerous opponents are marked, without crossing", marked.has(_away.players[1])
+		and marked.has(_away.players[2]) and _home.players[3].ai.mark == _away.players[2],
+		"marks=%s / %s" % [_home.players[3].ai.mark, _home.players[4].ai.mark])
 	_check("defense: the presser and the cover mark nobody", brain.chaser != null and brain.cover != null
 		and brain.chaser.ai.mark == null and brain.cover.ai.mark == null)
 

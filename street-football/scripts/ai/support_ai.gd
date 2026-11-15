@@ -14,10 +14,16 @@ static func intent_for(player: Player, delta: float, ctx: MatchContext, brain: T
 	if player == brain.chaser:
 		return _chase(player, delta, ctx)
 	if player == brain.cover:
-		return Steering.seek(player, cover_point(player.team, ctx))
+		return Steering.seek(player, _apart(player, cover_point(player.team, ctx), ctx))
 	if player.ai.mark != null:
-		return Steering.seek(player, _mark_point(player, player.ai.mark, ctx))
-	return Steering.seek(player, FormationPositions.slot_target(player, ctx, false))
+		return Steering.seek(player, _apart(player, _mark_point(player, player.ai.mark, ctx), ctx))
+	return Steering.seek(player, _apart(player, FormationPositions.slot_target(player, ctx, false), ctx))
+
+
+## A defending spot kept defend_spacing_min from teammates: two defenders never stand on top of
+## each other (the one pressing the ball is not moved).
+static func _apart(player: Player, target: Vector3, ctx: MatchContext) -> Vector3:
+	return AttackShape.spaced(player, target, ctx, Steering.num("defend_spacing_min", 3.0))
 
 
 ## Second defender: between the ball and our goal, cover_defend_depth behind the ball (at most

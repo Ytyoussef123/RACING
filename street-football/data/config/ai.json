@@ -137,6 +137,7 @@
 	"cover_min_goal_distance": 12.0,
 	"spacing_min": 5.0,
 	"spacing_push": 0.7,
+	"defend_spacing_min": 3.0,
 	"shape_wall_margin": 1.0,
 	"job_sprint_distance": 4.5,
 	"run_seconds": 2.4,

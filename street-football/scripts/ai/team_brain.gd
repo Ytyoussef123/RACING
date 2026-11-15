@@ -89,8 +89,9 @@ func _pick_cover(ctx: MatchContext, human_player: Player, presser: Player) -> Pl
 	return best
 
 
-## Marking: the free opponents in our part of the court (mark_zone_frac), the most advanced
-## first, each get the nearest outfield player not yet marking, chasing or covering.
+## Marking: of the free opponents in our part of the court (mark_zone_frac), the most advanced
+## ones (as many as we have markers: outfield players not chasing or covering) are marked; the
+## closest marker-opponent pair is matched first, again and again, so markers do not cross.
 func _assign_marks(ctx: MatchContext, human_player: Player) -> void:
 	var court := ctx.court
 	var zone := Steering.num("mark_zone_frac", 0.62)
@@ -104,15 +105,19 @@ func _assign_marks(ctx: MatchContext, human_player: Player) -> void:
 	for p in team.outfield():
 		if p != chaser and p != cover and p != human_player:
 			markers.append(p)
-	for opp in free_opponents:
-		if markers.is_empty():
-			return
+	if free_opponents.size() > markers.size():
+		free_opponents.resize(markers.size())
+	while not markers.is_empty() and not free_opponents.is_empty():
 		var best_i := 0
+		var best_j := 0
 		var best_d := INF
 		for i in range(markers.size()):
-			var d := markers[i].flat_distance_to(opp.position)
-			if d < best_d:
-				best_d = d
-				best_i = i
-		markers[best_i].ai.mark = opp
+			for j in range(free_opponents.size()):
+				var d := markers[i].flat_distance_to(free_opponents[j].position)
+				if d < best_d:
+					best_d = d
+					best_i = i
+					best_j = j
+		markers[best_i].ai.mark = free_opponents[best_j]
 		markers.remove_at(best_i)
+		free_opponents.remove_at(best_j)

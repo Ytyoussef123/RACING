@@ -161,10 +161,11 @@ static func get_open(target: Vector3, team: Team) -> Vector3:
 	return target + Steering.flat(target - nearest.position) / best * Steering.num("get_open_shift", 1.5)
 
 
-## Pushes the spot away from every teammate closer than spacing_min (by spacing_push of the
-## missing distance), so teammates spread out; then keeps it on the court.
-static func spaced(player: Player, target: Vector3, ctx: MatchContext) -> Vector3:
-	var min_gap := Steering.num("spacing_min", 5.0)
+## Pushes the spot away from every teammate closer than `min_gap` (spacing_min when not given;
+## by spacing_push of the missing distance), so teammates spread out; then keeps it on the court.
+static func spaced(player: Player, target: Vector3, ctx: MatchContext, min_gap: float = -1.0) -> Vector3:
+	if min_gap < 0.0:
+		min_gap = Steering.num("spacing_min", 5.0)
 	var push := Steering.num("spacing_push", 0.7)
 	var result := target
 	for mate in player.team.outfield():
