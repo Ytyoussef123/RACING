@@ -22,6 +22,8 @@ var _skill_cooldown: float = 0.0
 var _queued: String = ""
 var _queued_charge: float = 0.0
 var _queued_aim: Vector3 = Vector3.ZERO
+## For a queued shot: the point in the goal it is aimed at (ShotAim).
+var _queued_point: Vector3 = Vector3.ZERO
 var _queue_timer: float = 0.0
 
 
@@ -58,6 +60,8 @@ func update(delta: float, player: Player, ctx: MatchContext) -> void:
 		_queue("pass", 0.0, aim, has_ball)
 	elif intent.through_pressed:
 		_queue("through", 0.0, aim, has_ball)
+	elif intent.clear_pressed:
+		_queue("clear", 0.0, aim, has_ball)
 	elif intent.skill != Vector3.ZERO and has_ball and _skill_cooldown <= 0.0:
 		_skill_cooldown = float(Config.get_value("skills", "cooldown", 1.0))
 		_queue("skill", 0.0, intent.skill, true)
@@ -75,10 +79,12 @@ func update(delta: float, player: Player, ctx: MatchContext) -> void:
 		is_charging = true
 		shot_charge = minf(1.0, shot_charge + delta / maxf(0.01, _cfg("shot_charge_time", 0.9)))
 	elif is_charging:
+		var shot_point := ShotAim.target(player, ctx, _stick(intent))
 		if _can_kick(player, ctx):
-			_shoot(player, ctx, aim, shot_charge)
+			_shoot(player, ctx, shot_point, shot_charge)
 		elif possession.holder == null or possession.holder == player:
 			_queue("shot", shot_charge, aim, has_ball)
+			_queued_point = shot_point
 		is_charging = false
 		shot_charge = 0.0
 	if possession.holder == player:
@@ -127,7 +133,9 @@ func _play_queued(player: Player, ctx: MatchContext) -> void:
 		"through":
 			_through_pass(player, ctx, _queued_aim)
 		"shot":
-			_shoot(player, ctx, _queued_aim, _queued_charge)
+			_shoot(player, ctx, _queued_point, _queued_charge)
+		"clear":
+			_clear(player, ctx, _queued_aim)
 		"skill":
 			# A flick that makes no move (forward with nobody close) gives the cooldown back.
 			if SkillMoves.perform(player, ctx, _queued_aim).is_empty():
@@ -146,7 +154,8 @@ func _pass(player: Player, ctx: MatchContext, aim: Vector3) -> void:
 	else:
 		kick_velocity = aim * _cfg("pass_speed", 11.0) + Vector3.UP * _cfg("pass_lift", 0.0)
 	var error := player.stat("keeper_kick_error_degrees" if player.is_keeper else "pass_error_degrees", 0.0)
-	kick_velocity = _with_error(kick_velocity, error * _weak_foot_mult(player, aim) * _pace_mult(player), ctx)
+	kick_velocity = KickAccuracy.with_error(kick_velocity,
+		error * KickAccuracy.weak_foot_mult(player, aim) * KickAccuracy.pace_mult(player), ctx)
 	ctx.stats.passes[player.team.index] += 1
 	_kick(player, ctx, kick_velocity, 0.0, target, "pass")
 
@@ -155,15 +164,17 @@ func _pass(player: Player, ctx: MatchContext, aim: Vector3) -> void:
 func _through_pass(player: Player, ctx: MatchContext, aim: Vector3) -> void:
 	var target := PassTargeting.choose(player, aim, ctx)
 	var error := player.stat("keeper_kick_error_degrees" if player.is_keeper else "through_error_degrees", 0.0)
-	error *= _weak_foot_mult(player, aim) * _pace_mult(player)
+	error *= KickAccuracy.weak_foot_mult(player, aim) * KickAccuracy.pace_mult(player)
 	ctx.stats.passes[player.team.index] += 1
 	if target == null:
-		_kick(player, ctx, _with_error(aim * _cfg("through_space_speed", 10.0), error, ctx), 0.0, null, "pass")
+		_kick(player, ctx, KickAccuracy.with_error(aim * _cfg("through_space_speed", 10.0), error, ctx), 0.0, null, "pass")
 		return
-	_kick(player, ctx, _with_error(PassTargeting.through_velocity(player, target, ctx), error, ctx), 0.0, target, "pass")
+	_kick(player, ctx, KickAccuracy.with_error(PassTargeting.through_velocity(player, target, ctx), error, ctx), 0.0, target, "pass")
 
 
-func _shoot(player: Player, ctx: MatchContext, aim: Vector3, charge: float) -> void:
+## A shot at `target`, a point in the opponent's goal (ShotAim).
+func _shoot(player: Player, ctx: MatchContext, target: Vector3, charge: float) -> void:
+	var aim := Steering.flat(target - ctx.ball.position).normalized()
 	var speed := lerpf(_cfg("shot_speed_min", 12.0), _cfg("shot_speed_max", 26.0), charge)
 	speed *= player.stat("shot_speed_mult", 1.0)
 	var lift := lerpf(_cfg("shot_lift_min", 0.5), _cfg("shot_lift_max", 5.5), charge)
@@ -175,47 +186,23 @@ func _shoot(player: Player, ctx: MatchContext, aim: Vector3, charge: float) -> v
 	var goal := Vector3(player.team.target_goal_x(ctx.court), 0.0, 0.0)
 	var beyond := maxf(0.0, player.flat_distance_to(goal) - StatEffects.num("long_shot_distance", 12.0))
 	var error := player.stat("shot_error_degrees", 0.0) + beyond * player.stat("long_shot_error_per_meter", 0.0)
-	error *= _weak_foot_mult(player, aim) * _pace_mult(player)
+	error *= KickAccuracy.weak_foot_mult(player, aim) * KickAccuracy.pace_mult(player) \
+		* KickAccuracy.shot_angle_mult(player, ctx, aim)
 	if first_time and player.profile != null and player.profile.special_skills.has("first_time_shot"):
 		error *= float(Config.get_value("skills", "first_time_shot_error_mult", 0.6))
 	ctx.stats.shots[player.team.index] += 1
-	_kick(player, ctx, _with_error(aim * speed + Vector3.UP * lift, error, ctx), spin, null, "shot")
+	_kick(player, ctx, KickAccuracy.with_error(aim * speed + Vector3.UP * lift, error, ctx), spin, null, "shot")
 
 
-## Kicks are a little more accurate walking, a little less sprinting or in a knock-on.
-func _pace_mult(player: Player) -> float:
-	var intent := player.intent
-	if intent.knock_on:
-		return _cfg("pace_error_mult_knock_on", 1.2)
-	if intent.sprint:
-		return _cfg("pace_error_mult_sprint", 1.15)
-	if intent.walk:
-		return _cfg("pace_error_mult_walk", 0.85)
-	return 1.0
-
-
-## Turns a kick sideways by a random angle up to `degrees` (most kicks land near the aim).
-func _with_error(kick_velocity: Vector3, degrees: float, ctx: MatchContext) -> Vector3:
-	if degrees <= 0.0:
-		return kick_velocity
-	var angle := (ctx.rng.randf() + ctx.rng.randf() - 1.0) * degrees
-	return kick_velocity.rotated(Vector3.UP, deg_to_rad(angle))
-
-
-## Kicks aimed well to the weak-foot side are less accurate (weak_foot 1..4 stars).
-func _weak_foot_mult(player: Player, aim: Vector3) -> float:
-	if player.profile == null or player.profile.special_skills.has("rabona"):
-		# Rabona: kicks on the weak side are done behind the standing leg, with the good foot.
-		return 1.0
-	var facing := player.motion.facing
-	if rad_to_deg(facing.angle_to(aim)) < StatEffects.num("weak_side_degrees", 35.0):
-		return 1.0
-	var to_left := facing.cross(aim).y > 0.0
-	var weak_is_left := player.preferred_foot != "left"
-	if to_left != weak_is_left:
-		return 1.0
-	var mults: Array = Config.get_value("stat_effects", "weak_foot_error_mult", [2.6, 2.0, 1.5, 1.15])
-	return float(mults[clampi(player.weak_foot, 1, mults.size()) - 1])
+## SHOOT in our own half: a long, high kick away from our goal, where the stick points.
+func _clear(player: Player, ctx: MatchContext, aim: Vector3) -> void:
+	var dir := Steering.flat(aim).normalized()
+	if dir.x * player.team.attack_sign < 0.0:
+		dir.x = -dir.x
+	var error := player.stat("through_error_degrees", 0.0) * _cfg("clear_error_mult", 1.5)
+	error *= KickAccuracy.weak_foot_mult(player, dir) * KickAccuracy.pace_mult(player)
+	var kick := dir * _cfg("clear_speed", 17.0) + Vector3.UP * _cfg("clear_lift", 6.5)
+	_kick(player, ctx, KickAccuracy.with_error(kick, error, ctx), 0.0, null, "clear")
 
 
 func _kick(player: Player, ctx: MatchContext, kick_velocity: Vector3, spin: float, target: Player,
@@ -274,6 +261,12 @@ func _can_kick(player: Player, ctx: MatchContext) -> bool:
 	if ball.position.y > _cfg("kick_max_ball_height", 1.0):
 		return false
 	return player.flat_distance_to(ball.position) <= _cfg("kick_reach", 1.1)
+
+
+## The raw stick of the intent (its aim when set, else its move); ZERO when released.
+static func _stick(intent: PlayerIntent) -> Vector3:
+	var aim := Vector3(intent.aim.x, 0.0, intent.aim.z)
+	return aim if aim.length() > 0.3 else Vector3(intent.move.x, 0.0, intent.move.z)
 
 
 ## Kick direction: the intent's aim if set, else its move direction, else where the player faces.

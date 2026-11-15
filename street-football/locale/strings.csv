@@ -5,6 +5,7 @@ DEVICE_INFO,Screen %d × %d · %s · Godot %s,Écran %d × %d · %s · Godot %s
 COURT_CAGE,Concrete Cage,Cage en béton
 COURT_OPEN,Open Lot,Terrain ouvert
 BTN_SHOOT,SHOOT,TIR
+BTN_CLEAR,CLEAR,DÉGAGER
 BTN_PASS,PASS,PASSE
 BTN_SPRINT,SPRINT,SPRINT
 MSG_GOAL,GOAL!,BUT !

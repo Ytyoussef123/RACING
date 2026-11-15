@@ -16,6 +16,8 @@ var shoot_held: bool = false
 var pass_pressed: bool = false
 ## True only on the frame the through-pass button was pressed.
 var through_pressed: bool = false
+## True only on the frame SHOOT was pressed in our own half: a long clearance.
+var clear_pressed: bool = false
 ## True only on the frame a tackle is tried.
 var tackle_pressed: bool = false
 ## True only on the frame the human asks to switch player.

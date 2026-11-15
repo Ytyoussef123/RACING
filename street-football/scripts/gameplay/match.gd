@@ -84,11 +84,13 @@ func _physics_process(delta: float) -> void:
 	var human_player: Player = _human.controlled if _human != null else null
 	if _human != null:
 		var attacking := _human.is_attacking(ctx)
-		var intent := _input.read(attacking)
+		var clearing := attacking and _human.controlled.team.to_frac(_human.controlled.position.x, ctx.court) \
+			< float(Config.get_value("player", "clear_zone_frac", 0.5))
+		var intent := _input.read(attacking, clearing)
 		_human.update(delta, intent, ctx)
 		human_player = _human.controlled
 		human_player.intent = HumanAssists.apply(human_player, intent, attacking, delta, ctx, _human)
-		_touch.set_defense_layout(not attacking)
+		_touch.set_defense_layout(not attacking, clearing)
 	for team in ctx.teams:
 		team.brain.update(delta, ctx, human_player)
 	var playing := flow.state == MatchFlow.State.PLAYING

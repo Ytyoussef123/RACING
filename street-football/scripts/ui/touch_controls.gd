@@ -9,6 +9,8 @@ const BUTTON_IDS: Array[String] = ["shoot", "pass", "sprint", "through"]
 ## Labels with the ball (attack) and without it (defense), like eFootball.
 const ATTACK_LABELS := {"shoot": "BTN_SHOOT", "pass": "BTN_PASS", "sprint": "BTN_SPRINT", "through": "BTN_THROUGH"}
 const DEFENSE_LABELS := {"shoot": "BTN_TACKLE", "pass": "BTN_SWITCH", "sprint": "BTN_PRESS", "through": "BTN_MATCH_UP"}
+## With the ball in our own half, SHOOT is a clearance.
+const CLEAR_LABELS := {"shoot": "BTN_CLEAR", "pass": "BTN_PASS", "sprint": "BTN_SPRINT", "through": "BTN_THROUGH"}
 const BUTTON_COLORS := {
 	"shoot": Color(1.0, 0.36, 0.1),
 	"pass": Color(0.13, 0.77, 0.85),
@@ -67,8 +69,9 @@ func consume_press(id: String) -> bool:
 
 
 ## Shows the defense labels (TACKLE, SWITCH, PRESS, MATCH-UP) or the attack labels.
-func set_defense_layout(defense: bool) -> void:
-	var labels: Dictionary = DEFENSE_LABELS if defense else ATTACK_LABELS
+## Button labels: defense, attack, or attack in our own half (SHOOT = CLEAR).
+func set_defense_layout(defense: bool, clearing: bool = false) -> void:
+	var labels: Dictionary = DEFENSE_LABELS if defense else (CLEAR_LABELS if clearing else ATTACK_LABELS)
 	for id in BUTTON_IDS:
 		(_buttons[id] as ActionButton).label_key = str(labels[id])
 

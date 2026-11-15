@@ -19,6 +19,8 @@ func _ready() -> void:
 	_test_shot_over_goal_is_no_goal()
 	_test_open_court_out()
 	_test_dribble_and_shoot_scores()
+	_test_shot_on_target()
+	_test_clear()
 	_test_pass_assist_finds_teammate()
 	_test_receive_assist_meets_ball()
 	_test_through_pass_leads_receiver()
@@ -176,6 +178,68 @@ func _test_dribble_and_shoot_scores() -> void:
 	_check("player takes the ball", had_ball)
 	_check("player shoots", shot_done)
 	_check("dribble and shot score at +x", goal == 1, "goal=%d ball=%s" % [goal, ctx.ball.position])
+
+
+## Shot on target ("tir cadre"): shots go at the goal even when the shooter is not lined up.
+func _test_shot_on_target() -> void:
+	var home := _make_team(0, 1.0)
+	var away := _make_team(1, -1.0)
+	home.opponent = away
+	away.opponent = home
+	var ctx := MatchContext.new()
+	ctx.court = CourtData.load_court("cage_concrete")
+	var half := ctx.court.half_goal_width
+	var goal_x := ctx.court.half_length
+	var shooter := _spawn(home, Vector3(12.0, 0.0, 6.0), Vector3.BACK)
+	var along := ShotAim.target(shooter, ctx, Vector3.BACK)
+	_check("shot aim: stick along the goal line still aims inside the goal", along.z > 0.0 and along.z < half,
+		"z=%.2f" % along.z)
+	var at_post := ShotAim.target(shooter, ctx, (Vector3(goal_x, 0.0, -1.0) - shooter.position).normalized())
+	_check("shot aim: aiming at the goal keeps the aim", absf(at_post.z + 1.0) < 0.05, "z=%.2f" % at_post.z)
+	var wide := ShotAim.target(shooter, ctx, (Vector3(goal_x, 0.0, 9.0) - shooter.position).normalized())
+	_check("shot aim: aiming wide of the goal goes inside the post on that side", wide.z > 0.0 and wide.z < half,
+		"z=%.2f" % wide.z)
+	var keeper := _spawn(away, Vector3(goal_x - 1.0, 0.0, 0.6), Vector3.LEFT)
+	away.keeper = keeper
+	var free := ShotAim.target(shooter, ctx, Vector3.ZERO)
+	_check("shot aim: no stick aims at the corner away from the keeper", free.z < 0.0 and free.z > -half,
+		"z=%.2f" % free.z)
+	# A real shot while running along the goal line, stick along the run: it heads on goal.
+	ctx.ball = _new_ball(shooter.position + Vector3(0.0, 0.0, 0.45) + Vector3.UP * ball_radius(), Vector3.ZERO)
+	ctx.possession.take(shooter, ctx.ball)
+	for i in range(14):
+		var intent := PlayerIntent.new()
+		intent.move = Vector3.BACK
+		intent.shoot_held = i < 10
+		shooter.intent = intent
+		shooter.handling.update(DT, shooter, ctx)
+		if ctx.possession.holder != shooter:
+			break
+	var v := ctx.ball.velocity
+	var cross := ctx.ball.position.z + v.z * (goal_x - ctx.ball.position.x) / v.x if v.x > 0.1 else 99.0
+	_check("shot on target: running along the goal line, the shot heads on goal", absf(cross) < half,
+		"crosses at z=%.2f v=%s" % [cross, v])
+	shooter.queue_free()
+	keeper.queue_free()
+
+
+## CLEAR (SHOOT in our own half): a long, high kick, never back toward our own goal.
+func _test_clear() -> void:
+	var team := _make_team(0, 1.0)
+	var player := _spawn(team, Vector3(-10.0, 0.0, 0.0), Vector3.LEFT)
+	var ctx := MatchContext.new()
+	ctx.court = CourtData.load_court("cage_concrete")
+	ctx.ball = _new_ball(Vector3(-10.5, ball_radius(), 0.0), Vector3.ZERO)
+	ctx.possession.take(player, ctx.ball)
+	var intent := PlayerIntent.new()
+	intent.move = Vector3.LEFT
+	intent.clear_pressed = true
+	player.intent = intent
+	player.handling.update(DT, player, ctx)
+	var v := ctx.ball.velocity
+	_check("clear: long and high, away from our own goal", v.x > 10.0 and v.y > 5.0 and ctx.possession.holder == null,
+		"v=%s" % v)
+	player.queue_free()
 
 
 ## Pass assist: a teammate 50 degrees off the joystick line still gets the pass;

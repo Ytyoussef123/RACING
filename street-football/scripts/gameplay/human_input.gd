@@ -25,7 +25,8 @@ func _init(touch: TouchControls) -> void:
 	_touch = touch
 
 
-func read(attacking: bool) -> PlayerIntent:
+## clearing: our side has the ball and our player is in our own half (SHOOT becomes CLEAR).
+func read(attacking: bool, clearing: bool = false) -> PlayerIntent:
 	var intent := PlayerIntent.new()
 	# Speed steps: the move keeps a full length; walk / run / sprint / knock-on set the speed.
 	var stick := _move_vector()
@@ -53,12 +54,18 @@ func read(attacking: bool) -> PlayerIntent:
 	var sprint_hold := _touch.is_held("sprint") or Input.is_physical_key_pressed(KEY_SHIFT)
 	if attacking and not _was_attacking and shoot_hold:
 		_shoot_locked = true
+	# A SHOOT held for a clearance must be lifted before it can start a shot.
+	if clearing and shoot_hold:
+		_shoot_locked = true
 	if not shoot_hold:
 		_shoot_locked = false
 	_was_attacking = attacking
 	intent.switch_pressed = q_tap
 	if attacking:
-		intent.shoot_held = (shoot_hold or shoot_tap) and not _shoot_locked
+		if clearing:
+			intent.clear_pressed = shoot_tap
+		else:
+			intent.shoot_held = (shoot_hold or shoot_tap) and not _shoot_locked
 		intent.pass_pressed = pass_tap
 		intent.through_pressed = through_tap
 		intent.sprint = sprint_hold
