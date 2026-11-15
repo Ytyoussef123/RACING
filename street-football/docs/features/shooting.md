@@ -68,7 +68,7 @@ Last change: 2026-11-15, step 3 shot types: a slide on SHOOT picks chip, curled 
 
 ## How to check after a change
 - CI: `tests/physics_smoke_test.tscn`, `tests/stats_test.tscn`, `SHOT TYPES TESTS DONE: 0 failure(s)`.
-- `MATCH BALANCE` line (last record: 4.83 goals, 27.5 shots, 17.3 saves per 150-second match over 6 matches) and `MATCH SHOT TYPES` (shots, saves, goals by type).
+- `MATCH BALANCE` line (last record, after the slower players: 4.17 goals, 23.8 shots, 13.5 saves per 150-second match over 6 matches) and `MATCH SHOT TYPES` (shots, saves, goals by type).
 - Phone test, not done yet (shot types): each slide on SHOOT (up chip, left or right curl, down low) with too little, right and too much power; a chip when the keeper comes out; curls from both sides; the keeper saving shots at him more than in the corners.
 - Motion study (a shot seen from the match camera).
 - Phone test: charge, release, curl, weak foot, early shot. Not tested yet: a full-power shot can now fly over the bar; hold CLEAR.

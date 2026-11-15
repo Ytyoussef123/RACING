@@ -15,9 +15,40 @@ A dated log, newest entry first: what was done, what was decided and why, and wh
 | 7 | Progression: coins, unlocks, upgrades, save system | Done, waiting for phone test |
 | 8 | Release build: optimized APK, full file review | Not started |
 
-The player-motion work is an extra feature branch between Phase 7 and Phase 8 (`feature/player-motion`, created from `feature/progression`), waiting for the phone test. `feature/broadcast-camera` (created from `feature/player-motion`) adds camera views and also waits for the phone test. `feature/speed-modes` (created from `feature/broadcast-camera`) adds walk, run, sprint and knock-on, and waits for the phone test. `feature/shot-on-target` (created from `feature/speed-modes`) adds shots on target and CLEAR, and waits for the phone test. `feature/keeper-ball` (created from `feature/shot-on-target`) adds the goalkeeper with the ball (hands or feet), and waits for the phone test. `feature/team-movement` (created from `feature/keeper-ball`) adds team movement (creating space), and waits for the phone test. `feature/kick-power` (created from `feature/team-movement`) adds the power bar for every kick, and waits for the phone test. `feature/lofted-pass` (created from `feature/kick-power`) adds lofted passes, and waits for the phone test. `feature/shot-types` (created from `feature/lofted-pass`) adds the shot types, and waits for the phone test.
+The player-motion work is an extra feature branch between Phase 7 and Phase 8 (`feature/player-motion`, created from `feature/progression`), waiting for the phone test. `feature/broadcast-camera` (created from `feature/player-motion`) adds camera views and also waits for the phone test. `feature/speed-modes` (created from `feature/broadcast-camera`) adds walk, run, sprint and knock-on, and waits for the phone test. `feature/shot-on-target` (created from `feature/speed-modes`) adds shots on target and CLEAR, and waits for the phone test. `feature/keeper-ball` (created from `feature/shot-on-target`) adds the goalkeeper with the ball (hands or feet), and waits for the phone test. `feature/team-movement` (created from `feature/keeper-ball`) adds team movement (creating space), and waits for the phone test. `feature/kick-power` (created from `feature/team-movement`) adds the power bar for every kick, and waits for the phone test. `feature/lofted-pass` (created from `feature/kick-power`) adds lofted passes, and waits for the phone test. `feature/shot-types` (created from `feature/lofted-pass`) adds the shot types, and waits for the phone test. `feature/player-speed` (created from `feature/shot-types`) slows the players down, and waits for the phone test.
 
 ## Log
+
+### 2026-11-15 — Slower players: sprint at the old run speed
+
+#### Why
+
+- The user's request: "The speed of player should be reduced. Now normally the speed without the sprint button should be the speed with sprint, and the without should be less." So the old run speed becomes the sprint speed, and running without SPRINT is slower.
+- Walk was lowered too: all three speed steps (walk, run, sprint) got the same factor (x0.705), so the user's four speed steps (walk / run / sprint / knock-on, their design of 2026-11-15) keep the same proportions, only slower.
+
+#### Done
+
+- `data/config/player.json`: `sprint_speed` 7.8 -> 5.5 m/s (the old run speed); `run_speed` 5.5 -> 3.9; `walk_speed` 2.2 -> 1.55. The knock-on follows the sprint (`knock_on_speed_factor` 1.0 -> 5.5 m/s). With the ball (`dribble_speed_factor` 0.92): walk 1.43, run 3.59, sprint 5.06 m/s; knock-on stays 5.5 (no dribbling slowdown).
+- Not changed on purpose: acceleration 22, deceleration 28, turn speeds, turn grip (walk 1.3, sprint 0.6), `stat_effects` ranges, AI difficulty `speed_factor`, ball, pass and shot speeds. A lower acceleration would have made the movement heavier, which the user said not to strengthen without asking.
+- `data/config/animation.json` (look only): `move_blend_full_speed` 1.6 -> 1.1, `walk_gait_full_speed` 2.4 -> 1.7, `run_gait_speed` 3.4 -> 2.4, so the slower runs keep a running stride and the walk stays a walk. The sprint swing still blends by speed / top sprint speed (unchanged code).
+- `data/config/ai.json`: `through_min_runner_speed` 3.0 -> 2.1 (same share of the new run speed).
+- Code fallbacks in `player_motion.gd`, `dribbling.gd`, `player_animator.gd` and `carrier_ai.gd` updated to the new numbers (no logic change).
+- Tests: `physics_smoke_test.gd` dribble checks now compare the steps to each other: sprint dribbling faster than 1.2x run dribbling (was run + 1.0 m/s), knock-on faster than 1.04x sprint dribbling (was + 0.3 m/s), walk within 30 % of the configured walk pace with the ball (was 1.4 to 2.6 m/s). `motion_study.gd` line-up poses: jog 4.0 -> 2.8 m/s, sprint 7.5 -> 5.3 m/s. `team_ai_test.gd`: the runner in the through-pass test moves at 5.0 m/s (was 6.0, above the new top speed). All 9 test suites pass (0 failures). Motion study checked: walk, run and sprint strides look right.
+- Branch `feature/player-speed` (from `feature/shot-types`), commit `bea4541`, CI run 43738218282 green (APK artifact there).
+
+#### Numbers
+
+- MATCH BALANCE (6 AI matches of 150 s, before -> after): goals 4.83 -> 4.17, shots 27.5 -> 23.8, saves 17.3 -> 13.5 per match; longest stuck ball 0.0 s.
+- Shot types (6 matches, shots / saved / goals): normal 104 / 69 / 15; low 21 / 7 / 5; chip 5 / 0 / 1; curl 12 / 5 / 2; other goals 2.
+- Passes completed 462 of 653 (71 %) -> 433 of 601 (72 %).
+- Side effect: balls won 160 -> 93 over the 6 matches. With slower players the passes travel relatively faster, so there are fewer interceptions and longer possessions (settled possession, ball held 2 s or more, 11 % -> 15 % of the time).
+- MATCH SPACING: 5.4 m to the nearest teammate (same), two teammates closer than 3 m 31 % -> 30 %, 3+ near the ball 8 % (same).
+
+#### Next
+
+- Phone test, not done yet: does the run now feel right, is sprint the old running pace, is walk too slow. The user can ask to keep walk at 2.2 m/s, or to change the gap between run and sprint.
+- Balls won dropped and is not retuned (reported to the user). If defending feels too hard on the phone, the options are tackle reach, AI press distance or interception, to be decided by the user.
+- Nothing merged to main yet.
 
 ### 2026-11-15 — Shot types (step 3)
 
