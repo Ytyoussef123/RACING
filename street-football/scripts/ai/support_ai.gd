@@ -29,7 +29,7 @@ static func cover_point(team: Team, ctx: MatchContext) -> Vector3:
 	var d := to_goal.length()
 	if d < 0.01:
 		return own_goal
-	return ball + to_goal / d * minf(Steering.num("cover_defend_depth", 4.5), d * 0.5)
+	return ball + to_goal / d * minf(Steering.num("cover_defend_depth", 6.0), d * 0.5)
 
 
 static func _chase(player: Player, delta: float, ctx: MatchContext) -> PlayerIntent:

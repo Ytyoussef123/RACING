@@ -74,7 +74,7 @@ func _pick_cover(ctx: MatchContext, human_player: Player, presser: Player) -> Pl
 		return null
 	var ball_pos := ctx.ball.position
 	var to_goal := Vector2(ball_pos.x - team.own_goal_x(ctx.court), ball_pos.z)
-	if to_goal.length() < Steering.num("cover_min_goal_distance", 7.0):
+	if to_goal.length() < Steering.num("cover_min_goal_distance", 12.0):
 		return null
 	var spot := SupportAI.cover_point(team, ctx)
 	var best: Player = null

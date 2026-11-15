@@ -49,7 +49,7 @@ static func tick(brain: TeamBrain, delta: float, ctx: MatchContext) -> void:
 	if _deepest(outfield, ctx) == passer or ctx.rng.randf() >= brain.team.tuning.give_go_chance:
 		return
 	passer.ai.go_left = Steering.num("give_go_seconds", 1.6)
-	passer.ai.go_target = AttackShape.give_go_spot(passer, ctx)
+	passer.ai.go_target = AttackShape.give_go_spot(passer, ctx, possession.pass_target)
 
 
 ## Decision tick while our side has the ball: gives the players without the ball their jobs and

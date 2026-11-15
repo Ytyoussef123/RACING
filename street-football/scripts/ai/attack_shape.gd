@@ -30,15 +30,21 @@ static func intent_for(player: Player, ctx: MatchContext, brain: TeamBrain) -> P
 		else:
 			target = FormationPositions.slot_target(player, ctx, true)
 		target = get_open(target, player.team)
-	var intent := Steering.seek(player, spaced(player, target, ctx))
+	target = spaced(player, target, ctx)
+	var intent := Steering.seek(player, target)
+	# Far from his spot (the ball just changed sides, or the carrier ran away): he sprints there.
+	if s.attack_role != AiPlayerState.AttackRole.NONE \
+			and player.flat_distance_to(target) > Steering.num("job_sprint_distance", 4.5):
+		sprint = true
 	if sprint and intent.move != Vector3.ZERO:
 		intent.sprint = true
 	return intent
 
 
-## Support: support_distance from the carrier, `angle` degrees from straight toward goal.
+## Support: support_distance from where the carrier will be in support_lead_seconds, `angle`
+## degrees from straight toward goal.
 static func support_spot(carrier: Player, ctx: MatchContext, angle: float) -> Vector3:
-	return clamp_to_court(carrier.position + _direction(carrier.team, angle) * Steering.num("support_distance", 6.0), ctx.court)
+	return clamp_to_court(_anchor(carrier) + _direction(carrier.team, angle) * Steering.num("support_distance", 6.5), ctx.court)
 
 
 ## Decision tick: the support angle (support_angles, both sides) with the clearest lane from the
@@ -118,14 +124,17 @@ static func may_run(player: Player, carrier: Player, ctx: MatchContext) -> bool:
 	return carrier.flat_distance_to(run_spot(player, ctx)) <= Steering.num("run_max_pass_distance", 20.0)
 
 
-## Give-and-go: give_go_distance straight up the court from where he passed, a little toward
-## the middle, not past slot_frac_max.
-static func give_go_spot(passer: Player, ctx: MatchContext) -> Vector3:
+## Give-and-go: give_go_distance up the court from where he passed, a little toward the middle,
+## and give_go_side_step to the side away from the receiver (not into him); not past slot_frac_max.
+static func give_go_spot(passer: Player, ctx: MatchContext, receiver: Player) -> Vector3:
 	var team := passer.team
 	var court := ctx.court
 	var frac := team.to_frac(passer.position.x, court) + Steering.num("give_go_distance", 7.0) / court.length
 	frac = minf(frac, Steering.num("slot_frac_max", 0.9))
 	var z := passer.position.z * (1.0 - Steering.num("give_go_center_pull", 0.3))
+	if receiver != null:
+		var away := -signf(receiver.position.z - passer.position.z)
+		z += (away if away != 0.0 else 1.0) * Steering.num("give_go_side_step", 2.0)
 	return clamp_to_court(Vector3(team.frac_to_x(frac, court), 0.0, z), court)
 
 
@@ -177,7 +186,7 @@ static func clamp_to_court(spot: Vector3, court: CourtData) -> Vector3:
 
 static func _support_score(carrier: Player, ctx: MatchContext, angle: float, avoid: Array) -> float:
 	var team := carrier.team
-	var raw := carrier.position + _direction(team, angle) * Steering.num("support_distance", 6.0)
+	var raw := _anchor(carrier) + _direction(team, angle) * Steering.num("support_distance", 6.5)
 	var spot := clamp_to_court(raw, ctx.court)
 	var score := cos(deg_to_rad(angle)) * Steering.num("support_forward_weight", 0.8)
 	score -= Steering.flat(raw - spot).length() * Steering.num("support_wall_weight", 1.0)
@@ -185,12 +194,17 @@ static func _support_score(carrier: Player, ctx: MatchContext, angle: float, avo
 		* Steering.num("support_open_weight", 0.4)
 	if CarrierAI.lane_clear(carrier.position, spot, team.opponent):
 		score += Steering.num("support_lane_bonus", 2.0)
-	var crowd := Steering.num("support_crowd_distance", 5.0)
+	var crowd := Steering.num("support_crowd_distance", 6.0)
 	for other: Vector3 in avoid:
 		var d := Steering.flat(spot - other).length()
 		if d < crowd:
 			score -= (crowd - d) * Steering.num("support_crowd_weight", 0.5)
 	return score
+
+
+## Where the carrier will be in support_lead_seconds (the support keeps up with a running carrier).
+static func _anchor(carrier: Player) -> Vector3:
+	return carrier.position + Steering.flat(carrier.motion.velocity) * Steering.num("support_lead_seconds", 0.4)
 
 
 ## Unit vector `angle` degrees from straight toward the opponent's goal (turning around the vertical).

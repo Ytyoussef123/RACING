@@ -20,8 +20,10 @@ const CLOSE_PAIR := 3.0
 const CROWD_RADIUS := 4.0
 const CROWD_COUNT := 3
 ## The same numbers for each side by phase of play: its side has the ball (or its pass is on the
-## way to a teammate), the other side has it, or the ball is loose.
-const PHASES: Array[String] = ["with the ball", "without the ball", "loose ball"]
+## way to a teammate), the other side has it, or the ball is loose; and with the ball once the side
+## has kept it for SETTLED_SECONDS (the shape has had time to form).
+const PHASES: Array[String] = ["with the ball", "without the ball", "loose ball", "with the ball 2 s+"]
+const SETTLED_SECONDS := 2.0
 const SAFETY_SECONDS_PER_MATCH := 400.0
 
 var _match: Node
@@ -46,11 +48,14 @@ var _spacing_count := 0
 var _crowd_samples := 0
 var _close_samples := 0
 var _side_samples := 0
-var _phase_sum: Array[float] = [0.0, 0.0, 0.0]
-var _phase_count: Array[int] = [0, 0, 0]
-var _phase_close: Array[int] = [0, 0, 0]
-var _phase_crowd: Array[int] = [0, 0, 0]
-var _phase_sides: Array[int] = [0, 0, 0]
+var _phase_sum: Array[float] = [0.0, 0.0, 0.0, 0.0]
+var _phase_count: Array[int] = [0, 0, 0, 0]
+var _phase_close: Array[int] = [0, 0, 0, 0]
+var _phase_crowd: Array[int] = [0, 0, 0, 0]
+var _phase_sides: Array[int] = [0, 0, 0, 0]
+## Side that has the ball (-1: nobody) and since when (s of this match).
+var _owner := -1
+var _owner_since := 0.0
 ## Diagnosis: how often each kind of close pair and each crowd near the ball happens, by the
 ## players' jobs (AttackRoles with the ball; chaser, cover, marker or zone without it).
 var _pair_kinds: Dictionary = {}
@@ -79,6 +84,8 @@ func _start_next() -> void:
 	_final = Vector2i.ZERO
 	_stuck_time = 0.0
 	_elapsed = 0.0
+	_owner = -1
+	_owner_since = 0.0
 	_match = MATCH_SCENE.instantiate()
 	add_child(_match)
 	_match.goal_scored.connect(func(_team: int) -> void: _goals += 1)
@@ -102,6 +109,13 @@ func _physics_process(delta: float) -> void:
 	for p in ctx.all_players:
 		if absf(p.position.x) > court.half_length + 0.01 or absf(p.position.z) > court.half_width + 0.01:
 			_out_of_bounds = true
+	var owner := -1
+	for team in ctx.teams:
+		if _has_ball(team, ctx):
+			owner = team.index
+	if owner != _owner:
+		_owner = owner
+		_owner_since = _elapsed
 	_sample_timer += delta
 	if _sample_timer >= SPACING_SAMPLE_SECONDS and _match.flow.state == MatchFlow.State.PLAYING:
 		_sample_timer = 0.0
@@ -117,6 +131,9 @@ func _sample_spacing(ctx: MatchContext) -> void:
 			phase = 0
 		elif _has_ball(team.opponent, ctx):
 			phase = 1
+		var buckets: Array[int] = [phase]
+		if phase == 0 and _elapsed - _owner_since >= SETTLED_SECONDS:
+			buckets.append(3)
 		var outfield := team.outfield()
 		var near_ball := 0
 		var close_pair := false
@@ -133,21 +150,25 @@ func _sample_spacing(ctx: MatchContext) -> void:
 			if nearest < INF:
 				_spacing_sum += nearest
 				_spacing_count += 1
-				_phase_sum[phase] += nearest
-				_phase_count[phase] += 1
+				for b in buckets:
+					_phase_sum[b] += nearest
+					_phase_count[b] += 1
 				close_pair = close_pair or nearest < CLOSE_PAIR
 			if p.flat_distance_to(ctx.ball.position) < CROWD_RADIUS:
 				near_ball += 1
 				near_labels.append(_label(p, team, ctx, phase))
 		_side_samples += 1
-		_phase_sides[phase] += 1
+		for b in buckets:
+			_phase_sides[b] += 1
 		if near_ball >= CROWD_COUNT:
 			_crowd_samples += 1
-			_phase_crowd[phase] += 1
+			for b in buckets:
+				_phase_crowd[b] += 1
 			_count(_crowd_kinds, PHASES[phase], near_labels)
 		if close_pair:
 			_close_samples += 1
-			_phase_close[phase] += 1
+			for b in buckets:
+				_phase_close[b] += 1
 
 
 ## What a player is doing, for the diagnosis.
@@ -221,8 +242,9 @@ func _report() -> void:
 		print("MATCH SPACING %s (%.0f %% of the time): %.1f m to the nearest teammate, %.0f %% two closer than %.0f m, %.0f %% 3+ near the ball"
 			% [PHASES[k], 100.0 * _phase_sides[k] / sides, _phase_sum[k] / maxf(1.0, float(_phase_count[k])),
 			100.0 * _phase_close[k] / phase_sides, CLOSE_PAIR, 100.0 * _phase_crowd[k] / phase_sides])
-	_print_kinds("close pair", _pair_kinds, sides)
-	_print_kinds("crowd", _crowd_kinds, sides)
+	for k in range(3):
+		_print_kinds("close pair", _pair_kinds, PHASES[k], maxf(1.0, float(_phase_sides[k])))
+		_print_kinds("crowd", _crowd_kinds, PHASES[k], maxf(1.0, float(_phase_sides[k])))
 	_check("every match reaches full time", _all_finished)
 	_check("goals are scored", _total_goals >= MIN_TOTAL_GOALS, "total=%d" % _total_goals)
 	_check("score matches goals", not _score_mismatch)
@@ -232,11 +254,14 @@ func _report() -> void:
 	get_tree().quit(1 if _failures > 0 else 0)
 
 
-## The most frequent kinds, as a share of all side samples.
-func _print_kinds(what: String, kinds: Dictionary, sides: float) -> void:
-	var keys: Array = kinds.keys()
+## The most frequent kinds of one phase, as a share of that phase's side samples.
+func _print_kinds(what: String, kinds: Dictionary, phase_name: String, sides: float) -> void:
+	var keys: Array = []
+	for key in kinds.keys():
+		if str(key).begins_with(phase_name + ":"):
+			keys.append(key)
 	keys.sort_custom(func(a: Variant, b: Variant) -> bool: return int(kinds[a]) > int(kinds[b]))
-	for k in range(mini(keys.size(), 8)):
+	for k in range(mini(keys.size(), 4)):
 		print("MATCH SPACING %s %s: %.1f %%" % [what, str(keys[k]), 100.0 * int(kinds[keys[k]]) / sides])
 
 
