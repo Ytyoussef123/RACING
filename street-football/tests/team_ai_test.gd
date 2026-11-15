@@ -23,6 +23,7 @@ func _ready() -> void:
 	_test_give_and_go()
 	_test_keeper_ball_no_jobs()
 	_test_defense_cover_and_marks()
+	_test_press_loose_ball()
 	_test_brains_run()
 	print("TEAM AI TESTS DONE: %d failure(s)" % _failures)
 	get_tree().quit(1 if _failures > 0 else 0)
@@ -254,6 +255,34 @@ func _test_defense_cover_and_marks() -> void:
 
 
 ## Both brains drive every player for 2 s of a loose ball, an attack and a defense without errors.
+## A loose ball is there to be won whoever touched it last: the human's buttons are the defense
+## ones and PRESS (no stick) runs his player to the ball; his own pass on its way keeps the attack ones.
+func _test_press_loose_ball() -> void:
+	_place([[-17, 0], [-8, 1], [0, 0], [3, -5], [9, 6]],
+		[[17, 0], [12, -2], [12, 3], [14, 0], [10, -6]], null, Vector3(4.0, 0.0, 0.0))
+	var human := HumanControl.new(_home)
+	var player := _home.players[2]
+	human.select(player)
+	_ctx.possession.last_touch_team = _home.index
+	_check("press: a loose ball we touched last shows the defense buttons", not human.is_attacking(_ctx))
+	_ctx.possession.pass_target = _home.players[4]
+	_check("press: our pass on its way keeps the attack buttons", human.is_attacking(_ctx))
+	_ctx.possession.pass_target = null
+	var won := false
+	for i in range(240):
+		var intent := PlayerIntent.new()
+		intent.press_held = true
+		player.intent = HumanAssists.apply(player, intent, human.is_attacking(_ctx), 1.0 / 60.0, _ctx, human)
+		player.move(1.0 / 60.0, _ctx.court, false)
+		player.handling.update(1.0 / 60.0, player, _ctx)
+		_ctx.ball.step(1.0 / 60.0)
+		if _ctx.possession.holder == player:
+			won = true
+			break
+	_check("press: held with no stick, the player runs to the loose ball and takes it", won,
+		"distance=%.2f" % player.flat_distance_to(_ctx.ball.position))
+
+
 func _test_brains_run() -> void:
 	_attack_setup()
 	var ok := true

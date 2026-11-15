@@ -50,13 +50,15 @@ func update(delta: float, intent: PlayerIntent, ctx: MatchContext) -> void:
 			select(nearest)
 
 
-## True when the human's side has the ball, or touched the loose ball last (its own pass or
-## shot is travelling): the buttons show the attack layout. Otherwise the defense layout.
+## True when the human's side has the ball, or its own pass is travelling to a teammate: the
+## buttons show the attack layout. Otherwise the defense layout: a loose ball is there to be won
+## whoever touched it last (PRESS sends the player to it).
 func is_attacking(ctx: MatchContext) -> bool:
 	var holder := ctx.possession.holder
 	if holder != null:
 		return holder.team == team
-	return ctx.possession.last_touch_team == team.index
+	var target := ctx.possession.pass_target
+	return target != null and target.team == team
 
 
 ## True while a pass is travelling to the human's player (receive assist runs him to the ball).
