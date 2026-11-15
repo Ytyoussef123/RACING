@@ -1,6 +1,6 @@
 # Match flow
 
-Last change: 2026-11-14, Phase 7: My Crew as default home side, coins and results after the match (branch `feature/progression`, commit `f78448c`)
+Last change: 2026-11-15, human assists moved out of `match.gd` into `HumanAssists` (branch `feature/speed-modes`, commit `a89cab9`)
 
 ## What it does now
 - 5v5: each team has a keeper and 4 outfield players. The human's team attacks to the right (orange, keeper yellow). Goalkeepers are always AI.
@@ -21,9 +21,10 @@ Last change: 2026-11-14, Phase 7: My Crew as default home side, coins and result
 - Code: `scripts/gameplay/match.gd` (match scene script: builds the match, runs frames, goal and out detection). `scripts/gameplay/match_flow.gd` (MatchFlow): `start()`, `tick_clock()`, `stop()`, `tick_stop()`, `finish()`, `clock_text()`. `scripts/gameplay/restart_placer.gd` (RestartPlacer): `kickoff()`, `plan_out()`, `apply_restart()`. `scripts/gameplay/match_context.gd` (MatchContext): `emit_event()`, `add_team()`. `scripts/gameplay/team.gd` (Team): own and target goal, `set_formation()`, `assign_slots()`. `scripts/gameplay/team_factory.gd` (TeamFactory): `build()`, `kits_clash()`. `scripts/gameplay/slot_assigner.gd` (SlotAssigner). `scripts/gameplay/match_stats.gd` (MatchStats). `scripts/data/formation_data.gd` (FormationData). Scenes: `scenes/match/`.
 - Numbers: `data/config/match.json` -> `match_seconds` 180, `goal_message_seconds` 2.0, `full_time_message_seconds` 4.0, `restart_message_seconds` 1.5, `default_formation`, `default_difficulty`, `formations`, `difficulties`, `courts`, `default_home_team` "my_crew", `default_away_team` "rooftop_rebels", `auto_switch`, `auto_switch_margin` 2.5, `switch_cooldown` 0.8, `restart_clear_distance` 3.0, `restart_inset` 0.4, `kickoff_taker_offset` 0.6, `kit_clash_distance` 0.35.
 - Numbers: `data/config/progression.json` (coins). `data/formations/*.json` (5 formations). `data/courts/*.json`.
-- Tests: `tests/match_sim_test.gd` (3 full AI matches, goals counted, ball never stuck, everyone in the court); `tests/stats_test.gd` (slot assignment); `tests/progression_test.gd` (rewards, e.g. a 3-1 win on Normal = 195 coins); `tests/ui_flow_test.gd` (menu choices, results screen).
+- Tests: `tests/match_sim_test.gd` (6 full AI matches, goals counted, ball never stuck, everyone in the court); `tests/stats_test.gd` (slot assignment); `tests/progression_test.gd` (rewards, e.g. a 3-1 win on Normal = 195 coins); `tests/ui_flow_test.gd` (menu choices, results screen).
 
 ## History (newest first)
+- 2026-11-15: the human assists moved from `match.gd` to `HumanAssists` (`scripts/gameplay/human_assists.gd`) to keep `match.gd` under about 300 lines. No change to the rules. Branch `feature/speed-modes`, commit `a89cab9`.
 - 2026-11-14: Phase 7: My Crew is the default home side, coins after every match shown on the results screen, match record saved, 4 courts. Branch `feature/progression`, commit `f78448c`.
 - 2026-11-14: Phase 6: match events feed sounds and effects (kicks, tackles, saves, skills, ball hits), goal celebration, camera shake on goals. Branch `feature/polish`, commits `cff05f4`, `16fa679`.
 - 2026-11-14: Phase 5: menus; quick match flow (crews, formation, court and rules, match length 3/4/5 min); results screen with scorers and stats; PAUSE menu (RESUME, FORMATION, QUIT MATCH). Branch `feature/menus`, commit `88497f3`.

@@ -1,6 +1,6 @@
 # AI
 
-Last change: 2026-11-14, AI uses skill moves when a defender is within 2 m (branch `feature/polish`, commit `16fa679`)
+Last change: 2026-11-15, `shoot_range` lowered to 8 / 9.5 / 11 m after the speed modes (branch `feature/speed-modes`, commit `9949e3f`)
 
 ## What it does now
 - Every player, human or AI, is driven by the same `PlayerIntent`. The AI has no cheating inputs.
@@ -10,6 +10,8 @@ Last change: 2026-11-14, AI uses skill moves when a defender is within 2 m (bran
 - Receivers and loose-ball chasers use the same intercept prediction as the human receive assist.
 - Keeper: stays between ball and goal, moves across for shots, rushes loose balls near goal, saves (catch or parry) once per shot with a difficulty-based chance, then passes to the most open teammate. Goalkeepers are always AI, also on the human's team.
 - Difficulties easy / normal / hard (decision interval, speed factor, shot error, shoot range, pass tendency, tackle chances, keeper save chance, skill tendency). The AI's aim error is added to the player's own stat-based error. Decisions run at the difficulty's interval, movement runs every frame.
+- `shoot_range` is 8 / 9.5 / 11 m for easy / normal / hard (was 9 / 11 / 12.5).
+- The speed modes apply to the AI too: sprinting with the ball keeps it close, and accuracy changes by mode. The AI does not walk or knock-on yet (planned after the user's controls test).
 - The human's teammates use "normal" (`teammates_difficulty`). The default opponent formation is 1-2-1.
 
 ## Where it lives
@@ -20,9 +22,10 @@ Last change: 2026-11-14, AI uses skill moves when a defender is within 2 m (bran
   - Decisions: `pass_lane_width`, `pass_min_score`, `pass_min_distance`, `pass_max_distance`, `shot_min_frac`, `shot_corner_inset` 0.55, `shot_min_goal_angle_degrees` 9.0, `shot_close_distance` 6.0, `shot_lane_width` 0.5, `shot_charge_min/max`.
   - Keeper: `keeper_line_offset`, `keeper_rush_distance`, `keeper_reach`, `keeper_reach_height`, `keeper_catch_speed`, `keeper_save_min_speed`, `keeper_hold_seconds`, `keeper_parry_lift`, `keeper_parry_spread`.
   - Top level: `teammates_difficulty`, `opponent_formation`.
-- Tests: `tests/match_sim_test.gd`: 3 AI-vs-AI matches with fixed seeds (150 s each, fixed 60 fps), checks the ball never stays stuck and players stay in the court, prints the `MATCH BALANCE` line. `tests/stats_test.gd`: keeper attributes.
+- Tests: `tests/match_sim_test.gd`: 6 AI-vs-AI matches (seeds 11, 22, 33, 44, 55, 66; was 3) with fixed seeds (150 s each, fixed 60 fps), checks the ball never stays stuck and players stay in the court, prints the `MATCH BALANCE` line. `tests/stats_test.gd`: keeper attributes.
 
 ## History (newest first)
+- 2026-11-15: `shoot_range` 9 / 11 / 12.5 -> 8 / 9.5 / 11 m. Why: with the sprint keeping the ball close, the AI reached shooting range sooner and shot from further out: 6 matches gave 2.33 goals, 29.3 shots, 13.3 saves (8 % of shots scored instead of 18 %); after the change 3.67 goals, 33.2 shots, 14.0 saves. The AI does not walk or knock-on yet. Branch `feature/speed-modes`, commit `9949e3f`.
 - 2026-11-14: player-motion work (players keep the ball in turns). No AI file changed; balance moved to 5.00 goals, 28.3 shots, 11.0 saves (was 3.33 / 24.3 / 9.0) because attacks last longer. Note: if scoring feels too easy on the phone, raise the keeper save chances in `ai.json`. Branch `feature/player-motion` (no AI commit).
 - 2026-11-14: AI uses skill moves (`skill_tendency`). Why: Phase 6. Branch `feature/polish`, commit `16fa679`.
 - 2026-11-14: the keeper AI (`scripts/ai/keeper_ai.gd`) now plays the dive animation (`keeper.animate_dive`) and sends a "save" event (`ctx.emit_event("save", ...)`) when it saves. Branch `feature/polish`, commit `cff05f4`.
@@ -34,10 +37,11 @@ Last change: 2026-11-14, AI uses skill moves when a defender is within 2 m (bran
 - 2026-11-14: Phase 1 commit `3193378` (branch `main`) only created the empty folder (`scripts/ai/.gitkeep`).
 
 ## Do not undo
-- Balance is measured by the CI AI-match test (`MATCH BALANCE`, 3 fixed seeds). History of the numbers per 150-second match:
+- Balance is measured by the CI AI-match test (`MATCH BALANCE`, 3 fixed seeds until 2026-11-15, then 6). History of the numbers per 150-second match:
   - after stats: 1.67 goals (too low) -> fixed with `shot_corner_inset` 0.55, smaller aim errors, skipping shots under 9 degrees goal angle or through a defender (unless within 6 m), lower keeper save chances -> 3.67 goals, 23.7 shots, 9.7 saves;
   - after skill moves: 3.33 goals, 24.3 shots, 9.0 saves;
-  - after the player-motion work: 5.00 goals, 28.3 shots, 11.0 saves.
+  - after the player-motion work: 5.00 goals, 28.3 shots, 11.0 saves;
+  - after the speed modes (6 matches): 2.33 goals, 29.3 shots, 13.3 saves with the old `shoot_range`; 3.67 goals, 33.2 shots, 14.0 saves with 8 / 9.5 / 11 m (latest).
   With 3 matches the goal count moves a lot between runs (1.67 to 5.00 during the player-motion work). Judge by shots and saves too, and by the phone.
 - The AI uses the same `PlayerIntent` path as the human: no cheating inputs. Difficulty only changes reaction time, speed factor, aim error, tendencies and keeper save chance.
 - Decisions at an interval, movement every frame: difficulty stays tunable and movement smooth.
@@ -45,6 +49,6 @@ Last change: 2026-11-14, AI uses skill moves when a defender is within 2 m (bran
 - Keepers are always AI.
 
 ## How to check after a change
-- CI test `tests/match_sim_test.tscn`: the `MATCH BALANCE` line (goals, shots, saves, longest stuck ball) and the 3 match results; compare with the numbers above.
+- CI test `tests/match_sim_test.tscn`: the `MATCH BALANCE` line (goals, shots, saves, longest stuck ball) and the match results (6 matches); compare with the numbers above.
 - Other CI suites pass (physics, stats, progression, menus).
 - Phone test: play each difficulty; check scoring is not too easy or too hard.

@@ -53,17 +53,19 @@ Four buttons in a diamond (eFootball style). Labels and meaning switch with poss
 - **SHOOT:** hold to charge (a power bar appears above the player), release to shoot. Turning while shooting curls the ball.
 - **PASS:** goes to the teammate closest to the joystick direction (it does not need to be exactly on the line).
 - **THROUGH:** a pass into the space 4 m in front of the receiver, mostly toward the opponent goal and partly along his run, kept inside the court.
+- **Walk, run, sprint:** push the joystick softly to walk (with the ball it stays very close), fully to run, and hold SPRINT to sprint (the ball stays close, about 0.5 m ahead). The joystick ring turns yellow in the run zone.
+- **Knock-on (with the ball):** pull the joystick hard twice (thumb stays on the screen: edge, back a little, edge again quickly). The ball is pushed 1.3 m ahead and you run onto it and push again, at full speed, until you soften or release the joystick (or pass, shoot or lose the ball). The ring turns orange. A ball pushed ahead can be stolen.
 - **SPRINT:** hold.
-- **PRESS** (hold SPRINT on defense): the player sprints goal-side of the ball carrier, then to the ball, and tackles by himself when in reach. On a loose ball he sprints to where he can meet it.
+- **PRESS** (hold SPRINT on defense): with the joystick moved, the player sprints where it points. PRESS alone is the automatic press: he sprints goal-side of the ball carrier, then to the ball, and tackles by himself when in reach. On a loose ball he sprints to where he can meet it.
 - **MATCH-UP** (hold): the player shadows the ball carrier goal-side at 1.6 m and follows his moves. No automatic tackle: tap TACKLE.
 - **TACKLE:** tap when an opponent is in reach.
 - **SWITCH:** jump to the teammate nearest the ball. Switching is also automatic when a pass leaves for a teammate, when a teammate gets the ball, and when defending if a teammate is clearly closer.
 - **Receive assist:** the player a pass is aimed at runs to the earliest point of the ball's path he can reach and waits there. The joystick keeps aiming, so a first-time kick goes where you point (forward if the stick is neutral).
 - **First-time kicks:** PASS, THROUGH or a shot pressed up to 0.5 s before the ball arrives is kept and played when the ball comes within reach.
 - **Shoulder charge:** when your side does not have the ball, double-tap the joystick (F on keyboard) near the ball carrier to push him with the shoulder. Within 1.4 m you win or lose the duel (about 50 % at equal strength); too far, you only lunge and are slowed briefly.
-- **Touch dribbling:** the player taps the ball ahead and catches it, further when sprinting (about 0.9 m running, 1.8 m sprinting). A ball knocked far ahead can be stolen, and is lost if it gets too far. Release the joystick to stop the ball at the feet. A pass or shot asked while the ball is ahead waits until the player reaches the ball.
+- **Touch dribbling:** the player taps the ball ahead and catches it: very close walking (about 0.4 to 0.55 m), 0.5 to 1.0 m running, close again sprinting, and exactly 1.3 m in a knock-on. A ball knocked far ahead can be stolen, and is lost if it gets too far. Release the joystick to stop the ball at the feet. A pass or shot asked while the ball is ahead waits until the player reaches the ball.
 - **Skill moves:** with the ball, flick the joystick (quick swipe and release, under 0.22 s; C on keyboard). The direction compared to where the player faces picks the move:
-  - Forward: knock-on (big touch to run onto), rainbow flick over a defender within 3 m, nutmeg through a defender within 1.6 m.
+  - Forward: rainbow flick over a defender within 3 m, nutmeg through a defender within 1.6 m, otherwise no move (the knock-on is now the joystick double pull).
   - Side: elastico or step-over.
   - Back: heel-flick pass to a teammate behind, roulette or drag-back.
   - Each move needs a minimum of skill-move stars. Success chance = 0.45 + 0.1 per star + a dribbling bonus (max 0.97); a miss is a bad touch and the ball is lost. A good move can freeze defenders within 2.6 m. The move name pops up above the player.
@@ -81,6 +83,8 @@ Keyboard (PC):
 - Q: switch player (any time)
 - F: shoulder charge
 - C: skill move
+- Ctrl: walk
+- K: knock-on
 
 ## Progression
 

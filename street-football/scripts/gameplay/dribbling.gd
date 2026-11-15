@@ -122,27 +122,28 @@ static func can_steal(player: Player, ctx: MatchContext) -> bool:
 	return holder_dist > exposed and player.flat_distance_to(ctx.ball.position) < holder_dist
 
 
-## A touch ahead: the ball gets the player's speed plus an extra that depends on the mode. The
-## knock-on push is computed so the ball stops being ahead at exactly knock_on_distance.
+## A touch ahead: the ball gets the player's speed plus an extra. Walking, sprinting and the
+## knock-on aim the ball at a gap ahead of him (its farthest point): dribble_walk_gap and
+## dribble_sprint_gap (good dribblers a little closer), knock_on_distance (always exact).
+## Running keeps its extra speed (dribble_touch_extra_*).
 func _touch(player: Player, ctx: MatchContext, to_ball: Vector3, dir: Vector3, player_along: float,
 		mode: Mode, charging: bool) -> void:
 	var ball := ctx.ball
+	var ahead := to_ball.dot(dir)
+	var closer := player.stat("dribble_touch_extra_mult", 1.0)
 	var extra: float
 	if mode == Mode.KNOCK_ON:
-		extra = _knock_on_push(to_ball.dot(dir), player_along)
+		extra = _push_for_gap(_cfg("knock_on_distance", 1.3), ahead, player_along)
+	elif charging:
+		extra = _cfg("dribble_touch_extra_min", 1.2) * closer
+	elif mode == Mode.WALK:
+		extra = _push_for_gap(_cfg("dribble_walk_gap", 0.45) * closer, ahead, player_along)
+	elif mode == Mode.SPRINT:
+		extra = _push_for_gap(_cfg("dribble_sprint_gap", 0.55) * closer, ahead, player_along)
 	else:
-		if charging:
-			extra = _cfg("dribble_touch_extra_min", 1.2)
-		elif mode == Mode.SPRINT:
-			extra = _cfg("dribble_touch_extra_sprint", 1.4)
-		elif mode == Mode.WALK:
-			extra = _cfg("dribble_walk_extra", 0.5)
-		else:
-			var run_speed := _cfg("run_speed", 5.5) * player.motion.speed_factor
-			extra = lerpf(_cfg("dribble_touch_extra_min", 1.2), _cfg("dribble_touch_extra_run", 1.7),
-				clampf(player_along / maxf(0.1, run_speed), 0.0, 1.0))
-		# Good dribblers keep their touches closer (the knock-on distance stays exact).
-		extra *= player.stat("dribble_touch_extra_mult", 1.0)
+		var run_speed := _cfg("run_speed", 5.5) * player.motion.speed_factor
+		extra = lerpf(_cfg("dribble_touch_extra_min", 1.2), _cfg("dribble_touch_extra_run", 1.7),
+			clampf(player_along / maxf(0.1, run_speed), 0.0, 1.0)) * closer
 	# Push along the wanted direction, steering the ball back onto the line in front of him.
 	var lateral := to_ball - dir * to_ball.dot(dir)
 	var v := dir * (player_along + extra) - lateral * _cfg("dribble_touch_centering", 2.5)
@@ -153,13 +154,14 @@ func _touch(player: Player, ctx: MatchContext, to_ball: Vector3, dir: Vector3, p
 	ctx.possession.touched(player)
 
 
-## Extra speed for a knock-on push from `ahead` meters: the ball, slowed by the ground (dribble
-## friction, rolling friction and drag at the player's speed), gets knock_on_distance ahead of him.
-static func _knock_on_push(ahead: float, player_speed: float) -> float:
+## Extra speed for a touch from `ahead` meters that sends the ball `gap` meters ahead of the
+## player at its farthest: the ground slows it (dribble friction, rolling friction and drag at the
+## player's speed) while he keeps his speed.
+static func _push_for_gap(gap: float, ahead: float, player_speed: float) -> float:
 	var slowing := _cfg("dribble_ball_friction", 3.0) + float(Config.get_value("ball", "rolling_friction", 1.6)) \
 		+ float(Config.get_value("ball", "rolling_drag", 0.25)) * player_speed
-	var gap := maxf(0.0, _cfg("knock_on_distance", 1.3) - maxf(0.0, ahead))
-	return minf(sqrt(2.0 * slowing * gap), _cfg("knock_on_max_push", 6.0))
+	var room := maxf(0.0, gap - maxf(0.0, ahead))
+	return minf(sqrt(2.0 * slowing * room), _cfg("dribble_max_push", 6.0))
 
 
 ## Turning with the ball: the touch sends it to a point just ahead of where the player will be

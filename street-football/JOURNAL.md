@@ -15,9 +15,54 @@ A dated log, newest entry first: what was done, what was decided and why, and wh
 | 7 | Progression: coins, unlocks, upgrades, save system | Done, waiting for phone test |
 | 8 | Release build: optimized APK, full file review | Not started |
 
-The player-motion work is an extra feature branch between Phase 7 and Phase 8 (`feature/player-motion`, created from `feature/progression`), waiting for the phone test. `feature/broadcast-camera` (created from `feature/player-motion`) adds camera views and also waits for the phone test.
+The player-motion work is an extra feature branch between Phase 7 and Phase 8 (`feature/player-motion`, created from `feature/progression`), waiting for the phone test. `feature/broadcast-camera` (created from `feature/player-motion`) adds camera views and also waits for the phone test. `feature/speed-modes` (created from `feature/broadcast-camera`) adds walk, run, sprint and knock-on, and waits for the phone test.
 
 ## Log
+
+### 2026-11-15 — Speed modes: walk, run, sprint, knock-on
+
+#### Why
+
+- The user designed four speeds with the ball, after answering my questions:
+  - Joystick pushed softly = walk, the ball very close. Pushed fully = run ("first speed", as before). SPRINT = sprint ("third speed"), the ball about 0.5 m ahead. Joystick pulled hard twice = knock-on: the ball pushed an exact distance (he chose 1 to 1.5 m), the player runs onto it and pushes again.
+  - Without the ball: walk / run / sprint, no knock-on.
+  - Three fixed steps with a visual cue on the joystick ring. Knock-on always at full speed. It lasts while the stick stays pushed hard and ends when the stick is softened or released, or on a pass / shot / loss of the ball. A ball pushed ahead can be stolen.
+  - The gesture: the thumb stays on the screen, edge, back a little, edge again quickly. The single knock-on is removed from the forward flick.
+  - On defense: PRESS with the joystick moved = sprint where it points; PRESS alone = automatic press.
+  - Walking animation. Turning sharper when slow and wider at full sprint. Accuracy a little better walking and worse sprinting. Walking recovers stamina faster. Stats as before.
+  - The AI will use these modes later, after he tests the controls (agreed).
+- He also asked to always use Sonnet (agents `code-reader`, `docs-writer`) to read code and history, and Opus at max effort only to modify code (already in `CLAUDE.md`).
+
+#### Done
+
+- Movement: `PlayerIntent.walk` and `PlayerIntent.knock_on`; `PlayerMotion.step(delta, move, sprint, dribbling, walk, knock_on)` with a fixed walking speed, knock-on at full sprint speed without the dribbling slowdown, run unchanged. Turning grip by speed (`turn_grip_walk`, `turn_grip_sprint`): sharper turns when slow, wider at full sprint (the "heavier movement" idea left open before, now done by his choice). Walking or standing recovers stamina faster; the knock-on drains like a sprint.
+- Dribbling: four modes (`Dribbling.Mode`: WALK, RUN, SPRINT, KNOCK_ON). Sprint now keeps the ball close; the knock-on push is computed so the ball gets exactly 1.3 m ahead.
+- Controls: walk below `walk_threshold` 0.6 of the stick, yellow ring in the run zone, orange in knock-on mode; double pull detection in `FloatingStick`; keyboard Ctrl = walk, K = knock-on. Defense: PRESS with the stick moved = sprint where it points (`scripts/gameplay/human_assists.gd`, moved out of `match.gd`).
+- Skill moves: the forward flick no longer makes a knock-on; with nobody in the way it is no move and the skill cooldown is given back.
+- Animation: walking gait blended with the run by speed, small walking touches.
+- Accuracy by speed mode for everyone (passes and shots): x0.85 walking, x1.15 sprinting, x1.2 in a knock-on.
+- AI: `shoot_range` lowered to 8 / 9.5 / 11 m (easy / normal / hard) because the close sprint made the AI shoot from too far. The AI does not walk or knock-on yet.
+- Tests: the AI match test plays 6 seeded matches instead of 3; new physics tests (dribbling per mode, turning grip, double pull); the motion study adds `motion_walk_side` and `motion_knockon_side`.
+- Branch `feature/speed-modes`, commits `a89cab9` (speed modes), `a693967` (balance test with 6 matches), `9949e3f` (tuning from the motion study and the balance test), `86ed455` (walking touch push).
+
+#### Numbers
+
+- `data/config/player.json`: `walk_speed` 2.2, `turn_grip_walk` 1.3, `turn_grip_sprint` 0.6, `knock_on_speed_factor` 1.0, `knock_on_distance` 1.3, `knock_on_reach` 0.6, `knock_on_max_push` 6.0, `dribble_walk_reach` 0.55, `dribble_walk_extra` 0.8, `dribble_sprint_reach` 0.62, `dribble_touch_extra_sprint` 1.4 (was 4.5), `pace_error_mult_walk` 0.85, `pace_error_mult_sprint` 1.15, `pace_error_mult_knock_on` 1.2.
+- `data/config/controls.json`: `walk_threshold` 0.6, `double_pull_out_fraction` 0.9, `double_pull_in_fraction` 0.6, `double_pull_seconds` 0.5, `double_pull_max_degrees` 45, `stick_run_color`, `stick_knock_on_color`.
+- `data/config/stat_effects.json`: `walk_recover_mult` 1.6. `data/config/ai.json`: `shoot_range` 8 / 9.5 / 11.
+
+#### Checked
+
+- CI green.
+- Ball distance ahead of the player (motion study): walk about 0.4 to 0.55 m, run 0.5 to 1.0 m, sprint 0.1 to 0.5 m settling near 0.6 m, knock-on 0.55 to 1.41 m.
+- Balance over 6 matches: with the old `shoot_range` 2.33 goals, 29.3 shots, 13.3 saves (8 % of shots scored instead of 18 %); after lowering it 3.67 goals, 33.2 shots, 14.0 saves.
+- Lesson: touches come every 0.3 s, so a push must make up what the ground takes off in that time; with 0.6 m/s the walking ball drifted back inside the feet.
+
+#### Next
+
+- Phone test of the four modes and the double pull.
+- Then the AI using walk and knock-on.
+- Then the HUD items from the video (see `docs/features/touch-controls-and-hud.md`).
 
 ### 2026-11-14 — Feature files (docs/features/)
 
