@@ -13,6 +13,8 @@ var last_kicker: Player = null
 var pass_target: Player = null
 ## Kind of the last kick: "pass" (passes and through passes), "shot" or "" (anything else).
 var last_kick_kind: String = ""
+## Type of the last shot (ShotTypes): "" normal, "low", "chip" or "curl".
+var last_shot_type: String = ""
 ## Match counters (passes completed are counted here); may be null in tests.
 var stats: MatchStats = null
 

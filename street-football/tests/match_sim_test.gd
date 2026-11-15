@@ -60,6 +60,12 @@ var _owner_since := 0.0
 ## players' jobs (AttackRoles with the ball; chaser, cover, marker or zone without it).
 var _pair_kinds: Dictionary = {}
 var _crowd_kinds: Dictionary = {}
+## Shots, saves and goals by shot type (ShotTypes), to see which type misses.
+var _type_shots: Dictionary = {}
+var _type_saves: Dictionary = {}
+var _type_goals: Dictionary = {}
+var _seen_kick := -1
+var _seen_saves := 0
 
 
 func _ready() -> void:
@@ -88,7 +94,9 @@ func _start_next() -> void:
 	_owner_since = 0.0
 	_match = MATCH_SCENE.instantiate()
 	add_child(_match)
-	_match.goal_scored.connect(func(_team: int) -> void: _goals += 1)
+	_seen_kick = -1
+	_seen_saves = 0
+	_match.goal_scored.connect(_on_goal)
 	_match.full_time.connect(_on_full_time)
 
 
@@ -99,6 +107,7 @@ func _physics_process(delta: float) -> void:
 	var ctx: MatchContext = _match.ctx
 	var ball := ctx.ball
 	var court := ctx.court
+	_count_shot_types(ctx)
 	if ctx.possession.holder == null and ball.velocity.length() < 0.1 and _match.flow.state == MatchFlow.State.PLAYING:
 		_stuck_time += delta
 		_max_stuck = maxf(_max_stuck, _stuck_time)
@@ -207,6 +216,32 @@ static func _has_ball(team: Team, ctx: MatchContext) -> bool:
 	return target != null and target.team == team
 
 
+func _on_goal(_team: int) -> void:
+	_goals += 1
+	var possession: Possession = _match.ctx.possession
+	_bump(_type_goals, _shot_name(possession.last_shot_type) if possession.last_kick_kind == "shot" else "other")
+
+
+func _count_shot_types(ctx: MatchContext) -> void:
+	var possession := ctx.possession
+	if possession.kick_count != _seen_kick:
+		_seen_kick = possession.kick_count
+		if possession.last_kick_kind == "shot":
+			_bump(_type_shots, _shot_name(possession.last_shot_type))
+	var saves := ctx.stats.saves[0] + ctx.stats.saves[1]
+	if saves > _seen_saves:
+		_bump(_type_saves, _shot_name(possession.last_shot_type))
+	_seen_saves = saves
+
+
+static func _shot_name(type: String) -> String:
+	return "normal" if type.is_empty() else type
+
+
+static func _bump(counts: Dictionary, key: String) -> void:
+	counts[key] = int(counts.get(key, 0)) + 1
+
+
 func _on_full_time(home: int, away: int) -> void:
 	_finished = true
 	_final = Vector2i(home, away)
@@ -245,6 +280,12 @@ func _report() -> void:
 	for k in range(3):
 		_print_kinds("close pair", _pair_kinds, PHASES[k], maxf(1.0, float(_phase_sides[k])))
 		_print_kinds("crowd", _crowd_kinds, PHASES[k], maxf(1.0, float(_phase_sides[k])))
+	var parts := PackedStringArray()
+	for type in ["normal", "low", "chip", "curl", "other"]:
+		if _type_shots.has(type) or _type_goals.has(type):
+			parts.append("%s %d shots, %d saved, %d goals" % [type, int(_type_shots.get(type, 0)),
+				int(_type_saves.get(type, 0)), int(_type_goals.get(type, 0))])
+	print("MATCH SHOT TYPES (6 matches): " + "; ".join(parts))
 	_check("every match reaches full time", _all_finished)
 	_check("goals are scored", _total_goals >= MIN_TOTAL_GOALS, "total=%d" % _total_goals)
 	_check("score matches goals", not _score_mismatch)

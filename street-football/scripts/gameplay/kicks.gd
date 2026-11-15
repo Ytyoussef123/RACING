@@ -96,6 +96,7 @@ static func shoot(handling: BallHandling, player: Player, ctx: MatchContext, tar
 	if first_time and player.profile != null and player.profile.special_skills.has("first_time_shot"):
 		error *= float(Config.get_value("skills", "first_time_shot_error_mult", 0.6))
 	ctx.stats.shots[player.team.index] += 1
+	ctx.possession.last_shot_type = type
 	kick(handling, player, ctx, KickAccuracy.with_error(kick_velocity, error * type_error, ctx), spin, null, "shot")
 
 
