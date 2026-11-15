@@ -41,7 +41,7 @@ Last change: 2026-11-15, `shoot_range` lowered to 8 / 9.5 / 11 m after the speed
   - after stats: 1.67 goals (too low) -> fixed with `shot_corner_inset` 0.55, smaller aim errors, skipping shots under 9 degrees goal angle or through a defender (unless within 6 m), lower keeper save chances -> 3.67 goals, 23.7 shots, 9.7 saves;
   - after skill moves: 3.33 goals, 24.3 shots, 9.0 saves;
   - after the player-motion work: 5.00 goals, 28.3 shots, 11.0 saves;
-  - after the speed modes (6 matches): 2.33 goals, 29.3 shots, 13.3 saves with the old `shoot_range`; 3.67 goals, 33.2 shots, 14.0 saves with 8 / 9.5 / 11 m (latest).
+  - after the speed modes (6 matches): 2.33 goals, 29.3 shots, 13.3 saves with the old `shoot_range`; 3.67 goals, 33.2 shots, 14.0 saves with 8 / 9.5 / 11 m; after the gap touches (`45a870f`): 3.17 goals, 28.2 shots, 12.2 saves (latest).
   With 3 matches the goal count moves a lot between runs (1.67 to 5.00 during the player-motion work). Judge by shots and saves too, and by the phone.
 - The AI uses the same `PlayerIntent` path as the human: no cheating inputs. Difficulty only changes reaction time, speed factor, aim error, tendencies and keeper save chance.
 - Decisions at an interval, movement every frame: difficulty stays tunable and movement smooth.

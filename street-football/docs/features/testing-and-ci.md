@@ -6,7 +6,7 @@ Last change: 2026-11-15, AI match test plays 6 matches, motion study adds walk a
 - Godot cannot run in the cloud work environment (downloads from github.com are blocked), so CI is the only place the game runs.
 - The workflow `.github/workflows/street-football-apk.yml` runs on every push that changes `street-football/` (or the workflow, or the keystore) and on manual start. Steps in order: install Godot 4.7.2 and templates, import, physics tests, stats tests, progression tests, menu flow tests, AI match test, script-error scan, screenshot tour, export debug APK, upload APK, print screenshots.
 - Headless suites each must print their "DONE: 0 failure" line: physics (`TESTS DONE`), stats (`STATS TESTS DONE`), progression (`PROGRESSION TESTS DONE`), menus (`UI TESTS DONE`), AI match (`MATCH TESTS DONE`).
-- The AI match test plays 6 fixed-seed AI matches (seeds 11, 22, 33, 44, 55, 66) and prints `MATCH RESULT` and `MATCH BALANCE` (goals, shots, saves per match). Latest: 3.67 goals, 33.2 shots, 14.0 saves per 150-second match. It was 3 matches until 2026-11-15; with 3 the goals per match moved from 1.67 to 5.00 between runs.
+- The AI match test plays 6 fixed-seed AI matches (seeds 11, 22, 33, 44, 55, 66) and prints `MATCH RESULT` and `MATCH BALANCE` (goals, shots, saves per match). Latest: 3.17 goals, 28.2 shots, 12.2 saves per 150-second match. It was 3 matches until 2026-11-15; with 3 the goals per match moved from 1.67 to 5.00 between runs.
 - New physics tests (2026-11-15): dribbling per mode (walk, sprint, knock-on), turning grip, double pull.
 - The script-error scan greps all logs for script errors (SCRIPT ERROR, Parse Error, Failed to load script, Invalid call, Invalid access) and prints each distinct error once. Also runs the start scene and the match scene briefly.
 - The screenshot tour renders every screen with Xvfb at 2400x1080 and prints each as base64 lines (`SHOT_BEGIN`, `SHOT_DATA`, `SHOT_END`). `.github/scripts/decode_screenshots.py <log> <folder>` turns them back into JPEG images. It never blocks the build.
@@ -46,6 +46,6 @@ Last change: 2026-11-15, AI match test plays 6 matches, motion study adds walk a
 
 ## How to check after a change
 - Open the GitHub Actions run: every suite prints its "DONE: 0 failure" line, no script errors, the APK artifact exists.
-- Read `MATCH BALANCE`; compare to 3.67 goals, 33.2 shots, 14.0 saves (6 matches).
+- Read `MATCH BALANCE`; compare to 3.17 goals, 28.2 shots, 12.2 saves (6 matches).
 - Save the job log and run `python3 .github/scripts/decode_screenshots.py <log> <folder>`; look at the images, and the motion study after body or dribbling changes.
 - Phone test: install the APK from the artifact (or run the project in the Godot Android editor).
