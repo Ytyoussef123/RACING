@@ -1,12 +1,14 @@
 # Passing and receiving
 
-Last change: 2026-11-15, pass error depends on the speed mode (branch `feature/speed-modes`, commit `a89cab9`). Before that: 2026-11-14, kick buffer while dribbling: kicks only played with the ball in reach (branch `feature/five-v-five`, commit `1d96a5e`).
+Last change: 2026-11-15, kick accuracy moved to `KickAccuracy`, the kicked ball passes through the kicker (branch `feature/shot-on-target`, commits `436f156`, `acc04df`). Before that: 2026-11-15, pass error depends on the speed mode (branch `feature/speed-modes`, commit `a89cab9`). Before that: 2026-11-14, kick buffer while dribbling: kicks only played with the ball in reach (branch `feature/five-v-five`, commit `1d96a5e`).
 
 ## What it does now
 - PASS (tap): the ball goes to the teammate on the joystick's side, even if he is not exactly on the line (pass assist). Cone 70 degrees, scored mostly by angle, small penalty for a blocked lane. If nobody is in the cone, the teammate closest to the joystick direction is chosen, up to 120 degrees; beyond that, no pass. The ball goes to where the receiver is running (`pass_lead_factor`).
 - THROUGH: ball into the space `through_lead_distance` (4 m) in front of the receiver, mostly toward the opponent goal and partly along his run, kept inside the court.
 - Pass speed grows with distance (`pass_speed_base` + `pass_speed_per_meter`, between min and max). Error depends on low pass (PASS) and lofted pass (THROUGH) stats; vision changes the through-pass lead.
-- Speed mode: the error is multiplied by x0.85 walking, x1.15 sprinting, x1.2 in a knock-on, for everyone, AI too (`player.json` -> `pace_error_mult_walk`, `pace_error_mult_sprint`, `pace_error_mult_knock_on`; `BallHandling._pace_mult`).
+- Speed mode: the error is multiplied by x0.85 walking, x1.15 sprinting, x1.2 in a knock-on, for everyone, AI too (`player.json` -> `pace_error_mult_walk`, `pace_error_mult_sprint`, `pace_error_mult_knock_on`; `KickAccuracy.pace_mult`).
+- Kick accuracy (`with_error`, `weak_foot_mult`, `pace_mult`, `shot_angle_mult`) lives in `scripts/gameplay/kick_accuracy.gd` (`KickAccuracy`), moved out of `BallHandling`.
+- The kicked ball passes through the kicker's body for `kick_pass_through_seconds` 0.15 s (`player.ghost_timer`), also for passes played across the body.
 - Receive assist: the pass target runs to the earliest point of the predicted ball path (`BallPhysics.copy()` stepped with walls, 2 s ahead) that he can reach in time, and waits there. The joystick keeps aiming (`PlayerIntent.aim`), so first-time kicks go where you point (forward if the stick is neutral). AI receivers and loose-ball chasers use the same prediction.
 - Kicks are only played with the ball within reach (`kick_reach` 1.1 m, ball not higher than `kick_max_ball_height`). A pass, through pass or shot asked a little early is queued (kick buffer, `kick_buffer_seconds` 0.5 s, or 1.2 s while dribbling with the aim chosen at the press) and played when the ball is reached. No kicking from a distance.
 - Control switches to the receiver when a pass leaves for a teammate. A pass deflected by the other team stops being a pass (`Possession.touched`).
@@ -21,6 +23,7 @@ Last change: 2026-11-15, pass error depends on the speed mode (branch `feature/s
 - Tests: `tests/physics_smoke_test.gd`: "pass assist: teammate 50 degrees off the line", "pass assist: fallback to the closest direction", "pass assist: no pass backwards past the limit", "receive assist: meeting point is on the ball's path", "receive assist: receiver controls the pass", "through pass: aimed ahead of the receiver", "through pass: speed within limits". `tests/stats_test.tscn`: passing stats.
 
 ## History (newest first)
+- 2026-11-15: kick accuracy moved from `BallHandling` to `KickAccuracy` (`with_error`, `weak_foot_mult`, `pace_mult`); after any kick the ball passes through the kicker for 0.15 s. Why: `BallHandling` had to stay under ~300 lines; a pass or shot back across the kicker's body hit his own collision circle and bounced away. Branch `feature/shot-on-target`, commits `436f156`, `acc04df`.
 - 2026-11-15: pass error by speed mode (x0.85 walking, x1.15 sprinting, x1.2 knock-on). Why: the user's design of the speed modes. Branch `feature/speed-modes`, commit `a89cab9`.
 - 2026-11-14: kicks need the ball within `kick_reach`; a kick asked while the ball is ahead waits up to 1.2 s with the aim chosen at the press, and `DribbleAssist` runs the player onto the ball. User feedback (touch dribbling request). Branch `feature/five-v-five`, commit `1d96a5e`.
 - 2026-11-14: receive assist (user request: the receiver needs an assist), first-time kick buffer (0.5 s), THROUGH pass (`through_velocity`), AI receivers use the same intercept prediction, pass assist confirmed good by the user. Why: before, control switched to the receiver but he did not move to the ball, and the joystick (still pointing along the pass) could push him away. Branch `feature/five-v-five`, commit `6055f1d`.
@@ -34,6 +37,8 @@ Last change: 2026-11-15, pass error depends on the speed mode (branch `feature/s
 - The receiver gets a receive assist (user request): he runs to the predicted meeting point while the joystick only aims. Without it the stick could push him away from the ball.
 - Kicks are only played with the ball within reach: a pass, through pass or shot asked a little early is queued (kick buffer) and played when the ball is reached. No kicking from a distance.
 - A pass deflected by the other team stops being a pass (`Possession.touched`).
+
+- The kicked ball passes through the kicker for `kick_pass_through_seconds` 0.15 s; without it a pass across his own body bounces off him.
 
 ## How to check after a change
 - CI: `tests/physics_smoke_test.tscn` checks listed above, `tests/stats_test.tscn`.

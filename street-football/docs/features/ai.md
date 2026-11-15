@@ -1,6 +1,6 @@
 # AI
 
-Last change: 2026-11-15, `shoot_range` lowered to 8 / 9.5 / 11 m after the speed modes (branch `feature/speed-modes`, commit `9949e3f`)
+Last change: 2026-11-15, keeper save chance +0.05 (branch `feature/shot-on-target`, commit `2bcb10d`). Before that: 2026-11-15, `shoot_range` lowered to 8 / 9.5 / 11 m after the speed modes (branch `feature/speed-modes`, commit `9949e3f`)
 
 ## What it does now
 - Every player, human or AI, is driven by the same `PlayerIntent`. The AI has no cheating inputs.
@@ -12,12 +12,14 @@ Last change: 2026-11-15, `shoot_range` lowered to 8 / 9.5 / 11 m after the speed
 - Difficulties easy / normal / hard (decision interval, speed factor, shot error, shoot range, pass tendency, tackle chances, keeper save chance, skill tendency). The AI's aim error is added to the player's own stat-based error. Decisions run at the difficulty's interval, movement runs every frame.
 - `shoot_range` is 8 / 9.5 / 11 m for easy / normal / hard (was 9 / 11 / 12.5).
 - The speed modes apply to the AI too: sprinting with the ball keeps it close, and accuracy changes by mode. The AI does not walk or knock-on yet (planned after the user's controls test).
+- Keeper save chance is 0.4 / 0.6 / 0.75 (easy / normal / hard).
+- The AI's shot aim already crosses the goal, so the human shot-on-target aim (`ShotAim`) changed nothing for it.
 - The human's teammates use "normal" (`teammates_difficulty`). The default opponent formation is 1-2-1.
 
 ## Where it lives
 - Code: `scripts/ai/team_brain.gd` (TeamBrain): `update()`, roles and marks. `scripts/ai/carrier_ai.gd` (CarrierAI): `intent_for()`, `best_pass()`, `lane_clear()`. `scripts/ai/support_ai.gd` (SupportAI): off-ball intent. `scripts/ai/keeper_ai.gd` (KeeperAI): `intent_for()`, `try_save()`. `scripts/ai/formation_positions.gd` (FormationPositions): `slot_target()`, `kickoff_position()`. `scripts/ai/steering.gd` (Steering): `seek()`. `scripts/ai/ai_tuning.gd` (AiTuning): `for_difficulty()`. `scripts/ai/ai_player_state.gd` (AiPlayerState).
 - Numbers: `data/config/ai.json`:
-  - `difficulties` -> easy / normal / hard: `decision_interval` (0.45 / 0.28 / 0.15), `speed_factor`, `shot_error_degrees` (6 / 3 / 1.5), `shoot_range`, `pass_tendency`, `pass_pressure_distance`, `tackle_attempt_chance`, `tackle_success_bonus`, `keeper_save_chance` (0.35 / 0.55 / 0.7), `skill_tendency` (0.05 / 0.15 / 0.3).
+  - `difficulties` -> easy / normal / hard: `decision_interval` (0.45 / 0.28 / 0.15), `speed_factor`, `shot_error_degrees` (6 / 3 / 1.5), `shoot_range`, `pass_tendency`, `pass_pressure_distance`, `tackle_attempt_chance`, `tackle_success_bonus`, `keeper_save_chance` (0.4 / 0.6 / 0.75), `skill_tendency` (0.05 / 0.15 / 0.3).
   - Positioning: `role_shift`, `attack_push`, `defend_drop`, `z_ball_follow`, `defend_compress`, `slot_frac_min/max`, `mark_distance`, `mark_zone_frac`, `get_open_distance`.
   - Decisions: `pass_lane_width`, `pass_min_score`, `pass_min_distance`, `pass_max_distance`, `shot_min_frac`, `shot_corner_inset` 0.55, `shot_min_goal_angle_degrees` 9.0, `shot_close_distance` 6.0, `shot_lane_width` 0.5, `shot_charge_min/max`.
   - Keeper: `keeper_line_offset`, `keeper_rush_distance`, `keeper_reach`, `keeper_reach_height`, `keeper_catch_speed`, `keeper_save_min_speed`, `keeper_hold_seconds`, `keeper_parry_lift`, `keeper_parry_spread`.
@@ -25,6 +27,7 @@ Last change: 2026-11-15, `shoot_range` lowered to 8 / 9.5 / 11 m after the speed
 - Tests: `tests/match_sim_test.gd`: 6 AI-vs-AI matches (seeds 11, 22, 33, 44, 55, 66; was 3) with fixed seeds (150 s each, fixed 60 fps), checks the ball never stays stuck and players stay in the court, prints the `MATCH BALANCE` line. `tests/stats_test.gd`: keeper attributes.
 
 ## History (newest first)
+- 2026-11-15: keeper save chance easy / normal / hard 0.4 / 0.6 / 0.75 (was 0.35 / 0.55 / 0.7). Why: after the shot-on-target change and the pass-through fix, 6 AI matches gave 5.17 goals, 31.0 shots, 15.0 saves; after: 4.67 goals, 30.3 shots, 16.2 saves per match (3 to 7 goals per match). Branch `feature/shot-on-target`, commit `2bcb10d`.
 - 2026-11-15: `shoot_range` 9 / 11 / 12.5 -> 8 / 9.5 / 11 m. Why: with the sprint keeping the ball close, the AI reached shooting range sooner and shot from further out: 6 matches gave 2.33 goals, 29.3 shots, 13.3 saves (8 % of shots scored instead of 18 %); after the change 3.67 goals, 33.2 shots, 14.0 saves. The AI does not walk or knock-on yet. Branch `feature/speed-modes`, commit `9949e3f`.
 - 2026-11-14: player-motion work (players keep the ball in turns). No AI file changed; balance moved to 5.00 goals, 28.3 shots, 11.0 saves (was 3.33 / 24.3 / 9.0) because attacks last longer. Note: if scoring feels too easy on the phone, raise the keeper save chances in `ai.json`. Branch `feature/player-motion` (no AI commit).
 - 2026-11-14: AI uses skill moves (`skill_tendency`). Why: Phase 6. Branch `feature/polish`, commit `16fa679`.
@@ -41,7 +44,8 @@ Last change: 2026-11-15, `shoot_range` lowered to 8 / 9.5 / 11 m after the speed
   - after stats: 1.67 goals (too low) -> fixed with `shot_corner_inset` 0.55, smaller aim errors, skipping shots under 9 degrees goal angle or through a defender (unless within 6 m), lower keeper save chances -> 3.67 goals, 23.7 shots, 9.7 saves;
   - after skill moves: 3.33 goals, 24.3 shots, 9.0 saves;
   - after the player-motion work: 5.00 goals, 28.3 shots, 11.0 saves;
-  - after the speed modes (6 matches): 2.33 goals, 29.3 shots, 13.3 saves with the old `shoot_range`; 3.67 goals, 33.2 shots, 14.0 saves with 8 / 9.5 / 11 m; after the gap touches (`45a870f`): 3.17 goals, 28.2 shots, 12.2 saves (latest).
+  - after the speed modes (6 matches): 2.33 goals, 29.3 shots, 13.3 saves with the old `shoot_range`; 3.67 goals, 33.2 shots, 14.0 saves with 8 / 9.5 / 11 m; after the gap touches (`45a870f`): 3.17 goals, 28.2 shots, 12.2 saves;
+  - after shots on target and the pass-through fix: 5.17 goals, 31.0 shots, 15.0 saves; after the keeper save chance +0.05 (`2bcb10d`): 4.67 goals, 30.3 shots, 16.2 saves (latest).
   With 3 matches the goal count moves a lot between runs (1.67 to 5.00 during the player-motion work). Judge by shots and saves too, and by the phone.
 - The AI uses the same `PlayerIntent` path as the human: no cheating inputs. Difficulty only changes reaction time, speed factor, aim error, tendencies and keeper save chance.
 - Decisions at an interval, movement every frame: difficulty stays tunable and movement smooth.

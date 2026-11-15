@@ -15,9 +15,43 @@ A dated log, newest entry first: what was done, what was decided and why, and wh
 | 7 | Progression: coins, unlocks, upgrades, save system | Done, waiting for phone test |
 | 8 | Release build: optimized APK, full file review | Not started |
 
-The player-motion work is an extra feature branch between Phase 7 and Phase 8 (`feature/player-motion`, created from `feature/progression`), waiting for the phone test. `feature/broadcast-camera` (created from `feature/player-motion`) adds camera views and also waits for the phone test. `feature/speed-modes` (created from `feature/broadcast-camera`) adds walk, run, sprint and knock-on, and waits for the phone test.
+The player-motion work is an extra feature branch between Phase 7 and Phase 8 (`feature/player-motion`, created from `feature/progression`), waiting for the phone test. `feature/broadcast-camera` (created from `feature/player-motion`) adds camera views and also waits for the phone test. `feature/speed-modes` (created from `feature/broadcast-camera`) adds walk, run, sprint and knock-on, and waits for the phone test. `feature/shot-on-target` (created from `feature/speed-modes`) adds shots on target and CLEAR, and waits for the phone test.
 
 ## Log
+
+### 2026-11-15 — Shots on target and CLEAR
+
+#### Why
+
+- The user asked that an attacker who is not lined up with the goal still shoots on target ("tir cadré"). Shots can still miss, but not just because he is not facing the goal.
+- He named a "Blitz" shot (a curling power shot from the reference game) for later: NOT done, planned.
+- He agreed to CLEAR in our own half (SHOOT becomes CLEAR), from the list of the video's HUD items.
+
+#### Done
+
+- Shot aim: `scripts/gameplay/shot_aim.gd` (`ShotAim.target`). Every shot is aimed at a point on the opponent's goal line. A stick pointing at or near the goal keeps its aim (it can still miss up to `shot_assist_margin` 1.5 m past a post); a stick pointing elsewhere aims `shot_post_inset` 0.45 m inside the post on that side; no stick aims at the corner away from the keeper. The point is computed when SHOOT is released (a queued shot keeps it); the shot goes from the ball to it. The AI's aim already crosses the goal, so its shots are aimed as before.
+- Error still decides if it is on target: finishing, long shots, weak foot, speed mode, first-time skill, plus a tight angle (goal seen under `shot_tight_angle_degrees` 20 degrees: error up to x`shot_tight_error_mult` 1.6) and the back to the goal (more than 90 degrees from the facing: up to x`shot_turn_error_mult` 1.5).
+- `scripts/gameplay/kick_accuracy.gd` (`KickAccuracy`): `with_error`, `weak_foot_mult`, `pace_mult` (moved out of `BallHandling` to keep it under ~300 lines) and the new `shot_angle_mult`.
+- CLEAR: with the ball in our own half (`clear_zone_frac` 0.5 of the court, from our goal) the SHOOT button is labelled CLEAR (`BTN_CLEAR`, "CLEAR" / "DÉGAGER"); a tap kicks the ball long and high where the stick points, never back toward our goal. A SHOOT held for a clearance must be lifted before it can start a shot. `HumanInput.read(attacking, clearing)`, `TouchControls.set_defense_layout(defense, clearing)` with `CLEAR_LABELS`, `PlayerIntent.clear_pressed`, `BallHandling._clear`.
+- Bug found by the new shot test and fixed: a shot or pass played back across the kicker's own body hit his own collision circle and bounced away. After any kick the kicker's body now lets the ball through for `kick_pass_through_seconds` 0.15 s (`player.ghost_timer`, like a nutmegged player).
+- Keeper save chance raised (see Numbers).
+- Tests: "shot aim: stick along the goal line still aims inside the goal", "shot aim: aiming at the goal keeps the aim", "shot aim: aiming wide of the goal goes inside the post on that side", "shot aim: no stick aims at the corner away from the keeper", "shot on target: running along the goal line, the shot heads on goal", "clear: long and high, away from our own goal".
+- Branch `feature/shot-on-target`, commits `436f156` (shots on target, CLEAR, `KickAccuracy`), `acc04df` (kicked ball passes through the kicker), `2bcb10d` (keeper save chance +0.05).
+
+#### Numbers
+
+- `data/config/player.json`: `shot_post_inset` 0.45, `shot_assist_margin` 1.5, `shot_tight_angle_degrees` 20, `shot_tight_error_mult` 1.6, `shot_turn_error_mult` 1.5, `kick_pass_through_seconds` 0.15, `clear_speed` 17, `clear_lift` 6.5, `clear_error_mult` 1.5 (on the through-pass error), `clear_zone_frac` 0.5.
+- `data/config/ai.json`: `keeper_save_chance` easy / normal / hard 0.4 / 0.6 / 0.75 (was 0.35 / 0.55 / 0.7).
+
+#### Checked
+
+- Balance over 6 AI matches: after the shot change and the pass-through fix 5.17 goals, 31.0 shots, 15.0 saves per match; after the keeper change 4.67 goals, 30.3 shots, 16.2 saves per match (3 to 7 goals per match).
+
+#### Next
+
+- Phone test of shots from odd angles and of CLEAR.
+- The goalkeeper with the ball (hands / feet), then team movement (creating space), as agreed with the user.
+- Planned, not done: the "Blitz" curling shot.
 
 ### 2026-11-15 — Speed modes: walk, run, sprint, knock-on
 

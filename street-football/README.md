@@ -50,7 +50,7 @@ Four buttons in a diamond (eFootball style). Labels and meaning switch with poss
 | Bottom-left | PASS | SWITCH | E (SWITCH: Q) |
 | Bottom-right | SPRINT | PRESS | Shift |
 
-- **SHOOT:** hold to charge (a power bar appears above the player), release to shoot. Turning while shooting curls the ball.
+- **SHOOT:** hold to charge (a power bar appears above the player), release to shoot. Turning while shooting curls the ball. A shot always aims at the goal: the stick picks the side (pointing left or right of the goal aims at that post), and with no stick it aims at the corner away from the keeper. Shots can still miss (finishing, distance, weak foot, speed, tight angle, back to the goal). In your own half SHOOT becomes CLEAR: a long, high kick where the stick points, never back toward your own goal.
 - **PASS:** goes to the teammate closest to the joystick direction (it does not need to be exactly on the line).
 - **THROUGH:** a pass into the space 4 m in front of the receiver, mostly toward the opponent goal and partly along his run, kept inside the court.
 - **Walk, run, sprint:** push the joystick softly to walk (with the ball it stays very close), fully to run, and hold SPRINT to sprint (the ball stays close, about 0.5 m ahead). The joystick ring turns yellow in the run zone.
