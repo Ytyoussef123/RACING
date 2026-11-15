@@ -1,9 +1,9 @@
 # Defending
 
-Last change: 2026-11-15, tackle protection now = the carrier has the ball in his hands (branch `feature/keeper-ball`, commit `346d461`). Before that: 2026-11-15, PRESS with the joystick moved = sprint where it points (branch `feature/speed-modes`, commit `a89cab9`)
+Last change: 2026-11-15, PRESS works on a loose ball: defense buttons unless our own pass is on its way (branch `feature/press-loose-ball`, commit `77d08dd`). Before that: 2026-11-15, tackle protection now = the carrier has the ball in his hands (branch `feature/keeper-ball`, commit `346d461`). Before that: 2026-11-15, PRESS with the joystick moved = sprint where it points (branch `feature/speed-modes`, commit `a89cab9`)
 
 ## What it does now
-- When your team does not have the ball, the four buttons switch to the defense layout: THROUGH -> MATCH-UP, SHOOT -> TACKLE, PASS -> SWITCH, SPRINT -> PRESS (eFootball-style "Dash & Pressure"). Keyboard: R, Space, E (switch: Q), Shift.
+- When your team does not hold the ball (a loose ball counts, unless it is our own pass on its way to a teammate), the four buttons switch to the defense layout: THROUGH -> MATCH-UP, SHOOT -> TACKLE, PASS -> SWITCH, SPRINT -> PRESS (eFootball-style "Dash & Pressure"). Keyboard: R, Space, E (switch: Q), Shift.
 - PRESS (hold SPRINT on defense): the selected player goes to take the ball by himself: sprints goal-side of the carrier, then to the ball, auto-tackles in reach. On a loose ball he sprints to where he can meet it.
 - PRESS with the joystick moved = sprint where the stick points; PRESS alone = the automatic press above (user decision 2026-11-15). The code is in `scripts/gameplay/human_assists.gd` (`HumanAssists`), out of `match.gd`.
 - MATCH-UP (hold): shadows the carrier goal-side at `match_up_contain_distance` (1.6 m), follows his moves, no auto tackle (tap TACKLE).
@@ -22,6 +22,7 @@ Last change: 2026-11-15, tackle protection now = the carrier has the ball in his
 - Tests: `tests/physics_smoke_test.gd`: "shoulder charge: about half the duels won at equal strength", "shoulder charge: out of reach keeps the ball with the carrier", "shoulder charge: the stronger player has more chance", steal checks. `tests/stats_test.tscn`: tackling and balance, strength in shoulder duels.
 
 ## History (newest first)
+- 2026-11-15: PRESS on a loose ball: `HumanControl.is_attacking` is now true only when our side holds the ball or our pass is on its way to a teammate, so a loose ball (even one we touched last) shows the defense buttons and PRESS with no stick runs the player to where he meets the ball (`PressAssist`, unchanged). Why: user report: PRESS did nothing on a loose ball, the player waited until an opponent took it. Branch `feature/press-loose-ball`, commit `77d08dd`. Test: `_test_press_loose_ball` in `tests/team_ai_test.gd` (3 checks).
 - 2026-11-15: `TackleRules.is_protected` = the carrier has the ball in his hands (before: any keeper inside his area). With the ball at his feet the keeper can be tackled anywhere. The double tap on defense is still the shoulder charge (the ball-drop double tap is attack only). Why: user request, the keeper with the ball in hands or at feet. Branch `feature/keeper-ball`, commit `346d461`. Test: "keeper: with the ball in his hands nobody can tackle him", "keeper: with the ball at his feet he can be tackled".
 - 2026-11-15: PRESS with the joystick moved = sprint where it points; PRESS alone = automatic press as before. Code moved to `HumanAssists` (`scripts/gameplay/human_assists.gd`). Why: user decision, part of the speed modes. Branch `feature/speed-modes`, commit `a89cab9`.
 - 2026-11-14: Phase 6: tackle and shoulder events feed sounds and effects (scuff, dust puffs), tackle lean and shoulder lean animations. Branch `feature/polish`, commit `cff05f4`.
@@ -33,6 +34,7 @@ Last change: 2026-11-15, tackle protection now = the carrier has the ball in his
 
 ## Do not undo
 - PRESS is the SPRINT button when your team does not have the ball (eFootball-style "Dash & Pressure", user request), and the selected player goes to take the ball by himself. Do not move it back to SHOOT.
+- PRESS must work on a loose ball: it shows unless the loose ball is our own pass on its way (user report, 2026-11-15).
 - PRESS with the joystick moved is a plain sprint where it points (user decision, 2026-11-15); only PRESS alone is the automatic press.
 - Shoulder charge on a joystick double tap, decided by strength (and a little balance), as the user asked. Do not make it a fixed chance.
 - Labels and meaning of the four buttons switch with possession (`HumanControl.is_attacking`); SWITCH is the PASS button on defense.

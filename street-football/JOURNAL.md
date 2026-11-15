@@ -15,9 +15,37 @@ A dated log, newest entry first: what was done, what was decided and why, and wh
 | 7 | Progression: coins, unlocks, upgrades, save system | Done, waiting for phone test |
 | 8 | Release build: optimized APK, full file review | Not started |
 
-The player-motion work is an extra feature branch between Phase 7 and Phase 8 (`feature/player-motion`, created from `feature/progression`), waiting for the phone test. `feature/broadcast-camera` (created from `feature/player-motion`) adds camera views and also waits for the phone test. `feature/speed-modes` (created from `feature/broadcast-camera`) adds walk, run, sprint and knock-on, and waits for the phone test. `feature/shot-on-target` (created from `feature/speed-modes`) adds shots on target and CLEAR, and waits for the phone test. `feature/keeper-ball` (created from `feature/shot-on-target`) adds the goalkeeper with the ball (hands or feet), and waits for the phone test. `feature/team-movement` (created from `feature/keeper-ball`) adds team movement (creating space), and waits for the phone test. `feature/kick-power` (created from `feature/team-movement`) adds the power bar for every kick, and waits for the phone test. `feature/lofted-pass` (created from `feature/kick-power`) adds lofted passes, and waits for the phone test. `feature/shot-types` (created from `feature/lofted-pass`) adds the shot types, and waits for the phone test. `feature/player-speed` (created from `feature/shot-types`) slows the players down, and waits for the phone test.
+The player-motion work is an extra feature branch between Phase 7 and Phase 8 (`feature/player-motion`, created from `feature/progression`), waiting for the phone test. `feature/broadcast-camera` (created from `feature/player-motion`) adds camera views and also waits for the phone test. `feature/speed-modes` (created from `feature/broadcast-camera`) adds walk, run, sprint and knock-on, and waits for the phone test. `feature/shot-on-target` (created from `feature/speed-modes`) adds shots on target and CLEAR, and waits for the phone test. `feature/keeper-ball` (created from `feature/shot-on-target`) adds the goalkeeper with the ball (hands or feet), and waits for the phone test. `feature/team-movement` (created from `feature/keeper-ball`) adds team movement (creating space), and waits for the phone test. `feature/kick-power` (created from `feature/team-movement`) adds the power bar for every kick, and waits for the phone test. `feature/lofted-pass` (created from `feature/kick-power`) adds lofted passes, and waits for the phone test. `feature/shot-types` (created from `feature/lofted-pass`) adds the shot types, and waits for the phone test. `feature/player-speed` (created from `feature/shot-types`) slows the players down (sprint 5.8, run 3.5), and waits for the phone test. `feature/press-loose-ball` (created from `feature/player-speed`) makes PRESS work on a loose ball, and waits for the phone test.
 
 ## Log
+
+### 2026-11-15 — Sprint 5.8 / run 3.5, and PRESS on a loose ball
+
+#### Why
+
+- Speeds: the user gave their own numbers: "the sprint can be 5.8 and run 3.5". This replaces the 5.5 / 3.9 of the entry below. Walk stays 1.55.
+- PRESS: the user reported that with a loose ball PRESS did nothing and their player waited until an opponent took the ball. Cause: `HumanControl.is_attacking` was true for a loose ball our side touched last, so the button was SPRINT (which does nothing without the stick).
+
+#### Done
+
+- Branch `feature/player-speed`, commit `cb137a3`: `data/config/player.json` `sprint_speed` 5.5 -> 5.8, `run_speed` 3.9 -> 3.5 (walk stays 1.55; the knock-on follows the sprint = 5.8). With the ball (x0.92): run 3.22, sprint 5.34. `data/config/ai.json` `through_min_runner_speed` 2.1 -> 1.9. Motion study poses: jog 2.6, sprint 5.6 m/s. Code fallbacks updated.
+- Branch `feature/press-loose-ball` (from `feature/player-speed`), commit `77d08dd`: `HumanControl.is_attacking` = our side holds the ball, or our pass is on its way to a teammate (`possession.pass_target` on our team). Any other loose ball shows the defense buttons (TACKLE, SWITCH, PRESS, MATCH-UP), and PRESS with no stick runs the player to where he meets the ball (`PressAssist`, unchanged). This replaces the old rule "attack layout if we touched the loose ball last".
+- New test `_test_press_loose_ball` in `tests/team_ai_test.gd` (3 checks: defense buttons on a loose ball we touched last; our pass on its way keeps the attack buttons; PRESS held runs to the ball and takes it).
+- CI run 43756796940: all 9 suites, 0 failures, APK there.
+
+#### Numbers
+
+- MATCH BALANCE (6 AI matches, before -> after both changes): goals 4.17 -> 2.33, shots 23.8 -> 17.3, saves 13.5 -> 11.0 per match.
+- Passes completed 433 of 601 -> 412 of 559 (74 %). Balls won 93 -> 100.
+- Spacing: 5.4 m to the nearest teammate, two teammates closer than 3 m 31 %, 3+ near the ball 8 %.
+- Shot types (shots / saved / goals): normal 72 / 52 / 5; low 14 / 6 / 6; curl 14 / 8 / 3; no chips.
+- The drop in goals and shots comes from the slower run (3.5): attackers reach shooting positions less often. Not retuned; reported to the user, who decides.
+
+#### Next
+
+- Phone test, not done yet: run 3.5 and sprint 5.8 feel; PRESS on a loose ball and the layout change (defense buttons on any loose ball except our own pass on its way).
+- Goals are low (2.33). Options for the user: run speed, AI shoot range, keeper save chance.
+- Nothing merged to main yet.
 
 ### 2026-11-15 — Slower players: sprint at the old run speed
 
