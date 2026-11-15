@@ -211,6 +211,8 @@ func _kick(player: Player, ctx: MatchContext, kick_velocity: Vector3, spin: floa
 	player.animate("kick", 1.0, player.flat_distance_to(ctx.ball.position))
 	ctx.emit_event("shot" if kind == "shot" else "pass", ctx.ball.position, kick_velocity.length())
 	ctx.ball.kick(kick_velocity, spin)
+	# The ball leaves his foot: his own body does not deflect it (kicks across the body).
+	player.ghost_timer = maxf(player.ghost_timer, _cfg("kick_pass_through_seconds", 0.15))
 	dribbling.reset()
 	_cooldown = _cfg("kick_cooldown", 0.35)
 

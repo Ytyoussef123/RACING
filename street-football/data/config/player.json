@@ -36,6 +36,7 @@
 	"kick_reach": 1.1,
 	"kick_max_ball_height": 1.0,
 	"kick_cooldown": 0.35,
+	"kick_pass_through_seconds": 0.15,
 	"shot_charge_time": 0.9,
 	"shot_speed_min": 12.0,
 	"shot_speed_max": 26.0,
