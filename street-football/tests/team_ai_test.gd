@@ -24,6 +24,7 @@ func _ready() -> void:
 	_test_keeper_ball_no_jobs()
 	_test_defense_cover_and_marks()
 	_test_press_loose_ball()
+	_test_after_pass()
 	_test_brains_run()
 	print("TEAM AI TESTS DONE: %d failure(s)" % _failures)
 	get_tree().quit(1 if _failures > 0 else 0)
@@ -281,6 +282,34 @@ func _test_press_loose_ball() -> void:
 			break
 	_check("press: held with no stick, the player runs to the loose ball and takes it", won,
 		"distance=%.2f" % player.flat_distance_to(_ctx.ball.position))
+
+
+## After his pass a player stops a moment facing the ball, then jogs (no sprint) before running
+## again; the other side winning the ball ends it.
+func _test_after_pass() -> void:
+	_attack_setup()
+	var passer := _home.players[2]
+	_ctx.possession.kicked(passer, _home.players[3], _ctx.ball, "pass")
+	AfterPass.start(passer)
+	var intent := PlayerIntent.new()
+	intent.move = Vector3.LEFT
+	intent.sprint = true
+	AfterPass.adjust(passer, intent, DT, _ctx)
+	_check("after pass: he stops a moment, facing the ball", intent.move == Vector3.ZERO and not intent.sprint
+		and intent.face.length() > 0.1)
+	passer.ai.after_pass = 0.5
+	intent = PlayerIntent.new()
+	intent.move = Vector3.LEFT
+	intent.sprint = true
+	AfterPass.adjust(passer, intent, DT, _ctx)
+	_check("after pass: then he jogs, backward facing the ball when going away from it", not intent.sprint
+		and intent.move.length() < 0.75 and intent.move.length() > 0.5 and intent.face.x > 0.0, "move=%s face=%s" % [intent.move, intent.face])
+	_ctx.possession.take(_away.players[3], _ctx.ball)
+	intent = PlayerIntent.new()
+	intent.move = Vector3.LEFT
+	intent.sprint = true
+	AfterPass.adjust(passer, intent, DT, _ctx)
+	_check("after pass: the other side winning the ball ends it", intent.sprint and passer.ai.after_pass <= 0.0)
 
 
 func _test_brains_run() -> void:

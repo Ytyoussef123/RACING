@@ -25,6 +25,8 @@ var run_cooldown: float = 0.0
 var run_z: float = 0.0
 ## Give-and-go after his pass: seconds left of the run forward, and where he runs.
 var go_left: float = 0.0
+## Seconds left of the calm moment after his own pass (AfterPass): a short stop, then a jog.
+var after_pass: float = 0.0
 var go_target: Vector3 = Vector3.ZERO
 ## Keeper: time holding the ball, and the last shot already rolled for a save.
 var hold_timer: float = 0.0
@@ -32,6 +34,7 @@ var last_save_kick: int = -1
 
 
 func reset() -> void:
+	after_pass = 0.0
 	action = Action.NONE
 	think_timer = 0.0
 	charge_left = 0.0

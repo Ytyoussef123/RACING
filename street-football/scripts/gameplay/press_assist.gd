@@ -1,8 +1,8 @@
 class_name PressAssist
 extends RefCounted
 ## PRESS (hold the SPRINT button when you don't have the ball, like eFootball's Dash & Press):
-## the player sprints at the ball carrier by himself, staying goal-side, then goes for the ball
-## and tackles automatically when in reach. On a loose ball he sprints to where he can meet it.
+## the player sprints at the ball carrier by himself, staying goal-side, then goes for the ball.
+## The tackle is the human's (TACKLE), unless press_auto_tackle is 1. On a loose ball he sprints to where he can meet it.
 ## Numbers: data/config/player.json (press_*).
 
 
@@ -30,7 +30,7 @@ static func apply(player: Player, intent: PlayerIntent, delta: float, ctx: Match
 		intent.move = to.normalized()
 	player.ai.tackle_timer -= delta
 	var reach := _cfg("tackle_reach", 1.3) * _cfg("press_tackle_reach_factor", 0.85)
-	if dist_to_ball <= reach and player.ai.tackle_timer <= 0.0:
+	if _cfg("press_auto_tackle", 0.0) > 0.5 and dist_to_ball <= reach and player.ai.tackle_timer <= 0.0:
 		player.ai.tackle_timer = _cfg("press_tackle_interval", 0.6)
 		intent.tackle_pressed = true
 	return intent

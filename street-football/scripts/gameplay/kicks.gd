@@ -150,6 +150,8 @@ static func kick(handling: BallHandling, player: Player, ctx: MatchContext, kick
 	# The ball leaves his foot: his own body does not deflect it (kicks across the body).
 	player.ghost_timer = maxf(player.ghost_timer, _cfg("kick_pass_through_seconds", 0.15))
 	handling.after_kick()
+	if kind == "pass" and not player.is_keeper:
+		AfterPass.start(player)
 
 
 ## The value of a kick from the bar: `auto` for a tap (power AUTO), else low..high by power.

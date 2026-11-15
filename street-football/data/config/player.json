@@ -146,6 +146,7 @@
 	"press_goal_side_offset": 0.6,
 	"press_tackle_reach_factor": 0.85,
 	"press_tackle_interval": 0.6,
+	"press_auto_tackle": 0,
 	"kick_buffer_seconds": 0.5,
 	"through_lead_distance": 4.0,
 	"through_forward_weight": 0.6,

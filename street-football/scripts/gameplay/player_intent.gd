@@ -46,6 +46,9 @@ var match_up_held: bool = false
 ## Direction for kicks when it differs from `move` (receive assist moves to the ball while the
 ## joystick keeps aiming). ZERO means: use `move`, or the facing direction.
 var aim: Vector3 = Vector3.ZERO
+## Where the body looks when it is not where he goes (jogging backward facing the ball).
+## ZERO means: he faces where he moves.
+var face: Vector3 = Vector3.ZERO
 ## Direction of a skill move (joystick flick with the ball), or ZERO.
 var skill: Vector3 = Vector3.ZERO
 ## True only on the frame the human double-taps the joystick on defense: shoulder charge.

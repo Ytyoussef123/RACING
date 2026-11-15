@@ -46,6 +46,8 @@ func update(delta: float, ctx: MatchContext, human_player: Player) -> void:
 		if p == human_player:
 			continue
 		p.intent = _intent_for(p, delta, ctx)
+		if not p.is_keeper:
+			AfterPass.adjust(p, p.intent, delta, ctx)
 
 
 func _intent_for(p: Player, delta: float, ctx: MatchContext) -> PlayerIntent:

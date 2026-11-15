@@ -164,7 +164,7 @@ func move(delta: float, court: CourtData, dribbling: bool) -> void:
 		walk = false
 		knock_on = false
 	_update_energy(delta, (sprint or knock_on) and dir.length() > 0.2, walk or dir.length() < 0.2)
-	motion.step(delta, dir, sprint, dribbling, walk, knock_on)
+	motion.step(delta, dir, sprint, dribbling, walk, knock_on, intent.face)
 	position += motion.velocity * delta
 	if ball_in_hands:
 		KeeperHands.clamp_to_area(self, court)

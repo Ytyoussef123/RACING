@@ -87,7 +87,7 @@ func knock_on_speed() -> float:
 ## move: wanted direction on the ground, length 0..1 (joystick strength). walk: the player walks
 ## at walk_speed whatever the length. knock_on (with the ball): he runs at knock_on_speed.
 func step(delta: float, move: Vector3, sprint: bool, dribbling: bool, walk: bool = false,
-		knock_on: bool = false) -> void:
+		knock_on: bool = false, face: Vector3 = Vector3.ZERO) -> void:
 	var wanted := Vector3(move.x, 0.0, move.z).limit_length(1.0)
 	var moving := wanted.length() > 0.05
 	var target: Vector3
@@ -100,7 +100,9 @@ func step(delta: float, move: Vector3, sprint: bool, dribbling: bool, walk: bool
 	var rate := _acceleration * _accel_mult if moving else _deceleration
 	var grip := _grip(Vector2(velocity.x, velocity.z).length())
 	_accelerate(target, rate, grip, delta)
-	_turn(delta, wanted, dribbling, grip)
+	# `face`: the body looks there instead of where he goes (jogging backward).
+	var look := Vector3(face.x, 0.0, face.z)
+	_turn(delta, look if look.length() > 0.1 else wanted, dribbling, grip)
 
 
 ## Moves the velocity toward the target at `rate`; the part of the change that turns the run
