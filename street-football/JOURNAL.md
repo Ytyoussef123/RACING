@@ -15,9 +15,50 @@ A dated log, newest entry first: what was done, what was decided and why, and wh
 | 7 | Progression: coins, unlocks, upgrades, save system | Done, waiting for phone test |
 | 8 | Release build: optimized APK, full file review | Not started |
 
-The player-motion work is an extra feature branch between Phase 7 and Phase 8 (`feature/player-motion`, created from `feature/progression`), waiting for the phone test. `feature/broadcast-camera` (created from `feature/player-motion`) adds camera views and also waits for the phone test. `feature/speed-modes` (created from `feature/broadcast-camera`) adds walk, run, sprint and knock-on, and waits for the phone test. `feature/shot-on-target` (created from `feature/speed-modes`) adds shots on target and CLEAR, and waits for the phone test. `feature/keeper-ball` (created from `feature/shot-on-target`) adds the goalkeeper with the ball (hands or feet), and waits for the phone test.
+The player-motion work is an extra feature branch between Phase 7 and Phase 8 (`feature/player-motion`, created from `feature/progression`), waiting for the phone test. `feature/broadcast-camera` (created from `feature/player-motion`) adds camera views and also waits for the phone test. `feature/speed-modes` (created from `feature/broadcast-camera`) adds walk, run, sprint and knock-on, and waits for the phone test. `feature/shot-on-target` (created from `feature/speed-modes`) adds shots on target and CLEAR, and waits for the phone test. `feature/keeper-ball` (created from `feature/shot-on-target`) adds the goalkeeper with the ball (hands or feet), and waits for the phone test. `feature/team-movement` (created from `feature/keeper-ball`) adds team movement (creating space), and waits for the phone test.
 
 ## Log
+
+### 2026-11-15 — Team movement: creating space
+
+#### Why
+
+- The user asked that players create empty space and are not all near each other.
+- The analysis agreed with the user: spacing about 5 m; a support 5 to 8 m from the carrier at an angle with a clear lane; one player wide; one runs in behind the defenders when the carrier faces forward, and comes back if not found; a cover behind the ball; give-and-go after a pass; on defense one presses, one covers behind, the others mark, never more than two near the ball; difficulty changes how many runs. Calling runs (asking a teammate to run) is for later.
+
+#### Done
+
+- With the ball (ours, or our pass on its way), each outfield player without the ball gets a job at every decision tick: SUPPORT, FORWARD or COVER (`AttackRoles.assign`). Nearest players take the spots (cheapest total distance), a player keeps his job unless another is clearly closer (`role_keep_bonus` 3 m), the formation role prefers its job (`role_jobs`, `role_job_bonus` 2 m). When our keeper has the ball nobody has a job. Jobs are given at once when the ball is won.
+- Spots (`AttackShape`): SUPPORT 6.5 m from where the carrier will be in 0.4 s, angle 45, 90 or 135 degrees either side chosen for a clear lane, room, progress, walls and distance from the other spots; FORWARD level with the last defender minus 1 m, wide, on the side away from the ball; COVER 10 m behind the ball, or level and across when the ball is deep. Spots step away from opponents (`get_open`, nearest opponent) and from teammates closer than 5 m; players go around the carrier; a player more than 4.5 m from his spot sprints.
+- Runs in behind: chance per second by difficulty (0.25 / 0.5 / 0.8), sprint to 3 m behind the last defender, 2.4 s at most, 2.5 s before the next. The carrier AI plays a through pass to a runner (`through_tendency` 0.3 / 0.55 / 0.75); the human uses THROUGH.
+- Give-and-go: the passer (not the keeper, never the last man back) runs 7 m up the court for 1.6 s (`give_go_chance` 0.3 / 0.6 / 0.85).
+- Defense: nearest player presses; the player nearest the cover point covers 6 m behind the ball (only when the other side has the ball and the ball is 12 m or more from our goal); a loose ball gets one player; markers take the most advanced free opponents, closest pair first; defending spots keep 3 m from teammates and 4.5 m from a pressed ball.
+- Carrier pass weights moved to `ai.json` (`pass_progress_weight` 3, `pass_open_weight` 0.3, `pass_open_cap` 5, `pass_blocked_score` 5), same values.
+- New `scripts/ai/attack_roles.gd` and `scripts/ai/attack_shape.gd`; changed `support_ai.gd`, `team_brain.gd`, `carrier_ai.gd`, `ai_player_state.gd`, `ai_tuning.gd`, `data/config/ai.json`. Details: `docs/features/team-movement.md`.
+- Tests: new `tests/team_ai_test.gd` (31 checks) with a CI step "Team AI tests (headless)"; `tests/match_sim_test.gd` prints MATCH SPACING lines; the screenshot tour adds 4 top views (`match_top_1..4`).
+- Branch `feature/team-movement`, commits `d3976eb`, `e67afba`, `c5888cf`, `2ff5335`, `b694825`, `513bed3`, `98e43a5`, `c4df0bd`, `cf0ecf7`.
+
+#### What went wrong on the way
+
+- The first version (`c5888cf`) made bunching worse: close pairs 51 %, 3+ near the ball 19 %. The cover was the second nearest player to the ball and stayed near it, both teams sent a cover to loose balls, the cover stood at the carrier's heels when the ball was deep, markers crossed the court.
+- Fixed step by step: spacing measured by phase, cover picked nearest the cover point and none on loose balls, defenders 3 m apart, markers matched closest pair first, players go around the carrier, jobs at once on winning the ball, room (4.5 m) around a pressed ball.
+
+#### Numbers
+
+- Measure MATCH SPACING (6 fixed-seed matches, every 0.5 s). The old AI (`e67afba`) was measured on a throwaway branch `feature/team-movement-baseline` (commits `5a25225`, `d577869`, not to be merged). Old AI -> new (final `cf0ecf7`, CI run 43709460784), nearest teammate / close pairs under 3 m / 3+ near the ball:
+  - overall: 5.3 m -> 5.3 m; 39 % -> 34 %; 7 % -> 8 %
+  - with the ball: 5.5 m -> 5.8 m; 40 % -> 33 %; 6 % -> 7 %
+  - settled (with the ball 2 s+): 5.6 m -> 6.2 m; 43 % -> 37 %; 5 % -> 6 %
+  - without the ball: 5.0 m -> 4.9 m; 42 % -> 36 %; 10 % -> 11 %
+  - loose ball: 5.6 m -> 5.3 m; 32 % -> 31 %; 2 % -> 3 %
+- Passes per team per match 38 -> 52 (completion 74 %).
+- Balance (6 AI matches): 3.67 goals, 31.5 shots, 16.0 saves per match (was 4.17 / 27.8 / 15.3).
+- Most remaining close pairs with the ball are carrier + support right after short passes; without the ball, the presser and a marker.
+
+#### Next
+
+- Phone test: watch the support, a run in behind, a give-and-go, the cover and the markers. Nothing merged to main yet.
+- Calling runs (asking a teammate to run), planned for later.
 
 ### 2026-11-15 — Goalkeeper with the ball: hands or feet
 
