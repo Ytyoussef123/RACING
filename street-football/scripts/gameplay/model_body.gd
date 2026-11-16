@@ -91,7 +91,8 @@ func advance(delta: float, speed: float, backward: bool, run: float) -> void:
 
 ## Poses the skeleton: the RigPose first, then the recorded jog when running, then the clip of
 ## `action` (if any) at `time` seconds, mirrored for side -1.
-func apply(p: RigPose, action: String, time: float, duration: float, side: float, keeper: bool) -> void:
+func apply(p: RigPose, action: String, time: float, duration: float, side: float, keeper: bool,
+		windup: String = "", windup_amount: float = 0.0) -> void:
 	if _skeleton == null:
 		return
 	var v := p.v
@@ -132,6 +133,13 @@ func apply(p: RigPose, action: String, time: float, duration: float, side: float
 	var loco: Animation = _clips.get("jog_backward" if _backward else "jog", null)
 	if loco != null and _run > 0.01:
 		hips_at.y = lerpf(hips_at.y, _blend_clip(locals, loco, _phase * loco.length, _run, false, hips_index, hips_at.y), _run)
+	# Wind-up while a kick is being charged: the clip's backswing, before its contact.
+	var wind_key := windup + "_keeper" if keeper and _clips.has(windup + "_keeper") else windup
+	if action.is_empty() and windup_amount > 0.01 and _clips.has(wind_key):
+		var wind_setup: Dictionary = _setups[wind_key]
+		var wind_at := maxf(0.0, float(wind_setup.get("start", 0.0)) - float(wind_setup.get("wind", 0.15)))
+		var wind_w := smoothstep(0.0, float(_cfg("model_windup_full", 0.35)), windup_amount) * float(_cfg("model_windup_weight", 0.85))
+		hips_at.y = lerpf(hips_at.y, _blend_clip(locals, _clips[wind_key], wind_at, wind_w, side < 0.0, hips_index, hips_at.y), wind_w)
 	# The action's recorded movement.
 	var key := action + "_keeper" if keeper and _clips.has(action + "_keeper") else action
 	if _clips.has(key):

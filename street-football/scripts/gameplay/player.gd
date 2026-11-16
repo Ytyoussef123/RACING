@@ -69,6 +69,13 @@ func update_look(delta: float) -> void:
 	_rig.refresh()
 	_animator.keeper = is_keeper
 	_animator.holding = ball_in_hands
+	# A held kick winds the body up: the shot or clearance, or the pass.
+	_animator.windup = ""
+	_animator.windup_amount = 0.0
+	if handling.bar_shown():
+		_animator.windup = "kick" if handling.is_charging or handling.held_kick.kind == "clear" else "pass"
+		_animator.windup_amount = handling.bar_value()
+		_animator.windup_side = -1.0 if preferred_foot == "left" else 1.0
 	_animator.update(delta, motion.velocity, motion.facing, motion.turn_rate, motion.top_speed(true))
 
 

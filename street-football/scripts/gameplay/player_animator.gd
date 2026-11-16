@@ -33,6 +33,10 @@ var _travel: float = 0.0
 var _walk: float = 0.0
 var _clock: float = 0.0
 var _action: String = ""
+## A kick being charged ("pass" or "kick") and how far (0..1): the body winds up (ModelBody).
+var windup: String = ""
+var windup_amount: float = 0.0
+var windup_side: float = 1.0
 ## A skinned 3D body worn instead of the coded one (ModelBody), or null.
 var model: ModelBody = null
 var _action_time: float = 0.0
@@ -100,7 +104,7 @@ func update(delta: float, velocity: Vector3, facing: Vector3, turn_rate: float, 
 	if model != null:
 		var backward := forward < _n("backpedal_threshold", -0.4) * speed
 		model.advance(delta, speed, backward, (1.0 - _walk) * _move)
-		model.apply(_pose, _action, _action_time, _action_duration, _side, keeper)
+		model.apply(_pose, _action, _action_time, _action_duration, _side if not _action.is_empty() else windup_side, keeper, windup, windup_amount)
 
 
 ## The running cycle advances with the distance covered (longer strides when faster), backward

@@ -3,7 +3,8 @@ extends RefCounted
 ## What a player does just after his pass (AI players, and the human's player once the control has
 ## gone to the receiver): he stops for a moment looking at the ball, then jogs to his next place
 ## (backward, still facing the ball, when that place is behind him; forward otherwise), and only
-## then runs again. A give-and-go or a run in behind starts right after the short stop.
+## then runs again. A give-and-go or a run in behind starts right after the short stop, at running
+## pace (no sprint) until the jog time is over.
 ## The other side winning the ball ends it at once. Numbers: data/config/ai.json (after_pass_*).
 
 
@@ -27,9 +28,10 @@ static func adjust(player: Player, intent: PlayerIntent, delta: float, ctx: Matc
 		intent.sprint = false
 		intent.face = to_ball
 		return
+	intent.sprint = false
+	# A give-and-go or a run in behind: at running pace first, the sprint comes after.
 	if state.run_left > 0.0 or state.go_left > 0.0:
 		return
-	intent.sprint = false
 	intent.move = intent.move.limit_length(Steering.num("after_pass_jog_speed", 0.7))
 	if intent.move.dot(to_ball) < 0.0:
 		intent.face = to_ball
