@@ -86,8 +86,8 @@ func _turn_and_shoot(shot_name: String) -> void:
 ## of the first three heads (face, hair).
 func _lineup(shot_name: String) -> void:
 	var team_ids: Array = Roster.team_ids()
-	var poses := ["idle", "keeper", "jog", "pass", "kick", "kick_late", "tackle", "dive"]
-	var freeze_at := {"pass": 0.12, "kick": 0.08, "kick_late": 0.22, "tackle": 0.35, "dive": 0.35}
+	var poses := ["idle", "keeper", "jog", "pass", "kick", "tackle_run", "tackle", "dive"]
+	var freeze_at := {"pass": 0.12, "kick": 0.08, "tackle_run": 0.4, "tackle": 0.45, "dive": 0.35}
 	var bodies: Array[Player] = []
 	for i in range(poses.size()):
 		var team: TeamData = Roster.team(str(team_ids[i % team_ids.size()]))
@@ -105,17 +105,17 @@ func _lineup(shot_name: String) -> void:
 			p.update_look(DT)
 	for i in range(bodies.size()):
 		match poses[i]:
-			"kick", "kick_late":
+			"kick":
 				bodies[i].animate("kick", 1.0, 0.6)
 			"pass":
 				bodies[i].animate("pass", 1.0, 0.6)
-			"tackle":
-				bodies[i].animate("tackle")
+			"tackle", "tackle_run":
+				bodies[i].animate(poses[i])
 			"dive":
 				bodies[i].animate("dive", -1.0)
 	var step := DT * 0.25
 	var elapsed := 0.0
-	while elapsed < 0.25:
+	while elapsed < 0.5:
 		elapsed += step
 		for i in range(bodies.size()):
 			if elapsed <= float(freeze_at.get(poses[i], 1.0)):

@@ -1,7 +1,7 @@
 class_name TackleRules
 extends RefCounted
 ## A tackle: in reach of an opponent's ball, it may knock the ball loose; a miss slows the tackler.
-## Tackling when nobody has the ball only plays the slide (no penalty).
+## Tackling when nobody has the ball is a slide for nothing (he is slow to get up).
 ## Numbers: data/config/player.json (tackle_*), plus the AI difficulty bonus.
 
 
@@ -9,12 +9,38 @@ static func attempt(tackler: Player, ctx: MatchContext) -> bool:
 	var possession := ctx.possession
 	var carrier := possession.holder
 	var ball := ctx.ball
-	# The slide is always played on TACKLE, even with nobody to tackle.
-	tackler.animate("tackle")
+	# TACKLE is a slide: a running slide at speed, a slide tackle from slow or standing. He slides
+	# on along his way, and the ball is his if it comes in reach during the slide (slide_update).
+	var speed := Steering.flat(tackler.motion.velocity).length()
+	var running := speed >= _cfg("slide_run_speed", 2.5)
+	tackler.animate("tackle_run" if running else "tackle")
+	tackler.start_slide(_cfg("slide_seconds", 0.8), maxf(speed * _cfg("slide_speed_mult", 1.2), _cfg("slide_min_speed", 4.5)))
+	tackler.tackle_pending = true
+	return _resolve(tackler, ctx)
+
+
+## Called every frame: a slide in progress wins (or misses) the ball when it comes in reach; a
+## slide that never reaches it is a miss (the tackler is slow to get up).
+static func slide_update(tackler: Player, ctx: MatchContext) -> void:
+	if not tackler.tackle_pending:
+		return
+	if tackler.slide_time <= 0.0:
+		tackler.tackle_pending = false
+		tackler.stun_timer = maxf(tackler.stun_timer, _cfg("tackle_whiff_stun", 0.35))
+		return
+	_resolve(tackler, ctx)
+
+
+static func _resolve(tackler: Player, ctx: MatchContext) -> bool:
+	var possession := ctx.possession
+	var carrier := possession.holder
+	var ball := ctx.ball
 	if carrier == null or carrier.team == tackler.team:
 		return false
-	var in_reach := tackler.flat_distance_to(ball.position) <= _cfg("tackle_reach", 1.3)
-	if not in_reach or is_protected(carrier, ctx):
+	if tackler.flat_distance_to(ball.position) > _cfg("tackle_reach", 1.3):
+		return false
+	tackler.tackle_pending = false
+	if is_protected(carrier, ctx):
 		tackler.stun_timer = _cfg("tackle_whiff_stun", 0.35)
 		return false
 	if ctx.rng.randf() >= success_chance(tackler, carrier):

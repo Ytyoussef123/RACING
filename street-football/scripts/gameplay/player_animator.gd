@@ -103,7 +103,7 @@ func update(delta: float, velocity: Vector3, facing: Vector3, turn_rate: float, 
 	_rig.apply(_pose)
 	if model != null:
 		var backward := forward < _n("backpedal_threshold", -0.4) * speed
-		model.advance(delta, speed, backward, (1.0 - _walk) * _move)
+		model.advance(delta, speed, backward, _move)
 		model.apply(_pose, _action, _action_time, _action_duration, _side if not _action.is_empty() else windup_side, keeper, windup, windup_amount)
 
 

@@ -20,6 +20,9 @@ var _opposite: Array[int] = []
 var _phase: float = 0.0
 var _run: float = 0.0
 var _backward: bool = false
+var _gait_a: String = "jog"
+var _gait_b: String = ""
+var _gait_t: float = 0.0
 
 static var _animations: Dictionary = {}
 
@@ -79,13 +82,33 @@ func set_kit(kit: Color) -> void:
 		mesh.material_override = material
 
 
-## Advances the running cycle: `speed` m/s over `delta` seconds, `backward` when back-pedalling.
-## `run` (0..1) is how much of the recorded jog replaces the coded pose (0 standing or walking).
-func advance(delta: float, speed: float, backward: bool, run: float) -> void:
+## Advances the walking / running cycle: `speed` m/s over `delta` seconds, `backward` when
+## back-pedalling. `moving` (0..1) is how much of the recorded cycle replaces the coded pose
+## (0 standing). The cycle is the blend of the two recorded gaits around this speed (model_gaits:
+## walk, jog, run, sprint), each loop covering its stride.
+func advance(delta: float, speed: float, backward: bool, moving: float) -> void:
 	_backward = backward
-	_run = run
-	var natural := float(_cfg("model_jog_speed", 2.5))
-	var stride := float(_cfg("model_jog_stride", 2.1)) * lerpf(1.0, maxf(1.0, speed / natural), float(_cfg("model_stride_stretch", 0.5)))
+	_run = moving
+	var gaits: Array = _cfg("model_gaits", [])
+	var stride := float(_cfg("model_jog_stride", 2.1))
+	_gait_a = "jog"
+	_gait_b = ""
+	_gait_t = 0.0
+	if not gaits.is_empty():
+		var first: Dictionary = gaits[0]
+		_gait_a = str(first.get("clip", "jog"))
+		stride = float(first.get("stride", stride))
+		for i in range(1, gaits.size()):
+			var low: Dictionary = gaits[i - 1]
+			var high: Dictionary = gaits[i]
+			if speed < float(low.get("speed", 0.0)):
+				break
+			_gait_a = str(low.get("clip", "jog"))
+			_gait_b = str(high.get("clip", "jog"))
+			_gait_t = clampf((speed - float(low.get("speed", 0.0))) / maxf(0.01, float(high.get("speed", 1.0)) - float(low.get("speed", 0.0))), 0.0, 1.0)
+			stride = lerpf(float(low.get("stride", stride)), float(high.get("stride", stride)), _gait_t)
+	if backward:
+		stride = float(_cfg("model_jog_stride", 2.1))
 	_phase = fposmod(_phase + speed * delta / maxf(0.1, stride), 1.0)
 
 
@@ -129,10 +152,14 @@ func apply(p: RigPose, action: String, time: float, duration: float, side: float
 	var hips_index: int = _bones["Hips"]
 	var hips_rest := _skeleton.get_bone_rest(hips_index).origin
 	var hips_at := hips_rest + Vector3(0.0, v[RigPose.ROOT_Y], v[RigPose.ROOT_FWD]) / _unit
-	# The recorded jog (forward or backward) when running.
-	var loco: Animation = _clips.get("jog_backward" if _backward else "jog", null)
+	# The recorded cycle when moving: backward jog, or the two gaits around his speed.
+	var loco: Animation = _clips.get("jog_backward" if _backward else _gait_a, null)
 	if loco != null and _run > 0.01:
 		hips_at.y = lerpf(hips_at.y, _blend_clip(locals, loco, _phase * loco.length, _run, false, hips_index, hips_at.y), _run)
+		var faster: Animation = _clips.get(_gait_b, null)
+		if faster != null and not _backward and _gait_t > 0.01:
+			var mix := _run * _gait_t
+			hips_at.y = lerpf(hips_at.y, _blend_clip(locals, faster, _phase * faster.length, mix, false, hips_index, hips_at.y), mix)
 	# Wind-up while a kick is being charged: the clip's backswing, before its contact.
 	var wind_key := windup + "_keeper" if keeper and _clips.has(windup + "_keeper") else windup
 	if action.is_empty() and windup_amount > 0.01 and _clips.has(wind_key):

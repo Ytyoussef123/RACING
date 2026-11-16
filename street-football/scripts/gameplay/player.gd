@@ -36,6 +36,13 @@ var energy: float = 1.0
 var ball_in_hands: bool = false
 var hands_time: float = 0.0
 
+## Slide tackle in progress: seconds left, its length, direction and starting speed.
+var slide_time: float = 0.0
+var tackle_pending: bool = false
+var _slide_total: float = 1.0
+var _slide_dir: Vector3 = Vector3.RIGHT
+var _slide_speed: float = 0.0
+
 var _stun_move_factor: float
 ## Jointed body (look only): joints and meshes built under Body/Pose.
 var _rig: PlayerRig
@@ -83,7 +90,7 @@ func update_look(delta: float) -> void:
 ## side: +1 right / -1 left (dive and shoulder direction); kicks use the preferred foot.
 ## reach: for a kick, how far the ball is (the body lunges toward a far ball).
 func animate(action: String, side: float = 1.0, reach: float = 0.0) -> void:
-	if action == "kick" or action == "pass":
+	if action == "kick" or action == "pass" or action == "chip":
 		side = -1.0 if preferred_foot == "left" else 1.0
 	_animator.play(action, side, reach)
 
@@ -154,6 +161,8 @@ func reset_to(ground_position: Vector3, facing: Vector3) -> void:
 	hands_time = 0.0
 	handling.reset()
 	ai.reset()
+	slide_time = 0.0
+	tackle_pending = false
 	_update_visual()
 
 
@@ -161,6 +170,14 @@ func reset_to(ground_position: Vector3, facing: Vector3) -> void:
 func move(delta: float, court: CourtData, dribbling: bool) -> void:
 	stun_timer = maxf(0.0, stun_timer - delta)
 	ghost_timer = maxf(0.0, ghost_timer - delta)
+	if slide_time > 0.0:
+		# Sliding: he goes on along his way, slowing down, and cannot steer.
+		slide_time = maxf(0.0, slide_time - delta)
+		motion.velocity = _slide_dir * _slide_speed * (slide_time / _slide_total)
+		position += motion.velocity * delta
+		clamp_to_court(court)
+		_update_visual()
+		return
 	var dir := intent.move
 	var sprint := intent.sprint
 	var walk := intent.walk
@@ -177,6 +194,15 @@ func move(delta: float, court: CourtData, dribbling: bool) -> void:
 		KeeperHands.clamp_to_area(self, court)
 	clamp_to_court(court)
 	_update_visual()
+
+
+## Starts a slide (tackle): `seconds` long, from `speed` m/s down to a stop, the way he runs or faces.
+func start_slide(seconds: float, speed: float) -> void:
+	var way := Vector3(motion.velocity.x, 0.0, motion.velocity.z)
+	_slide_dir = way.normalized() if way.length() > 0.5 else motion.facing
+	_slide_total = maxf(0.05, seconds)
+	slide_time = _slide_total
+	_slide_speed = speed
 
 
 func set_selected(selected: bool) -> void:

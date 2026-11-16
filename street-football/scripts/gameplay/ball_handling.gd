@@ -78,6 +78,7 @@ func after_kick() -> void:
 
 
 func update(delta: float, player: Player, ctx: MatchContext) -> void:
+	TackleRules.slide_update(player, ctx)
 	_tick_timers(delta)
 	var ball := ctx.ball
 	var possession := ctx.possession
@@ -175,6 +176,7 @@ func _try_take(player: Player, ctx: MatchContext) -> void:
 	var holder := ctx.possession.holder
 	# Decided before the take (it forgets who passed last): a keeper's hands, not on a back-pass.
 	var hands := KeeperHands.may_handle(player, ctx)
+	var received := ctx.possession.last_kick_kind == "pass"
 	if holder == null:
 		ctx.possession.take(player, ctx.ball)
 	elif Dribbling.can_steal(player, ctx):
@@ -186,6 +188,8 @@ func _try_take(player: Player, ctx: MatchContext) -> void:
 		return
 	if hands:
 		KeeperHands.take(player, ctx)
+	elif received and Steering.flat(player.motion.velocity).length() < _cfg("receive_anim_max_speed", 2.0):
+		player.animate("receive")
 
 
 func _queue(kind: String, charge: float, aim: Vector3, dribbling_now: bool, lofted: bool = false) -> void:

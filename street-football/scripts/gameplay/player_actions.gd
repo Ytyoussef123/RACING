@@ -8,7 +8,7 @@ extends RefCounted
 
 static func apply(p: RigPose, action: String, t: float, side: float, reach: float, cfg: Dictionary) -> void:
 	match action:
-		"kick", "pass":
+		"kick", "pass", "chip":
 			if PoseClips.has(action):
 				_clip_kick(p, action, t, side, reach, cfg)
 			else:
