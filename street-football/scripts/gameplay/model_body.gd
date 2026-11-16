@@ -23,6 +23,12 @@ var _backward: bool = false
 var _gait_a: String = "jog"
 var _gait_b: String = ""
 var _gait_t: float = 0.0
+## Bones posed every frame (no fingers, no end bones: not seen at match distance).
+var _active: Array[int] = []
+var _tick: int = 0
+
+## Animation -> its tracks for the posed bones: [[track, bone, is_position]...], found once.
+static var _tracks: Dictionary = {}
 
 static var _animations: Dictionary = {}
 
@@ -61,6 +67,12 @@ func build(parent: Node3D, height: float) -> bool:
 		var bone_name := _short(_skeleton.get_bone_name(i))
 		var other := bone_name.replace("Left", "Right") if bone_name.contains("Left") else bone_name.replace("Right", "Left")
 		_opposite.append(int(_bones.get(other, i)))
+		if not _is_detail(bone_name):
+			_active.append(i)
+	if bool(_cfg("model_hide_joints", false)):
+		for mesh in _meshes:
+			if mesh.name.to_lower().contains("joint"):
+				mesh.visible = false
 	# model_clips: action -> {"file", "start" (s), "rate", "out" (share of the action where it fades)}.
 	var clips: Dictionary = _cfg("model_clips", {})
 	for action in clips:
@@ -118,6 +130,10 @@ func apply(p: RigPose, action: String, time: float, duration: float, side: float
 		windup: String = "", windup_amount: float = 0.0) -> void:
 	if _skeleton == null:
 		return
+	# Nothing special going on: the pose is refreshed every other frame.
+	_tick += 1
+	if action.is_empty() and windup_amount <= 0.01 and _tick % maxi(1, int(_cfg("model_pose_every", 2))) != 0:
+		return
 	var v := p.v
 	var root := Basis.from_euler(Vector3(v[RigPose.ROOT_X], 0.0, v[RigPose.ROOT_Z]))
 	var hips := root * Basis.from_euler(Vector3(0.0, v[RigPose.HIPS_Y], v[RigPose.HIPS_Z]))
@@ -139,7 +155,7 @@ func apply(p: RigPose, action: String, time: float, duration: float, side: float
 	var globals := {}
 	var locals: Array[Quaternion] = []
 	locals.resize(_order.size())
-	for i in _order:
+	for i in _active:
 		var parent := _skeleton.get_bone_parent(i)
 		var parent_basis: Basis = globals[parent] if parent >= 0 and globals.has(parent) else Basis.IDENTITY
 		var global_basis: Basis
@@ -176,7 +192,7 @@ func apply(p: RigPose, action: String, time: float, duration: float, side: float
 		var w := RigPose.envelope(t, float(_anim_cfg("clip_blend_in", 0.08)), float(setup.get("out", _anim_cfg("clip_blend_out", 0.6))))
 		var at := clampf(float(setup.get("start", 0.0)) + time * float(setup.get("rate", 1.0)), 0.0, anim.length)
 		hips_at.y = lerpf(hips_at.y, _blend_clip(locals, anim, at, w, side < 0.0, hips_index, hips_at.y), w)
-	for i in _order:
+	for i in _active:
 		_skeleton.set_bone_pose_rotation(i, locals[i])
 	_skeleton.set_bone_pose_position(hips_index, hips_at)
 
@@ -186,21 +202,13 @@ func apply(p: RigPose, action: String, time: float, duration: float, side: float
 func _blend_clip(locals: Array[Quaternion], anim: Animation, at: float, w: float, mirror: bool, hips_index: int, hips_y: float) -> float:
 	var height := hips_y
 	var sampled := {}
-	for track in range(anim.get_track_count()):
-		var path := anim.track_get_path(track)
-		if path.get_subname_count() == 0:
-			continue
-		var name_key := _short(str(path.get_subname(0)))
-		if not _bones.has(name_key):
-			continue
-		var bone: int = _bones[name_key]
-		match anim.track_get_type(track):
-			Animation.TYPE_ROTATION_3D:
-				sampled[bone] = anim.rotation_track_interpolate(track, at)
-			Animation.TYPE_POSITION_3D:
-				if bone == hips_index:
-					# Only the height: the player's place on the court is the game's.
-					height = anim.position_track_interpolate(track, at).y
+	for entry in _tracks_of(anim):
+		if entry[2]:
+			# Only the height: the player's place on the court is the game's.
+			if entry[1] == hips_index:
+				height = anim.position_track_interpolate(entry[0], at).y
+		else:
+			sampled[entry[1]] = anim.rotation_track_interpolate(entry[0], at)
 	if mirror:
 		sampled = _mirrored(sampled)
 	for bone in sampled:
@@ -213,20 +221,47 @@ func _mirrored(sampled: Dictionary) -> Dictionary:
 	var flip := Basis.from_scale(Vector3(-1.0, 1.0, 1.0))
 	var turned := {}
 	var globals := {}
-	for i in _order:
+	for i in _active:
 		var parent := _skeleton.get_bone_parent(i)
 		var parent_basis: Basis = globals[parent] if parent >= 0 and globals.has(parent) else Basis.IDENTITY
 		globals[i] = parent_basis * (Basis(sampled[i] as Quaternion) if sampled.has(i) else _rest_local[i])
 		turned[i] = (globals[i] as Basis) * _rest_global[i].inverse()
 	var out := {}
 	var mirrored_globals := {}
-	for i in _order:
+	for i in _active:
 		var parent := _skeleton.get_bone_parent(i)
 		var parent_basis: Basis = mirrored_globals[parent] if parent >= 0 and mirrored_globals.has(parent) else Basis.IDENTITY
-		var global_basis: Basis = (flip * (turned[_opposite[i]] as Basis) * flip) * _rest_global[i]
+		var global_basis: Basis = (flip * (turned.get(_opposite[i], Basis.IDENTITY) as Basis) * flip) * _rest_global[i]
 		mirrored_globals[i] = global_basis
 		out[i] = (parent_basis.inverse() * global_basis).get_rotation_quaternion()
 	return out
+
+
+## The tracks of an animation that move a posed bone (found once per animation).
+func _tracks_of(anim: Animation) -> Array:
+	if _tracks.has(anim):
+		return _tracks[anim]
+	var list: Array = []
+	for track in range(anim.get_track_count()):
+		var path := anim.track_get_path(track)
+		if path.get_subname_count() == 0:
+			continue
+		var name_key := _short(str(path.get_subname(0)))
+		if not _bones.has(name_key) or _is_detail(name_key):
+			continue
+		var kind := anim.track_get_type(track)
+		if kind == Animation.TYPE_ROTATION_3D or kind == Animation.TYPE_POSITION_3D:
+			list.append([track, int(_bones[name_key]), kind == Animation.TYPE_POSITION_3D])
+	_tracks[anim] = list
+	return list
+
+
+## Finger and end bones: left in their rest pose.
+static func _is_detail(bone_name: String) -> bool:
+	for part in ["Thumb", "Index", "Middle", "Ring", "Pinky", "_End", "End"]:
+		if bone_name.contains(part):
+			return true
+	return false
 
 
 func _collect_meshes(node: Node) -> void:
