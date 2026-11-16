@@ -175,6 +175,7 @@
 	"through_lead_check": 3.0,
 	"through_min_runner_speed": 1.9,
 	"_after_pass": "After his pass a player stops for after_pass_settle_seconds facing the ball, then jogs (after_pass_jog_speed of his run speed, backward facing the ball when going away from it) for after_pass_jog_seconds before running again.",
+	"slide_tackle_chance": 0.15,
 	"after_pass_settle_seconds": 0.25,
 	"after_pass_jog_seconds": 1.2,
 	"after_pass_jog_speed": 0.7,

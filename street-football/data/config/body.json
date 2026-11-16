@@ -25,7 +25,7 @@
 	},
 	"_windup": "While a kick is held the body goes to the clip's backswing (wind seconds before its start), fully from model_windup_full of the bar, with weight model_windup_weight.",
 	"model_windup_full": 0.35,
-	"model_windup_weight": 0.85,
+	"model_windup_weight": 0.0,
 	"_gaits": "The recorded cycles by speed (m/s) and the meters one loop covers (stride): between two of them the body blends both. Standing keeps the coded pose.",
 	"model_gaits": [
 		{"clip": "walk", "speed": 1.0, "stride": 1.35},

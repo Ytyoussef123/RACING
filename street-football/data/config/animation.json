@@ -88,6 +88,7 @@
 	"kick_lunge_max": 0.25,
 	"tackle_seconds": 1.2,
 	"tackle_run_seconds": 1.1,
+	"tackle_stand_seconds": 0.35,
 	"chip_seconds": 0.6,
 	"receive_seconds": 0.6,
 	"tackle_lean_degrees": 25.0,

@@ -13,7 +13,7 @@ static func apply(p: RigPose, action: String, t: float, side: float, reach: floa
 				_clip_kick(p, action, t, side, reach, cfg)
 			else:
 				_kick(p, t, side, reach, cfg)
-		"tackle":
+		"tackle", "tackle_stand":
 			_tackle(p, t, side, cfg)
 		"shoulder":
 			_shoulder(p, t, side, cfg)

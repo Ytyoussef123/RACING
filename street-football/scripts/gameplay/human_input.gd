@@ -20,6 +20,8 @@ var _touch: TouchControls
 var _keys_down: Dictionary = {}
 ## Knock-on mode is on (started by a double pull).
 var _knock_on: bool = false
+## A held kick button whose kick was called off (slid down), until the finger is lifted.
+var _cancelled: Dictionary = {"pass": false, "through": false, "shoot": false}
 ## What each kick button meant when it was pressed ("" while it is up): a press keeps that meaning
 ## until the finger is lifted, so winning or losing the ball, or crossing the halfway line, never
 ## turns a held button into another kick (no accidental shot after a tackle, no shot from a held
@@ -75,6 +77,20 @@ func read(attacking: bool, clearing: bool = false) -> PlayerIntent:
 		intent.shoot_held = shoot_as == "shot"
 		intent.pass_held = pass_as == "pass"
 		intent.through_held = through_as == "through"
+		# Sliding the finger down on a held PASS, THROUGH or CLEAR calls the kick off.
+		for button in ["pass", "through", "shoot"]:
+			var is_held: bool = (button == "pass" and intent.pass_held) or (button == "through" and intent.through_held) \
+				or (button == "shoot" and intent.clear_held)
+			if not is_held:
+				if not _touch.is_held(button):
+					_cancelled[button] = false
+			elif _slid_down(button):
+				_cancelled[button] = true
+		if _cancelled["pass"] or _cancelled["through"] or _cancelled["shoot"]:
+			intent.kick_cancel = true
+			intent.pass_held = intent.pass_held and not _cancelled["pass"]
+			intent.through_held = intent.through_held and not _cancelled["through"]
+			intent.clear_held = intent.clear_held and not _cancelled["shoot"]
 		intent.pass_lofted = _slid_up("pass") or Input.is_physical_key_pressed(KEY_T)
 		intent.through_lofted = _slid_up("through") or Input.is_physical_key_pressed(KEY_G)
 		intent.shot_type = _shot_key()
@@ -96,6 +112,7 @@ func read(attacking: bool, clearing: bool = false) -> PlayerIntent:
 	else:
 		_knock_on = false
 		intent.tackle_pressed = shoot_tap
+		intent.tackle_slide = true
 		intent.switch_pressed = intent.switch_pressed or pass_tap
 		intent.press_held = sprint_hold
 		# PRESS with the joystick moved: sprint where it points (alone: the automatic press).
@@ -107,6 +124,10 @@ func read(attacking: bool, clearing: bool = false) -> PlayerIntent:
 
 
 ## The finger slid up on `button` (more up than sideways): held, or as it was lifted.
+func _slid_down(button: String) -> bool:
+	return _touch != null and _touch.slide_direction(button).y > 0.7
+
+
 func _slid_up(button: String) -> bool:
 	return _touch != null and _touch.slide_direction(button).y < -0.7
 

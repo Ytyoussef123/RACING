@@ -5,10 +5,22 @@ extends RefCounted
 ## Numbers: data/config/player.json (tackle_*), plus the AI difficulty bonus.
 
 
-static func attempt(tackler: Player, ctx: MatchContext) -> bool:
+## slide: the human's TACKLE (and the AI now and then). Otherwise a standing tackle: decided at
+## once, a miss slows him.
+static func attempt(tackler: Player, ctx: MatchContext, slide: bool = true) -> bool:
 	var possession := ctx.possession
 	var carrier := possession.holder
 	var ball := ctx.ball
+	if not slide:
+		if carrier == null or carrier.team == tackler.team:
+			return false
+		tackler.animate("tackle_stand")
+		tackler.tackle_pending = true
+		if not _resolve(tackler, ctx) and tackler.tackle_pending:
+			tackler.tackle_pending = false
+			tackler.stun_timer = _cfg("tackle_whiff_stun", 0.35)
+			return false
+		return ctx.possession.holder != carrier
 	# TACKLE is a slide: a running slide at speed, a slide tackle from slow or standing. He slides
 	# on along his way, and the ball is his if it comes in reach during the slide (slide_update).
 	var speed := Steering.flat(tackler.motion.velocity).length()

@@ -21,6 +21,7 @@ static func apply(player: Player, intent: PlayerIntent, ctx: MatchContext) -> Pl
 	var assisted := PlayerIntent.new()
 	assisted.match_up_held = true
 	assisted.tackle_pressed = intent.tackle_pressed
+	assisted.tackle_slide = intent.tackle_slide
 	assisted.switch_pressed = intent.switch_pressed
 	assisted.shoulder_pressed = intent.shoulder_pressed
 	var to := Steering.flat(target - player.position)

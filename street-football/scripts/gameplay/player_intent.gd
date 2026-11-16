@@ -23,6 +23,8 @@ var clear_pressed: bool = false
 var pass_held: bool = false
 var through_held: bool = false
 var clear_held: bool = false
+## Human only: the held PASS / THROUGH / CLEAR is called off (the finger slid down on the button).
+var kick_cancel: bool = false
 ## With PASS / THROUGH: the ball goes in the air (the human slid the finger up on the button, or
 ## the AI chose it). Its length comes from the power bar (or kick_power).
 var pass_lofted: bool = false
@@ -37,6 +39,8 @@ var shot_type: String = ""
 var drop_ball: bool = false
 ## True only on the frame a tackle is tried.
 var tackle_pressed: bool = false
+## The tackle is a slide (the human's TACKLE; the AI now and then). Otherwise a standing tackle.
+var tackle_slide: bool = false
 ## True only on the frame the human asks to switch player.
 var switch_pressed: bool = false
 ## True while the human holds PRESS: the player runs at the ball carrier by himself.

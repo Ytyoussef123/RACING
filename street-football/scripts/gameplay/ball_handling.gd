@@ -105,7 +105,7 @@ func update(delta: float, player: Player, ctx: MatchContext) -> void:
 	elif intent.tackle_pressed and not has_ball:
 		if _tackle_cooldown <= 0.0:
 			_tackle_cooldown = _cfg("tackle_cooldown", 0.8)
-			TackleRules.attempt(player, ctx)
+			TackleRules.attempt(player, ctx, intent.tackle_slide)
 	elif not _queued.is_empty() and _can_kick(player, ctx):
 		_play_queued(player, ctx)
 	elif intent.shoot_held:

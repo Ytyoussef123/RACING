@@ -33,6 +33,9 @@ func update(intent: PlayerIntent, delta: float) -> Dictionary:
 		held = "through"
 	elif intent.clear_held:
 		held = "clear"
+	if intent.kick_cancel:
+		reset()
+		return {}
 	var released := {}
 	if not held.is_empty() and held == kind:
 		time += delta

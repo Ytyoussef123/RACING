@@ -69,6 +69,7 @@ static func _chase(player: Player, delta: float, ctx: MatchContext) -> PlayerInt
 		state.tackle_timer = Steering.num("tackle_check_interval", 0.4)
 		if ctx.rng.randf() < player.team.tuning.tackle_attempt_chance * player.stat("tackle_attempt_mult", 1.0):
 			intent.tackle_pressed = true
+			intent.tackle_slide = ctx.rng.randf() < Steering.num("slide_tackle_chance", 0.15)
 	return intent
 
 
