@@ -2,7 +2,7 @@ extends Node
 ## Headless checks of the team movement AI (AttackRoles, AttackShape, TeamBrain, CarrierAI), run by CI:
 ##   godot --headless --path street-football res://tests/team_ai_test.tscn
 ## Prints one "TEST PASS" / "TEST FAIL" line per check, then "TEAM AI TESTS DONE: N failure(s)".
-## Two 1-2-1 sides on the cage court (36 x 22 m); home attacks +x.
+## Two 1-2-1 sides on the cage court (42 x 25 m); home attacks +x.
 
 const DT := 1.0 / 60.0
 const PLAYER_SCENE := preload("res://scenes/player/player.tscn")

@@ -207,7 +207,8 @@ func _save_chance(ctx: MatchContext, keeper: Player, velocity: Vector3, spin: fl
 
 
 func _test_keeper_comes_out() -> void:
-	var near := _keeper_line_distance(Vector3(14.0, 0.0, 0.0))
+	# 4 m from the goal line of the 42 m cage court.
+	var near := _keeper_line_distance(Vector3(17.0, 0.0, 0.0))
 	var far := _keeper_line_distance(Vector3(2.0, 0.0, 0.0))
 	# He stops within 0.25 m of his spot (Steering.seek), so 1.8 m out reads about 1.6 m.
 	_check("keeper: comes off his line as an attacker with the ball closes in", near > far + 0.4,
