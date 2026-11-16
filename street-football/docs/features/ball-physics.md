@@ -8,7 +8,7 @@ Last change: 2026-11-14, ball rolling matches its drawn size, kick-related code 
 - Ball physics radius is 0.11 m. The ball is drawn 1.5x bigger (`ball_visual_scale`) so it reads on a phone. Physics did not change with the scale. Its rolling animation turns at the speed of the drawn size (since 2026-11-14).
 - Cage courts (Concrete Cage, Rooftop Cage) have walls: the ball bounces off the boards. Open Lot and Beach Court have no walls: the ball leaving the court gives OUT and a restart.
 - Goals are 3 m wide, 2 m high, 1 m deep with nets; the ball stays in the net, and bounces off posts and crossbar.
-- Courts are 36 x 22 m (Concrete Cage). Surfaces per court: Beach Court (sand) slows the ball (friction x1.9, bounce x0.7), Rooftop Cage is a little faster and bouncier (friction x0.9, bounce x1.05). The prediction copy of the ball keeps the surface.
+- Courts: Concrete Cage and Rooftop Cage 42 x 25 m, Open Lot 40 x 23, Beach Court 38 x 23 (since 2026-11-16; goals unchanged). Surfaces per court: Beach Court (sand) slows the ball (friction x1.9, bounce x0.7), Rooftop Cage is a little faster and bouncier (friction x0.9, bounce x1.05). The prediction copy of the ball keeps the surface.
 - A prediction copy (`BallPhysics.copy()`) is stepped by the receive assist and the AI.
 
 ## Where it lives
@@ -21,6 +21,7 @@ Last change: 2026-11-14, ball rolling matches its drawn size, kick-related code 
 - Tests: `tests/physics_smoke_test.gd`: "rolling ball stops", "ball bounces lower and settles", "side wall bounces the ball", "goal detected at +x", "ball stays in the net", "post bounces the ball back", "shot over the bar is no goal", "open court reports OUT". Sand surface check in `tests/progression_test.tscn` (ball rolls about half as far).
 
 ## History (newest first)
+- 2026-11-16: courts enlarged again, the user's size: cage courts 36 x 22 -> 42 x 25 m, `open_lot` 34 x 20 -> 40 x 23, `beach_sand` 32 x 20 -> 38 x 23; goals (3 x 2 m) and goal areas unchanged. Ball physics unchanged. Branch `feature/windup-slide-pitch`, commits `7c9b167`, `4b3355d`.
 - 2026-11-14: the ball's rolling now matches its drawn size (it turned at the physics size before). Part of the player-motion work. Branch `feature/player-motion`, commit `1983d1f`.
 - 2026-11-14: court surfaces: `ball_friction_mult` and `ball_bounce_mult` (sand 1.9 / 0.7, rooftop 0.9 / 1.05) for the two new courts, so courts feel different. Branch `feature/progression`, commit `f78448c`.
 - 2026-11-14: ball drawn 1.5x bigger than its physics size to read on a phone (look only). Ball hits (ground, wall, post, net) feed the match events channel for sounds and effects. Branch `feature/polish`, commits `cff05f4`, `16fa679`.
