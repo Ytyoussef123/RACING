@@ -92,19 +92,20 @@ static func _flat_speed(v: Vector3) -> float:
 
 
 func _test_pass_power() -> void:
-	var auto_speed := clampf(6.0 + 0.55 * 10.0, 7.0, 16.0)
+	var auto_speed := clampf(7.0 + 0.6 * 10.0, 8.0, 18.0)
 	var setup := _setup(Vector3(10.0, 0.0, 0.0))
 	var tap := _flat_speed(_held_kick(setup, "pass", 3, Vector3.RIGHT))
 	_free(setup)
 	_check("power: a tap on PASS keeps the automatic speed", absf(tap - auto_speed) < 0.05,
 		"speed=%.2f auto=%.2f" % [tap, auto_speed])
 	setup = _setup(Vector3(10.0, 0.0, 0.0))
-	var soft := _flat_speed(_held_kick(setup, "pass", 15, Vector3.RIGHT))
+	# Just past the tap time (0.3 s): the bar has barely started.
+	var soft := _flat_speed(_held_kick(setup, "pass", 25, Vector3.RIGHT))
 	_free(setup)
 	setup = _setup(Vector3(10.0, 0.0, 0.0))
 	var strong := _flat_speed(_held_kick(setup, "pass", 70, Vector3.RIGHT))
 	_free(setup)
-	_check("power: a short hold plays a soft pass", soft > 5.9 and soft < 8.0, "speed=%.2f" % soft)
+	_check("power: a short hold plays a softer pass than a tap", soft > 7.9 and soft < auto_speed - 2.0, "speed=%.2f" % soft)
 	_check("power: a full hold plays a strong pass", strong > 19.5, "speed=%.2f" % strong)
 	# The AI presses PASS for one frame: automatic speed, as before.
 	setup = _setup(Vector3(10.0, 0.0, 0.0))
@@ -127,7 +128,7 @@ func _test_bar_shows_after_tap() -> void:
 	var shown_early := false
 	var shown_later := false
 	var full := 0.0
-	for i in range(50):
+	for i in range(70):
 		var intent := PlayerIntent.new()
 		intent.aim = Vector3.RIGHT
 		intent.pass_held = true
@@ -161,7 +162,7 @@ func _test_clear_power() -> void:
 	var tap := _held_kick(setup, "clear", 3, Vector3.RIGHT)
 	_free(setup)
 	setup = _setup(Vector3(10.0, 0.0, 0.0))
-	var soft := _held_kick(setup, "clear", 12, Vector3.RIGHT)
+	var soft := _held_kick(setup, "clear", 22, Vector3.RIGHT)
 	_free(setup)
 	setup = _setup(Vector3(10.0, 0.0, 0.0))
 	var full := _held_kick(setup, "clear", 70, Vector3.RIGHT)

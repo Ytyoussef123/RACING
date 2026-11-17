@@ -49,8 +49,8 @@ static func _score(passer: Player, mate: Player, cos_angle: float, dist: float, 
 static func pass_velocity(passer: Player, target: Player, speed: float = -1.0) -> Vector3:
 	var d := passer.flat_distance_to(target.position)
 	if speed < 0.0:
-		speed = clampf(_cfg("pass_speed_base", 6.0) + d * _cfg("pass_speed_per_meter", 0.55),
-			_cfg("pass_speed_min", 7.0), _cfg("pass_speed_max", 16.0))
+		speed = clampf(_cfg("pass_speed_base", 7.0) + d * _cfg("pass_speed_per_meter", 0.6),
+			_cfg("pass_speed_min", 8.0), _cfg("pass_speed_max", 18.0))
 	var lead := target.motion.velocity * (d / speed) * _cfg("pass_lead_factor", 0.8)
 	var to := Vector3(target.position.x + lead.x - passer.position.x, 0.0, target.position.z + lead.z - passer.position.z)
 	var dir := to.normalized() if to.length() > 0.01 else passer.motion.facing

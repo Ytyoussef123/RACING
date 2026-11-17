@@ -18,9 +18,9 @@ static func pass_ball(handling: BallHandling, player: Player, ctx: MatchContext,
 		kick_velocity = KeeperHands.throw_velocity(player, target, aim, power)
 	elif target != null:
 		kick_velocity = PassTargeting.pass_velocity(player, target,
-			by_power(power, AUTO, _cfg("pass_power_speed_min", 6.0), _cfg("pass_power_speed_max", 20.0)))
+			by_power(power, AUTO, _cfg("pass_power_speed_min", 8.0), _cfg("pass_power_speed_max", 20.0)))
 	else:
-		var speed := by_power(power, _cfg("pass_speed", 11.0), _cfg("pass_power_speed_min", 6.0),
+		var speed := by_power(power, _cfg("pass_speed", 13.0), _cfg("pass_power_speed_min", 8.0),
 			_cfg("pass_power_speed_max", 20.0))
 		kick_velocity = aim * speed + Vector3.UP * _cfg("pass_lift", 0.0)
 	var error := player.stat("keeper_kick_error_degrees" if player.is_keeper else "pass_error_degrees", 0.0)

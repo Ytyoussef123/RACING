@@ -73,7 +73,7 @@ static func _lofted(intent: PlayerIntent, which: String) -> bool:
 
 
 static func _tap() -> float:
-	return float(Config.get_value("player", "kick_tap_seconds", 0.18))
+	return float(Config.get_value("player", "kick_tap_seconds", 0.3))
 
 
 static func _charge_time() -> float:
