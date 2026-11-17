@@ -36,5 +36,24 @@ static func apply(player: Player, intent: PlayerIntent, delta: float, ctx: Match
 	return intent
 
 
+## PRESS with the joystick moved: he sprints where the stick points, but a little pulled toward
+## where the press would take him (press_stick_pull of the way), so steering him away from the
+## ball takes a little effort.
+static func pull(player: Player, intent: PlayerIntent, ctx: MatchContext) -> PlayerIntent:
+	var carrier := ctx.possession.holder
+	if carrier != null and carrier.team == player.team:
+		return intent
+	var target := ReceiveAssist.intercept_point(player, ctx) if carrier == null else carrier.position
+	var to := Steering.flat(target - player.position)
+	var stick := Steering.flat(intent.move)
+	if to.length() < 0.3 or stick.length() < 0.01:
+		return intent
+	var k := clampf(_cfg("press_stick_pull", 0.25), 0.0, 1.0)
+	var dir := stick.normalized() * (1.0 - k) + to.normalized() * k
+	if dir.length() > 0.01:
+		intent.move = dir.normalized() * stick.length()
+	return intent
+
+
 static func _cfg(key: String, fallback: float) -> float:
 	return float(Config.get_value("player", key, fallback))

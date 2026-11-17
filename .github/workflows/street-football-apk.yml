@@ -119,6 +119,16 @@ jobs:
             exit 1
           fi
 
+      - name: Dribble tests (headless)
+        run: |
+          godot --headless --path "$PROJECT_DIR" res://tests/dribble_test.tscn --quit-after 3000 2>&1 | tee dribble.log
+          grep -E "DRIBBLE |TEST (PASS|FAIL)" dribble.log || true
+          if ! grep -q "DRIBBLE TESTS DONE: 0 failure" dribble.log; then
+            echo "::error::Dribble tests failed or did not finish (see above)."
+            awk '/SCRIPT ERROR|ERROR:/ && !seen[$0]++' dribble.log | head -30
+            exit 1
+          fi
+
       - name: Progression tests (headless)
         run: |
           godot --headless --path "$PROJECT_DIR" res://tests/progression_test.tscn --quit-after 3000 2>&1 | tee progression.log
@@ -153,7 +163,7 @@ jobs:
         run: |
           godot --headless --path "$PROJECT_DIR" --quit-after 120 2>&1 | tee run.log
           godot --headless --path "$PROJECT_DIR" res://scenes/match/match.tscn --quit-after 300 2>&1 | tee match.log
-          if grep -E "SCRIPT ERROR|Parse Error|Failed to load script|Invalid call|Invalid access" import.log test.log stats.log progression.log ui.log match_test.log run.log match.log > errors.log; then
+          if grep -E "SCRIPT ERROR|Parse Error|Failed to load script|Invalid call|Invalid access" import.log test.log dribble.log stats.log progression.log ui.log match_test.log run.log match.log > errors.log; then
             echo "Distinct errors (count, file:message), first ones first:"
             awk '!seen[$0]++' errors.log | head -40
             echo "::error::Godot reported script errors (see above)."

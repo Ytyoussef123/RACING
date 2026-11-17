@@ -147,6 +147,7 @@
 	"press_tackle_reach_factor": 0.85,
 	"press_tackle_interval": 0.6,
 	"press_auto_tackle": 0,
+	"press_stick_pull": 0.25,
 	"_slide": "TACKLE is a slide: a running slide from slide_run_speed m/s, a slide tackle below. He slides for slide_seconds from slide_speed_mult x his speed (at least slide_min_speed) down to a stop, and wins or misses the ball when it comes in reach on the way.",
 	"slide_run_speed": 2.5,
 	"slide_seconds": 0.8,
