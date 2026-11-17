@@ -179,10 +179,12 @@ func _try_take(player: Player, ctx: MatchContext) -> void:
 	var received := ctx.possession.last_kick_kind == "pass"
 	if holder == null:
 		ctx.possession.take(player, ctx.ball)
+		dribbling.on_take()
 	elif Dribbling.can_steal(player, ctx):
 		holder.handling.block_control(_cfg("dribble_steal_cooldown", 0.4))
 		holder.handling.dribbling.reset()
 		ctx.possession.take(player, ctx.ball)
+		dribbling.on_take()
 		ctx.stats.balls_won[player.team.index] += 1
 	else:
 		return

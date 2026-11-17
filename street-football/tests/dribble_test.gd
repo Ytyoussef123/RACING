@@ -15,7 +15,8 @@ var _failures := 0
 func _ready() -> void:
 	for scenario in ["run", "sprint", "walk", "run_partial", "run_to_sprint", "sprint_to_run", "walk_to_sprint",
 			"run_hold_pass", "sprint_hold_pass", "sprint_hold_shoot", "sprint_zigzag", "run_zigzag",
-			"sprint_past_opponent", "run_past_opponent", "knock_on"]:
+			"sprint_past_opponent", "run_past_opponent", "knock_on",
+			"run_onto_ball_beside", "sprint_onto_ball_beside", "sprint_onto_ball_crossing", "run_onto_ball_behind_side"]:
 		_scenario(scenario)
 	print("DRIBBLE TESTS DONE: %d failure(s)" % _failures)
 	get_tree().quit(1 if _failures > 0 else 0)
@@ -38,14 +39,28 @@ func _scenario(scenario: String) -> void:
 	var player := _spawn(home, Vector3(-18.0, 0.0, 0.0), Vector3.RIGHT)
 	var opponent: Player = null
 	if scenario.ends_with("past_opponent"):
-		opponent = _spawn(away, Vector3(-12.0, 0.0, 0.8), Vector3.LEFT)
+		# Close to his way but not on the ball (1.5 m aside).
+		opponent = _spawn(away, Vector3(-12.0, 0.0, 1.5), Vector3.LEFT)
 	var ctx := MatchContext.new()
 	ctx.court = CourtData.load_court("cage_concrete")
 	ctx.add_team(home)
 	ctx.add_team(away)
 	ctx.ball = BallPhysics.new()
-	ctx.ball.place(Vector3(-17.45, float(Config.get_value("ball", "radius", 0.11)), 0.0))
-	ctx.possession.take(player, ctx.ball)
+	var radius := float(Config.get_value("ball", "radius", 0.11))
+	ctx.ball.place(Vector3(-17.45, radius, 0.0))
+	# Taking a loose ball on the move: lying beside his way, crossing it, or just behind his side.
+	var loose := scenario.contains("onto_ball")
+	match scenario:
+		"run_onto_ball_beside", "sprint_onto_ball_beside":
+			ctx.ball.place(Vector3(-14.0, radius, 0.8))
+		"sprint_onto_ball_crossing":
+			ctx.ball.place(Vector3(-13.0, radius, 3.0))
+			ctx.ball.velocity = Vector3(0.0, 0.0, -4.0)
+		"run_onto_ball_behind_side":
+			ctx.ball.place(Vector3(-17.2, radius, 0.85))
+	if not loose:
+		ctx.possession.take(player, ctx.ball)
+	var taken_at := -1
 	var kept := true
 	var behind_frames := 0
 	var worst := 0.0
@@ -73,6 +88,8 @@ func _scenario(scenario: String) -> void:
 				intent.move = Vector3(1.0, 0.0, 0.6 if int(t / 0.7) % 2 == 0 else -0.6).normalized()
 			"knock_on":
 				intent.knock_on = true
+			"sprint_onto_ball_beside", "sprint_onto_ball_crossing":
+				intent.sprint = true
 		if scenario.ends_with("hold_pass") and t > 0.8:
 			intent.pass_held = true
 		if scenario.ends_with("hold_shoot") and t > 0.8:
@@ -88,11 +105,19 @@ func _scenario(scenario: String) -> void:
 			opponent.handling.update(DT, opponent, ctx)
 		ctx.ball.step(DT)
 		CourtBounds.resolve(ctx.ball, ctx.court)
+		if loose and taken_at < 0:
+			if ctx.possession.holder == player:
+				taken_at = i
+			elif i > 150:
+				kept = false
+				break
+			continue
 		if ctx.possession.holder != player:
 			kept = false
 			break
 		var vel := Steering.flat(player.motion.velocity)
-		if i < 30 or vel.length() < 1.0:
+		# After the first half second (or the first touch of a ball he has just taken).
+		if i < (taken_at + 6 if loose else 30) or vel.length() < 1.0:
 			continue
 		var along := Steering.flat(ctx.ball.position - player.position).dot(vel.normalized())
 		max_ahead = maxf(max_ahead, along)

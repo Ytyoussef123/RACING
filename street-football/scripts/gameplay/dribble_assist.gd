@@ -30,7 +30,7 @@ static func adjust(player: Player, ctx: MatchContext) -> void:
 ## Turning away from a ball that is out of reach: he goes to the ball first, keeping where he
 ## wants to take it in dribble_dir.
 static func _turn_to_ball(intent: PlayerIntent, move: Vector3, to_ball: Vector3, d: float) -> void:
-	if d <= float(Config.get_value("player", "dribble_turn_reach", 0.85)) * 0.8:
+	if d <= float(Config.get_value("player", "dribble_turn_reach", 1.0)) * 0.8:
 		return
 	var away := cos(deg_to_rad(float(Config.get_value("player", "dribble_turn_assist_degrees", 50.0))))
 	if to_ball.dot(move.normalized()) >= away * d:

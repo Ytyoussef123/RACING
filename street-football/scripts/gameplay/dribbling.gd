@@ -20,12 +20,22 @@ var _windup: float = 0.0
 ## The last touch was a knock-on push: the ball stays his (sprint leash) until his next touch, even
 ## if the knock-on mode ends while he chases it.
 var _long_touch: bool = false
+## The ball was just won (pass received, loose ball, steal): the first touch takes it with him.
+var _fresh: bool = false
 
 
 func reset() -> void:
 	_touch_timer = 0.0
 	_windup = 0.0
 	_long_touch = false
+	_fresh = false
+
+
+## He has just taken the ball: his first touch, if he is on the move, sends it ahead of him even
+## when he took it beside or a little behind him (he would otherwise run past it).
+func on_take() -> void:
+	reset()
+	_fresh = true
 
 
 ## Runs every frame for the player who has the ball. Returns false when the ball got too far.
@@ -56,6 +66,13 @@ func update(player: Player, ctx: MatchContext, delta: float, kick_waiting: bool,
 	var dir := move.normalized()
 	var ball_vel := Steering.flat(ball.velocity)
 	var player_along := maxf(0.0, Steering.flat(player.motion.velocity).dot(dir))
+	if _fresh:
+		_fresh = false
+		if not kick_waiting and to_ball.dot(dir) < _cfg("dribble_first_touch_ahead", 0.35) \
+				and dist <= _cfg("dribble_first_touch_reach", 1.2):
+			player.animate_touch(_foot(player, to_ball), 0.0)
+			_turn_touch(player, ctx, to_ball, move, mode)
+			return true
 	if _windup > 0.0:
 		_windup -= delta
 		# The foot reaches the ball now (unless a kick takes over or the ball got away).
@@ -69,7 +86,7 @@ func update(player: Player, ctx: MatchContext, delta: float, kick_waiting: bool,
 	var behind := to_ball.dot(dir) < 0.15
 	if off_course or behind:
 		# Turning with the ball: touched at once, with the foot on its side, toward where he goes.
-		if dist <= _cfg("dribble_turn_reach", 0.85):
+		if dist <= _cfg("dribble_turn_reach", 1.0):
 			player.animate_touch(_foot(player, to_ball), 0.0)
 			_turn_touch(player, ctx, to_ball, move, mode)
 		return true
