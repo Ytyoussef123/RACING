@@ -44,6 +44,11 @@ Full step-by-step guide: [docs/android-export.md](docs/android-export.md).
 - **Way A, GitHub Actions artifact (recommended, nothing needed on your PC):** every push that changes `street-football/` builds a debug APK. Open the repository's **Actions** tab, open the latest run of "Street Football - Android debug APK", download the artifact zip, extract `street-football-debug.apk` and install it on your phone (allow "Install unknown apps" the first time).
 - **Way B, export from Godot:** install Godot 4.7.2, export templates, JDK 17 and the Android SDK, set them in Editor Settings, then *Project → Export…* with the **Android** preset and install the APK on your phone.
 
+## Tools
+
+- **MotionForge Studio** (`tools/motionforge/`): a single-page HTML animation editor (Three.js, phone and PC) to edit player movements with and without the ball and export them as GLB for Godot. See [tools/motionforge/README.md](tools/motionforge/README.md).
+- The folder is ignored by Godot (`.gdignore`) and is not part of the game.
+
 ## Folder structure
 
 ```

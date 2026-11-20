@@ -1,0 +1,1698 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0b0f16">
+<title>MotionForge Studio</title>
+<style>
+:root{--bg:#0a0e15;--panel:#111824;--panel2:#172130;--line:#253447;--text:#e9f1fa;--muted:#8d9fb4;--accent:#5fe3cc;--accent-ink:#05201b;--warn:#f3c46a;--danger:#ff8494;--ball:#ffd36b;--r:10px}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0}
+body{background:var(--bg);color:var(--text);font:13px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;overflow:hidden;-webkit-tap-highlight-color:transparent}
+button,.btn{font:inherit;color:var(--text);background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:6px 10px;cursor:pointer;min-height:34px;touch-action:manipulation;white-space:nowrap;display:inline-flex;align-items:center;justify-content:center;gap:5px;user-select:none}
+button:hover,.btn:hover{border-color:var(--accent)}
+button.on,button.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent);font-weight:700}
+button.ballc.on{background:var(--ball);border-color:var(--ball);color:#2a1d00}
+button:disabled{opacity:.4;cursor:default}
+button.danger{color:var(--danger)}
+input,select,textarea{font:inherit;color:var(--text);background:#0b121c;border:1px solid var(--line);border-radius:7px;padding:6px 8px;min-width:0;min-height:34px}
+textarea{width:100%;min-height:76px;resize:vertical;line-height:1.5}
+input[type=checkbox]{min-height:0;width:18px;height:18px;accent-color:var(--accent);margin:0}
+input[type=range]{min-height:0;padding:0;border:0;background:transparent;accent-color:var(--accent);width:100%;height:28px}
+.muted{color:var(--muted);font-size:12px}
+.hint{color:var(--muted);font-size:11.5px;margin-top:8px;line-height:1.5}
+#app{height:100%;display:grid;grid-template-rows:auto minmax(0,1fr);grid-template-columns:minmax(0,1fr)}
+header{display:flex;align-items:center;gap:10px;padding:7px 12px;border-bottom:1px solid var(--line);background:#0d131c;position:relative;z-index:30}
+.brand{font-weight:800;letter-spacing:.12em;font-size:13px;white-space:nowrap}.brand b{color:var(--accent)}
+#fileMenu{display:flex;gap:6px;margin-left:auto;align-items:center}
+#menuBtn{display:none;margin-left:auto}
+#app{overflow:hidden;max-width:100vw}
+#work>*{min-width:0}
+#work{min-height:0;display:grid;grid-template-columns:minmax(0,1fr) 350px;grid-template-rows:minmax(0,1fr) 200px;gap:8px;padding:8px}
+#viewport{grid-column:1;grid-row:1;position:relative;border-radius:var(--r);overflow:hidden;border:1px solid var(--line);min-height:0;background:#111a27}
+#view{position:absolute;inset:0;width:100%;height:100%;display:block;touch-action:none}
+.pill{font-size:11px;font-weight:700;color:var(--accent);border:1px solid #2b645f;background:#10292bdd;padding:4px 9px;border-radius:99px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+.pill.warn{color:var(--warn);border-color:#6b5524;background:#2a2312dd}
+.ov-top{position:absolute;top:8px;left:8px;right:64px;display:flex;gap:6px;flex-wrap:wrap;pointer-events:none}
+.ov-tools{position:absolute;top:8px;right:8px;display:flex;flex-direction:column;gap:6px}
+.ov-tools button,.ov-bottom button{background:#0f1925dd;backdrop-filter:blur(6px);min-width:46px;min-height:40px;font-size:12px;padding:4px 8px}
+.ov-tools button.on,.ov-bottom button.on{background:var(--accent);color:var(--accent-ink)}
+.ov-tools button.ballc.on{background:var(--ball);color:#2a1d00}
+.ov-bottom{position:absolute;left:8px;bottom:8px;display:flex;gap:6px}
+.ov-bottom #qKey{background:#3a2f12ee;border-color:#8a6c26;color:var(--warn);font-weight:700}
+#empty{position:absolute;inset:0;display:grid;place-items:center;padding:20px;text-align:center}
+#empty .card{max-width:380px;background:#101a27ee;border:1px solid #34475c;border-radius:14px;padding:20px}
+#empty h3{margin:6px 0}
+#toast{position:absolute;left:50%;bottom:58px;transform:translate(-50%,10px);background:#0d1724f2;border:1px solid #2f4760;color:var(--text);padding:7px 12px;border-radius:9px;font-size:12px;opacity:0;transition:.2s;pointer-events:none;max-width:86%;text-align:center}
+#toast.show{opacity:1;transform:translate(-50%,0)}
+#side{grid-column:2;grid-row:1/3;display:flex;flex-direction:column;min-height:0;background:var(--panel);border:1px solid var(--line);border-radius:var(--r);overflow:hidden}
+#tabs{display:grid;grid-template-columns:repeat(4,1fr);border-bottom:1px solid var(--line);flex:0 0 auto}
+#tabs button{border:0;border-radius:0;background:transparent;color:var(--muted);padding:9px 2px;font-weight:650;min-height:42px;font-size:12.5px}
+#tabs button.on{color:var(--accent);box-shadow:inset 0 -2px var(--accent);background:#132030}
+#panes{flex:1;min-height:0;overflow:auto;overscroll-behavior:contain}
+.pane{display:none}.pane.on{display:block}
+.sec{padding:11px 12px;border-bottom:1px solid var(--line)}
+.sec-h{font-weight:750;font-size:11.5px;letter-spacing:.05em;text-transform:uppercase;color:#cfdced;margin-bottom:8px;display:flex;justify-content:space-between;gap:8px;align-items:center}
+.sec-h .muted{text-transform:none;letter-spacing:0;font-weight:500}
+details.sec>summary{cursor:pointer;font-weight:750;font-size:11.5px;letter-spacing:.05em;text-transform:uppercase;color:#cfdced;list-style:none}
+details.sec>summary::before{content:'▸ ';color:var(--accent)}details.sec[open]>summary::before{content:'▾ '}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:6px}
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:6px}
+.grid2>*,.grid3>*{min-width:0}
+.grid2 button,.grid3 button,.grid2 .btn,.grid3 .btn{white-space:normal;line-height:1.2;font-size:12px}
+.row{display:flex;gap:6px;align-items:center;margin-top:6px}.row>input:not([type=checkbox]),.row>select{flex:1}
+.row>label{color:var(--muted);font-size:12px;min-width:64px}
+.check{display:flex;gap:8px;align-items:center;margin-top:8px;font-size:12.5px;cursor:pointer}
+.check.big{font-size:13.5px;font-weight:650;padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:#0e1622}
+.slider{display:grid;grid-template-columns:16px minmax(0,1fr) 52px;gap:8px;align-items:center;margin:2px 0}
+.slider span{color:var(--muted);font-weight:700;font-size:11px}
+.slider output{text-align:right;color:#b9c8d9;font-size:11.5px;font-variant-numeric:tabular-nums}
+.sub{color:var(--muted);font-size:11px;margin:9px 0 2px;text-transform:uppercase;letter-spacing:.05em}
+.list{display:flex;flex-direction:column;gap:4px;max-height:240px;overflow:auto}
+.clip{display:flex;align-items:center;gap:8px;padding:8px 10px;border:1px solid var(--line);border-radius:8px;cursor:pointer;background:#0d1520}
+.clip.on{border-color:var(--accent);background:#10292b}
+.clip .nm{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:600}
+.clip .meta{color:var(--muted);font-size:11px;white-space:nowrap}
+.chips{display:flex;flex-wrap:wrap;gap:5px}
+.chips button{min-height:32px;padding:4px 9px;font-size:12px;border-radius:99px}
+.chips button.on{background:#1b3a37;color:var(--accent);border-color:#2f7a70;font-weight:700}
+.notice{padding:8px 10px;border:1px solid #55482d;background:#231f15;color:#ecd59f;border-radius:8px;font-size:11.5px;margin-top:8px;line-height:1.5}
+#log{font-size:11.5px;color:var(--muted);white-space:pre-wrap;max-height:160px;overflow:auto;margin-top:6px}
+kbd{background:#1b2636;border:1px solid #31445a;border-radius:4px;padding:0 4px;font-size:11px}
+#timeline{grid-column:1;grid-row:2;display:flex;flex-direction:column;background:var(--panel);border:1px solid var(--line);border-radius:var(--r);min-height:0;overflow:hidden}
+#transport{display:flex;gap:5px;padding:6px;border-bottom:1px solid var(--line);align-items:center;flex-wrap:wrap}
+#transport button{min-width:36px;padding:4px 8px}
+#transport .sep{width:1px;align-self:stretch;background:var(--line);margin:0 2px}
+#timeLabel{font-variant-numeric:tabular-nums;color:#cfe;min-width:96px;text-align:center;font-size:12px}
+#playBtn{min-width:52px!important}
+#tl{flex:1;min-height:50px;width:100%;display:block;touch-action:none;cursor:pointer}
+dialog{background:var(--panel);color:var(--text);border:1px solid var(--line);border-radius:12px;padding:16px;max-width:min(420px,92vw)}
+dialog::backdrop{background:#0009}
+dialog h3{margin:0 0 8px}
+@media (max-width:760px){
+ header{padding:5px 8px}
+ .brand{font-size:12px}
+ #menuBtn{display:inline-flex}
+ #fileMenu{display:none;position:absolute;top:calc(100% + 4px);right:8px;flex-direction:column;align-items:stretch;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:8px;box-shadow:0 14px 40px #000a;min-width:220px}
+ #fileMenu.open{display:flex}
+ #fileMenu button,#fileMenu .btn{justify-content:flex-start;min-height:42px}
+ #work{display:flex;flex-direction:column;padding:6px;gap:6px}
+ #viewport{flex:0 0 auto;height:41dvh;min-height:220px}
+ #timeline{flex:0 0 auto}
+ #transport{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;padding:5px}
+ #transport::-webkit-scrollbar{display:none}
+ #transport button{min-height:38px}
+ #tl{height:84px;flex:none}
+ #side{flex:1;min-height:170px}
+ .ov-tools button,.ov-bottom button{min-height:42px;min-width:48px}
+}
+@media (max-height:520px) and (orientation:landscape){
+ header{padding:3px 10px}
+ #work{grid-template-columns:minmax(0,1fr) 310px;grid-template-rows:minmax(0,1fr) 124px;padding:5px;gap:5px}
+ #transport{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;padding:4px}
+}
+</style>
+</head>
+<body>
+<div id="app">
+<header>
+ <div class="brand">MOTION<b>FORGE</b> STUDIO</div>
+ <button id="menuBtn" aria-label="Menu fichier">☰ Fichier</button>
+ <div id="fileMenu">
+  <label class="btn" title="Importer un personnage (FBX, GLB, glTF)">👤 Personnage<input id="charFile" type="file" accept=".fbx,.glb,.gltf" hidden></label>
+  <label class="btn" title="Ajouter les animations d'un autre fichier au projet">➕ Animation<input id="animFile" type="file" accept=".fbx,.glb,.gltf" multiple hidden></label>
+  <label class="btn" title="Ouvrir un projet .json">📂 Ouvrir<input id="projFile" type="file" accept=".json,application/json" hidden></label>
+  <button id="saveProj" title="Ctrl+S">💾 Enregistrer</button>
+  <button id="exportBtn" class="primary">⬇ Exporter GLB</button>
+ </div>
+</header>
+
+<div id="work">
+ <section id="viewport">
+  <canvas id="view"></canvas>
+  <div class="ov-top"><span id="status" class="pill">Aucun personnage</span><span id="dirtyPill" class="pill warn" hidden>● modification non enregistrée</span></div>
+  <div class="ov-tools">
+   <button id="modeRot" class="on" title="Tourner (E)">⟳</button>
+   <button id="modeMove" title="Déplacer (W)">✥</button>
+   <button id="spaceBtn" title="Repère local / monde">Loc</button>
+   <button id="multiBtn" title="Sélection multiple (ou Maj+clic)">Multi</button>
+   <button id="ballBtn" class="ballc" title="Sélectionner le ballon (B)">⚽</button>
+   <button id="frameBtn" title="Centrer la caméra (F)">⌖</button>
+  </div>
+  <div class="ov-bottom">
+   <button id="qKey" title="Enregistrer une clé (K)">◆ Clé</button>
+   <button id="qUndo" title="Annuler (Ctrl+Z)">↶</button>
+   <button id="qRedo" title="Rétablir (Ctrl+Y)">↷</button>
+  </div>
+  <div id="empty"><div class="card"><div style="font-size:30px">◇</div><h3>Importe ton personnage</h3><p class="muted">FBX (Mixamo), GLB ou glTF. Il est mémorisé dans ce navigateur : tu n'auras pas à le réimporter.</p><label class="btn primary">Choisir un fichier 3D<input id="charFile2" type="file" accept=".fbx,.glb,.gltf" hidden></label></div></div>
+  <div id="toast"></div>
+ </section>
+
+ <section id="timeline">
+  <div id="transport">
+   <button id="toStart" title="Début (Home)">⏮</button>
+   <button id="prevFrame" title="Image précédente (←)">◂</button>
+   <button id="playBtn" class="primary" title="Lecture (Espace)">▶</button>
+   <button id="nextFrame" title="Image suivante (→)">▸</button>
+   <button id="toEnd" title="Fin (End)">⏭</button>
+   <span id="timeLabel">0.00 s · 0</span>
+   <button id="prevKey" title="Clé précédente (,)">◆◂</button>
+   <button id="nextKey" title="Clé suivante (.)">▸◆</button>
+   <span class="sep"></span>
+   <button id="markIn2" title="Début du segment ici (I)">[</button>
+   <button id="markOut2" title="Fin du segment ici (O)">]</button>
+   <span class="sep"></span>
+   <select id="rate" title="Vitesse de lecture"><option value="1">1×</option><option value="0.5">0.5×</option><option value="0.25">0.25×</option><option value="0.1">0.1×</option><option value="2">2×</option></select>
+   <button id="loopBtn" class="on" title="Boucle">↻</button>
+   <select id="zoom" title="Zoom de la timeline"><option value="1">🔍1×</option><option value="2">🔍2×</option><option value="4">🔍4×</option><option value="8">🔍8×</option></select>
+  </div>
+  <canvas id="tl"></canvas>
+ </section>
+
+ <aside id="side">
+  <nav id="tabs">
+   <button data-tab="clips" class="on">Mouvements</button>
+   <button data-tab="body">Corps</button>
+   <button data-tab="ball">Ballon</button>
+   <button data-tab="view">Vue</button>
+  </nav>
+  <div id="panes">
+   <!-- ============ MOUVEMENTS ============ -->
+   <section class="pane on" data-pane="clips">
+    <div class="sec">
+     <div class="sec-h">Mouvements du projet <span class="muted" id="clipCount"></span></div>
+     <div id="clipList" class="list"></div>
+     <div class="grid3">
+      <button id="clipNew" title="Nouveau mouvement à partir de la pose actuelle">+ Nouveau</button>
+      <button id="clipDup">Dupliquer</button>
+      <button id="clipRename">Renommer</button>
+      <button id="clipMirror" title="Crée la version gauche ↔ droite">Miroir G↔D</button>
+      <label class="btn" title="Ajouter les animations d'un fichier FBX / GLB">Importer<input id="animFile2" type="file" accept=".fbx,.glb,.gltf" multiple hidden></label>
+      <button id="clipDelete" class="danger">Supprimer</button>
+     </div>
+     <div class="hint">Un mouvement « avec ballon » a sa propre piste ballon (onglet <b>Ballon</b>). Les mouvements sans ballon n'en ont pas.</div>
+    </div>
+    <div class="sec">
+     <div class="sec-h">Durée et vitesse</div>
+     <div class="row"><label>Durée (s)</label><input id="clipDuration" type="number" step="0.1" min="0.1" max="120"><button id="applyDuration">OK</button></div>
+     <div class="row"><label>Vitesse</label><select id="speedFactor"><option value="0.5">0.5× (plus lent)</option><option value="0.75">0.75×</option><option value="0.9">0.9×</option><option value="1.1">1.1×</option><option value="1.25" selected>1.25×</option><option value="1.5">1.5×</option><option value="2">2× (plus rapide)</option></select><button id="applySpeed">Appliquer</button></div>
+    </div>
+    <div class="sec">
+     <div class="sec-h">Segment <span class="muted" id="segInfo">aucun</span></div>
+     <div class="grid2"><button id="markIn">[ Début ici</button><button id="markOut">Fin ici ]</button></div>
+     <div class="grid2">
+      <button id="segKeep" title="Rogner : garde seulement le segment">Garder seulement</button>
+      <button id="segDelete" title="Retire le segment et recolle la suite">Supprimer le segment</button>
+      <button id="segExtract">Copier vers un nouveau mouvement</button>
+      <button id="segClear">Effacer les marques</button>
+     </div>
+     <div class="hint">Avec un segment, la lecture en boucle reste dans le segment, et les outils du ballon s'appliquent à ce segment.</div>
+    </div>
+    <details class="sec" id="genSec">
+     <summary>Générer un mouvement à partir d'un texte</summary>
+     <textarea id="prompt" placeholder="Ex. : cours rapidement 3 secondes en conduisant le ballon&#10;Ex. : frappe du pied droit, tir puissant&#10;Ex. : passe du pied gauche vers la droite&#10;Ex. : marche lentement vers la gauche"></textarea>
+     <div class="row"><label>Durée (s)</label><input id="genDuration" type="number" min="0.5" max="30" step="0.1" value="2"></div>
+     <label class="check"><input type="checkbox" id="genFromRest" checked> Partir de la pose de repos (sinon : pose actuelle)</label>
+     <div class="grid2"><button id="genBtn" class="primary">Générer</button><button id="genHelp">Mots reconnus</button></div>
+     <div class="notice">Mouvements procéduraux simples (pas une IA entraînée) : un bon point de départ à retoucher avec les clés. Le résultat est ajouté comme nouveau mouvement.</div>
+    </details>
+   </section>
+
+   <!-- ============ CORPS ============ -->
+   <section class="pane" data-pane="body">
+    <div class="sec">
+     <div class="sec-h">Sélection <span class="muted" id="selInfo">—</span></div>
+     <div id="quickBones" class="chips"></div>
+     <div class="row"><select id="boneSelect"></select></div>
+     <div class="grid3"><button id="selChildren">+ Enfants</button><button id="selMirror" title="Sélectionne l'os du côté opposé">Côté opposé</button><button id="selAll">Tout le corps</button></div>
+    </div>
+    <div class="sec">
+     <div class="sec-h">Images clés <span class="muted" id="keyInfo"></span></div>
+     <label class="check"><input type="checkbox" id="autoKey" checked> Clé automatique après chaque retouche</label>
+     <div class="row"><label>Portée</label><select id="falloff" title="Sur une capture dense (Mixamo), une retouche est étalée en douceur sur les images voisines">
+      <option value="auto" selected>Auto (douce sur capture)</option><option value="0">Image seule</option><option value="3">± 3 images</option><option value="6">± 6 images</option><option value="12">± 12 images</option><option value="all">Tout le mouvement</option></select></div>
+     <div class="grid2">
+      <button id="keySel">◆ Clé sélection</button>
+      <button id="keyAll">◆ Clé corps entier</button>
+      <button id="delKeySel" class="danger">✕ Clé sélection</button>
+      <button id="delKeyAll" class="danger">✕ Clé corps entier</button>
+      <button id="copyPose">Copier la pose</button>
+      <button id="pastePose">Coller la pose</button>
+      <button id="pasteMirror">Coller en miroir</button>
+      <button id="resetBone">Pose de repos (sélection)</button>
+     </div>
+    </div>
+    <div class="sec">
+     <div class="sec-h">Rotation <span class="muted">locale, degrés</span></div>
+     <div class="slider"><span>X</span><input type="range" id="rx" min="-180" max="180" step="1"><output id="rxv">0°</output></div>
+     <div class="slider"><span>Y</span><input type="range" id="ry" min="-180" max="180" step="1"><output id="ryv">0°</output></div>
+     <div class="slider"><span>Z</span><input type="range" id="rz" min="-180" max="180" step="1"><output id="rzv">0°</output></div>
+     <div class="sub">Décalage de position (m, par rapport au repos)</div>
+     <div class="slider"><span>X</span><input type="range" id="px" min="-1" max="1" step="0.005"><output id="pxv">0.00</output></div>
+     <div class="slider"><span>Y</span><input type="range" id="py" min="-1" max="1" step="0.005"><output id="pyv">0.00</output></div>
+     <div class="slider"><span>Z</span><input type="range" id="pz" min="-1" max="1" step="0.005"><output id="pzv">0.00</output></div>
+     <div class="hint">Astuce : touche une articulation (point) dans la vue 3D pour la sélectionner, puis tourne-la avec la poignée. Le bassin déplace tout le corps.</div>
+    </div>
+   </section>
+
+   <!-- ============ BALLON ============ -->
+   <section class="pane" data-pane="ball">
+    <div class="sec">
+     <label class="check big"><input type="checkbox" id="ballOn"> ⚽ Ce mouvement utilise le ballon</label>
+     <div class="grid2"><button id="ballSelect" class="ballc">Sélectionner le ballon</button><button id="ballGround">Poser au sol</button></div>
+     <div class="sub">Position (m)</div>
+     <div class="slider"><span>X</span><input type="range" id="bx" min="-15" max="15" step="0.01"><output id="bxv">0.00</output></div>
+     <div class="slider"><span>Y</span><input type="range" id="by" min="0" max="6" step="0.01"><output id="byv">0.00</output></div>
+     <div class="slider"><span>Z</span><input type="range" id="bz" min="-15" max="15" step="0.01"><output id="bzv">0.00</output></div>
+     <div class="grid3"><button id="ballKey">◆ Clé</button><button id="ballDelKey" class="danger">✕ Clé</button><button id="ballClear" class="danger">Tout effacer</button></div>
+     <div class="muted" id="ballInfo" style="margin-top:6px">—</div>
+    </div>
+    <div class="sec">
+     <div class="sec-h">Ballon collé au joueur</div>
+     <div class="row"><label>Partie</label><select id="attachBone">
+      <option value="rfoot">Pied droit</option><option value="lfoot">Pied gauche</option>
+      <option value="rhand">Main droite</option><option value="lhand">Main gauche</option><option value="hands">Deux mains</option>
+      <option value="chest">Poitrine</option><option value="head">Tête</option><option value="rknee">Genou droit</option><option value="lknee">Genou gauche</option><option value="hips">Bassin (conduite)</option></select></div>
+     <div class="row"><label>Mode</label><select id="attachMode"><option value="ground">Au sol : suit en roulant (dribble)</option><option value="stick">Collé : suit l'os en 3D (porté, jonglage)</option></select></div>
+     <button id="attachApply" class="primary" style="width:100%;margin-top:8px">Coller le ballon</button>
+     <div class="hint">1. Va au début (ou marque un segment). 2. Place le ballon par rapport au pied/à la main. 3. Appuie sur « Coller ». Le décalage actuel est conservé sur tout le segment (ou tout le mouvement).</div>
+    </div>
+    <div class="sec">
+     <div class="sec-h">Passe, tir, lob</div>
+     <div class="row"><label>Hauteur</label><input type="range" id="flightH" min="0" max="6" step="0.1" value="0"><output id="flightHv" style="min-width:44px;text-align:right">0.0 m</output></div>
+     <div class="row"><label>Rebonds</label><select id="flightB"><option>0</option><option>1</option><option selected>2</option><option>3</option><option>4</option></select></div>
+     <div class="row"><label>Effet</label><select id="flightCurve"><option value="0">Aucun</option><option value="1">Brossé vers la gauche</option><option value="-1">Brossé vers la droite</option></select></div>
+     <button id="flightApply" class="primary" style="width:100%;margin-top:8px">Générer la trajectoire</button>
+     <div class="hint">Marque un segment : le ballon part de sa position au <b>début</b> et arrive à sa position à la <b>fin</b> (place-le à chaque bout et pose une clé). Hauteur 0 = passe à ras de terre.</div>
+    </div>
+    <div class="sec">
+     <div class="grid2"><button id="ballRoll">Calculer la rotation (roulement)</button><button id="ballFromHere">Ballon fixe d'ici à la fin</button></div>
+     <label class="check"><input type="checkbox" id="ballPath" checked> Afficher la trajectoire</label>
+     <div class="row"><label>Rayon (m)</label><input id="ballRadius" type="number" min="0.05" max="0.3" step="0.005" value="0.11"></div>
+    </div>
+   </section>
+
+   <!-- ============ VUE ============ -->
+   <section class="pane" data-pane="view">
+    <div class="sec">
+     <div class="sec-h">Caméra</div>
+     <div class="grid3"><button data-cam="front">Face</button><button data-cam="side">Profil</button><button data-cam="back">Dos</button><button data-cam="top">Dessus</button><button data-cam="ball">Sur le ballon</button><button data-cam="frame">Centrer</button></div>
+     <label class="check"><input type="checkbox" id="followCam" checked> Caméra qui suit le joueur</label>
+    </div>
+    <div class="sec">
+     <div class="sec-h">Affichage</div>
+     <label class="check"><input type="checkbox" id="showJoints" checked> Articulations (points à toucher)</label>
+     <label class="check"><input type="checkbox" id="showFingers"> Inclure les doigts</label>
+     <label class="check"><input type="checkbox" id="showSkeleton"> Squelette</label>
+     <label class="check"><input type="checkbox" id="wireframe"> Mode filaire</label>
+     <label class="check"><input type="checkbox" id="showPitch" checked> Terrain</label>
+    </div>
+    <div class="sec">
+     <div class="sec-h">Personnage et projet</div>
+     <div class="muted" id="modelInfo">Aucun personnage.</div>
+     <div class="grid2"><button id="forgetChar">Oublier le personnage mémorisé</button><button id="newProject" class="danger">Nouveau projet (tout effacer)</button></div>
+     <div class="hint">Le projet est enregistré automatiquement dans ce navigateur. Pour passer du téléphone au PC, utilise « Enregistrer » puis « Ouvrir » avec le fichier .json.</div>
+    </div>
+    <details class="sec">
+     <summary>Raccourcis clavier (PC)</summary>
+     <div class="hint"><kbd>Espace</kbd> lecture · <kbd>←</kbd><kbd>→</kbd> image · <kbd>,</kbd><kbd>.</kbd> clé préc./suiv. · <kbd>K</kbd> clé · <kbd>Suppr</kbd> supprimer la clé · <kbd>E</kbd> tourner · <kbd>W</kbd> déplacer · <kbd>B</kbd> ballon · <kbd>F</kbd> centrer · <kbd>I</kbd>/<kbd>O</kbd> début/fin du segment · <kbd>Maj</kbd>+clic sélection multiple · <kbd>Ctrl+Z</kbd>/<kbd>Ctrl+Y</kbd> annuler/rétablir · <kbd>Ctrl+S</kbd> enregistrer</div>
+    </details>
+    <div class="sec">
+     <div class="sec-h">Journal</div>
+     <div id="log"></div>
+    </div>
+   </section>
+  </div>
+ </aside>
+</div>
+</div>
+
+<dialog id="exportDlg">
+ <h3>Exporter en GLB</h3>
+ <label class="check"><input type="radio" name="expWhich" value="one" checked> Mouvement actif seulement</label>
+ <label class="check"><input type="radio" name="expWhich" value="all"> Tous les mouvements (une animation chacun)</label>
+ <label class="check"><input type="checkbox" id="expBall" checked> Inclure le ballon (nœud « Ballon »)</label>
+ <div class="hint">Le fichier GLB s'importe directement dans Godot : chaque mouvement devient une animation.</div>
+ <div class="grid2" style="margin-top:12px"><button id="expCancel">Annuler</button><button id="expGo" class="primary">Exporter</button></div>
+</dialog>
+
+<!--MF_EMBED-->
+<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"}}</script>
+<script type="module">
+import * as THREE from 'three';
+import { FBXLoader } from 'three/addons/loaders/FBXLoader.js';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { TransformControls } from 'three/addons/controls/TransformControls.js';
+import { GLTFExporter } from 'three/addons/exporters/GLTFExporter.js';
+
+/* =====================================================================
+   Constants and helpers
+   ===================================================================== */
+const $ = id => document.getElementById(id);
+const FPS = 30;                 // editing frame rate (Mixamo exports at 30 fps)
+const EPS = 1 / (FPS * 4);      // two times closer than this are "the same key"
+const BALL_NODE = 'Ballon';     // node name of the ball in exported GLB files
+const UNDO_MAX = 60;
+const isTouch = matchMedia('(pointer:coarse)').matches;
+const clamp = THREE.MathUtils.clamp, D2R = THREE.MathUtils.DEG2RAD, R2D = THREE.MathUtils.RAD2DEG;
+const snapT = t => Math.round(t * FPS) / FPS;
+const V3 = (x = 0, y = 0, z = 0) => new THREE.Vector3(x, y, z), Q = () => new THREE.Quaternion();
+const AX = { x: new THREE.Vector3(1, 0, 0), y: new THREE.Vector3(0, 1, 0), z: new THREE.Vector3(0, 0, 1) };
+const norm = n => (n || '').toLowerCase().replace(/mixamorig\d*[:_]?/g, '').replace(/[^a-z0-9]/g, '');
+const smooth = x => { x = clamp(x, 0, 1); return x * x * (3 - 2 * x); };
+const fmt = (v, d = 2) => (+v).toFixed(d);
+
+function log(msg, quiet) {
+  const el = $('log'), now = new Date();
+  el.textContent = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}  ${msg}\n` + el.textContent.slice(0, 6000);
+  if (!quiet) toast(msg);
+}
+let toastTimer = 0;
+function toast(msg) { const t = $('toast'); t.textContent = msg; t.classList.add('show'); clearTimeout(toastTimer); toastTimer = setTimeout(() => t.classList.remove('show'), 2400); }
+
+/* Small IndexedDB key/value store: the character file and the project survive a reload
+   (very useful on a phone, where re-importing a file each time is painful). */
+const idb = (() => {
+  let dbp = null;
+  const open = () => dbp || (dbp = new Promise((res, rej) => {
+    try { const r = indexedDB.open('motionforge', 1); r.onupgradeneeded = () => r.result.createObjectStore('kv'); r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error); }
+    catch (e) { rej(e); }
+  }));
+  const op = async (mode, fn) => { const db = await open(); return new Promise((res, rej) => { const tx = db.transaction('kv', mode); const r = fn(tx.objectStore('kv')); tx.oncomplete = () => res(r && r.result); tx.onerror = () => rej(tx.error); tx.onabort = () => rej(tx.error); }); };
+  return {
+    get: k => op('readonly', s => s.get(k)).catch(() => undefined),
+    set: (k, v) => op('readwrite', s => s.put(v, k)).catch(e => { console.warn('IndexedDB', e); }),
+    del: k => op('readwrite', s => s.delete(k)).catch(() => {}),
+  };
+})();
+
+/* =====================================================================
+   Scene
+   ===================================================================== */
+const canvas = $('view');
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.outputColorSpace = THREE.SRGBColorSpace;
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x111a27);
+const camera = new THREE.PerspectiveCamera(40, 1, 0.01, 500);
+camera.position.set(2.6, 1.6, 3.8);
+const orbit = new OrbitControls(camera, canvas);
+orbit.target.set(0, 0.9, 0);
+orbit.enableDamping = true;
+orbit.update();
+scene.add(new THREE.HemisphereLight(0xdfeeff, 0x2f3a48, 2.0));
+const sun = new THREE.DirectionalLight(0xffffff, 2.0); sun.position.set(3, 6, 4); scene.add(sun);
+
+// A small street pitch so distances are readable (1 grid square = 1 m).
+const pitch = new THREE.Group(); scene.add(pitch);
+{
+  const turf = new THREE.Mesh(new THREE.PlaneGeometry(40, 24), new THREE.MeshStandardMaterial({ color: 0x1d4a33, roughness: 1 }));
+  turf.rotation.x = -Math.PI / 2; turf.position.y = -0.002; pitch.add(turf);
+  const grid = new THREE.GridHelper(40, 40, 0x3f7a5c, 0x2a5d43); grid.scale.z = 24 / 40; grid.position.y = 0; pitch.add(grid);
+  const lineMat = new THREE.LineBasicMaterial({ color: 0xd8f0e4 });
+  const pts = [[-20, -12], [20, -12], [20, 12], [-20, 12], [-20, -12]].map(([x, z]) => new THREE.Vector3(x, 0.003, z));
+  pitch.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts), lineMat));
+  pitch.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(-20, .003, 0), new THREE.Vector3(20, .003, 0)]), lineMat));
+  const circle = []; for (let i = 0; i <= 64; i++) { const a = i / 64 * Math.PI * 2; circle.push(new THREE.Vector3(Math.cos(a) * 3, .003, Math.sin(a) * 3)); }
+  pitch.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(circle), lineMat));
+  const axes = new THREE.AxesHelper(0.5); axes.position.y = 0.01; pitch.add(axes);
+}
+
+const gizmo = new TransformControls(camera, canvas);
+gizmo.setMode('rotate'); gizmo.setSpace('local'); gizmo.setSize(isTouch ? 1.3 : 0.85);
+scene.add(gizmo);
+const groupPivot = new THREE.Object3D(); scene.add(groupPivot);
+
+// Joint markers: what you tap to select an articulation.
+const jointGroup = new THREE.Group(); scene.add(jointGroup);
+const jointGeo = new THREE.SphereGeometry(1, 12, 8);
+const jointMatN = new THREE.MeshBasicMaterial({ color: 0x5fe3cc, depthTest: false, transparent: true, opacity: .9 });
+const jointMatS = new THREE.MeshBasicMaterial({ color: 0xffc85a, depthTest: false });
+let jointMarkers = [];
+let skeletonHelper = null;
+
+// Ball
+const ballMesh = makeBallMesh(0.11); ballMesh.visible = false; scene.add(ballMesh);
+const ballPathLine = new THREE.Line(new THREE.BufferGeometry(), new THREE.LineDashedMaterial({ color: 0xffd36b, dashSize: .08, gapSize: .05, depthTest: false, transparent: true, opacity: .85 }));
+ballPathLine.renderOrder = 5; ballPathLine.frustumCulled = false; scene.add(ballPathLine);
+const ballKeyDots = new THREE.Points(new THREE.BufferGeometry(), new THREE.PointsMaterial({ color: 0xffd36b, size: 7, sizeAttenuation: false, depthTest: false }));
+ballKeyDots.renderOrder = 6; ballKeyDots.frustumCulled = false; scene.add(ballKeyDots);
+
+function makeBallMesh(r) {
+  const c = document.createElement('canvas'); c.width = 512; c.height = 256; const g = c.getContext('2d');
+  g.fillStyle = '#f5f5f0'; g.fillRect(0, 0, 512, 256);
+  const pent = [[64, 50], [192, 40], [320, 52], [448, 44], [128, 128], [256, 124], [384, 132], [0, 128], [512, 128], [64, 210], [192, 216], [320, 206], [448, 214]];
+  g.fillStyle = '#141820';
+  for (const [x, y] of pent) { g.beginPath(); for (let k = 0; k < 5; k++) { const a = -Math.PI / 2 + k * 2 * Math.PI / 5; const px = x + Math.cos(a) * 22, py = y + Math.sin(a) * 22; k ? g.lineTo(px, py) : g.moveTo(px, py); } g.closePath(); g.fill(); }
+  const tex = new THREE.CanvasTexture(c); tex.colorSpace = THREE.SRGBColorSpace;
+  const m = new THREE.Mesh(new THREE.SphereGeometry(1, 32, 20), new THREE.MeshStandardMaterial({ map: tex, roughness: .6 }));
+  m.scale.setScalar(r); m.name = 'MF_Ball';
+  return m;
+}
+
+function resize() {
+  const r = $('viewport').getBoundingClientRect();
+  if (r.width < 2 || r.height < 2) return;
+  renderer.setSize(r.width, r.height, false);
+  camera.aspect = r.width / r.height; camera.updateProjectionMatrix();
+  drawTimeline();
+}
+new ResizeObserver(resize).observe($('viewport'));
+new ResizeObserver(() => drawTimeline()).observe($('tl'));
+
+/* =====================================================================
+   State
+   Each clip ("mouvement") = { name, duration, tracks: KeyframeTrack[], ball: null | { keys:[{t,p,q}] } }
+   Tracks are never modified in place: every edit builds new track objects. That makes undo cheap
+   (a snapshot just keeps references to the old tracks).
+   ===================================================================== */
+const S = {
+  model: null, modelName: '', bones: [], boneByName: new Map(), rest: new Map(), hips: null,
+  clips: [], active: -1, time: 0, playing: false,
+  sel: new Set(), primary: null, ballSel: false, multi: false,
+  inT: null, outT: null, clipboard: null, dirty: false,
+  ballRadius: 0.11, undo: [], redo: [],
+};
+const cur = () => S.clips[S.active] || null;
+const dur = () => cur()?.duration || 1;
+
+/* =====================================================================
+   Character import
+   ===================================================================== */
+async function parseModelBuffer(buf, name) {
+  const ext = (name.split('.').pop() || '').toLowerCase();
+  if (ext === 'fbx') { const root = new FBXLoader().parse(buf, ''); return { root, clips: root.animations || [] }; }
+  if (ext === 'glb' || ext === 'gltf') {
+    const gltf = await new Promise((res, rej) => new GLTFLoader().parse(buf, '', res, rej));
+    return { root: gltf.scene || gltf.scenes?.[0], clips: gltf.animations || [] };
+  }
+  throw new Error('Format non pris en charge (FBX, GLB ou glTF).');
+}
+
+async function importCharacterFile(file) {
+  try {
+    log(`Import du personnage ${file.name}…`, true);
+    const buf = await file.arrayBuffer();
+    const { root, clips } = await parseModelBuffer(buf, file.name);
+    let add = true;
+    if (S.clips.length && clips.length) add = confirm(`Ajouter aussi les ${clips.length} animation(s) de ${file.name} au projet ?`);
+    installCharacter(root, add ? clips : [], file.name);
+    idb.set('character', { name: file.name, data: buf });
+  } catch (e) { console.error(e); log('Import impossible : ' + e.message); alert('Impossible de lire ce fichier : ' + e.message); }
+}
+
+function installCharacter(root, clips, name) {
+  if (!root) throw new Error('Le fichier ne contient pas de scène 3D.');
+  if (S.model) { gizmo.detach(); scene.remove(S.model); }
+  if (skeletonHelper) { scene.remove(skeletonHelper); skeletonHelper = null; }
+  root.name = 'Personnage';
+  root.updateMatrixWorld(true);
+  // Work in metres: Mixamo FBX files are in centimetres (about 180 units tall).
+  const box = new THREE.Box3().setFromObject(root), h = box.max.y - box.min.y;
+  if (h > 3) root.scale.multiplyScalar(h > 60 && h < 400 ? 0.01 : 1.8 / h);
+  root.traverse(o => { if (o.isMesh) { o.frustumCulled = false; (Array.isArray(o.material) ? o.material : [o.material]).forEach(m => { if (m) m.wireframe = $('wireframe').checked; }); } });
+  scene.add(root); root.updateMatrixWorld(true);
+  S.model = root; S.modelName = name;
+  S.bones = []; S.boneByName.clear(); S.rest.clear();
+  // FBXLoader can nest two bones with the same name (one per skinned mesh): the outer one
+  // (found first) is the one animations drive, so keep only the first of each name.
+  root.traverse(o => {
+    if (o.isBone && !S.boneByName.has(o.name)) {
+      S.bones.push(o); S.boneByName.set(o.name, o);
+      S.rest.set(o.name, { q: o.quaternion.clone(), p: o.position.clone(), s: o.scale.clone() });
+    }
+  });
+  S.hips = findBone(['hips', 'pelvis', 'root']) || S.bones[0] || null;
+  S.sel.clear(); S.primary = null; S.ballSel = false;
+  for (const c of S.clips) invalidate(c);
+  const added = entriesFromClips(clips, name);
+  if (added.length) { S.clips.push(...added); S.active = S.clips.length - added.length; }
+  if (S.active < 0 && S.clips.length) S.active = 0;
+  buildBoneUI(); rebuildJointMarkers();
+  if (S.hips) selectBone(S.hips);
+  $('empty').style.display = 'none';
+  $('modelInfo').textContent = `${name} · ${S.bones.length} os${added.length ? ` · ${added.length} animation(s) ajoutée(s)` : ''}`;
+  if ($('showSkeleton').checked) toggleSkeleton();
+  afterProjectChange(); frameCamera();
+  log(`Personnage chargé : ${name} (${S.bones.length} os${added.length ? `, ${added.length} animation(s)` : ''}).`);
+  scheduleSave();
+}
+
+/* Convert an imported THREE.AnimationClip into an editable entry, retargeting track names
+   onto this character's bones by name ("mixamorig1:LeftArm" → "mixamorigLeftArm", etc.). */
+function clipToEntry(clip, name) {
+  const byNorm = new Map(S.bones.map(b => [norm(b.name), b]));
+  const tracks = []; let skipped = 0;
+  for (const tr of clip.tracks) {
+    let p; try { p = THREE.PropertyBinding.parseTrackName(tr.name); } catch (e) { skipped++; continue; }
+    const prop = p.propertyName;
+    if (!['quaternion', 'position', 'scale'].includes(prop)) { skipped++; continue; }
+    const bone = S.boneByName.get(p.nodeName) || byNorm.get(norm(p.nodeName));
+    if (!bone) { skipped++; continue; }
+    const rest = S.rest.get(bone.name), size = tr.getValueSize(), v = tr.values;
+    // Drop channels that never move (scale = 1, positions of non-root bones equal to rest):
+    // they only clutter the timeline.
+    if (prop === 'scale') { let still = true; for (let i = 0; i < v.length; i++) if (Math.abs(v[i] - 1) > 1e-3) { still = false; break; } if (still) continue; }
+    if (prop === 'position' && bone !== S.hips) {
+      let still = true; const tol = Math.max(1e-4, rest.p.length() * 1e-3);
+      for (let i = 0; i < v.length; i += size) if (Math.abs(v[i] - rest.p.x) > tol || Math.abs(v[i + 1] - rest.p.y) > tol || Math.abs(v[i + 2] - rest.p.z) > tol) { still = false; break; }
+      if (still) continue;
+    }
+    const n = `${bone.name}.${prop}`;
+    if (tracks.some(t => t.name === n)) continue;
+    tracks.push(prop === 'quaternion' ? new THREE.QuaternionKeyframeTrack(n, Array.from(tr.times), Array.from(v)) : new THREE.VectorKeyframeTrack(n, Array.from(tr.times), Array.from(v)));
+  }
+  if (!tracks.length) { log(`« ${name} » : aucune piste ne correspond au squelette (${skipped} ignorée(s)).`); return null; }
+  let d = clip.duration > 0 ? clip.duration : Math.max(...tracks.map(t => t.times[t.times.length - 1] || 0), 0.5);
+  return { name, duration: d, tracks, ball: null, _bind: null, _times: null };
+}
+
+function entriesFromClips(clips, fileName) {
+  const base = fileName.replace(/\.[^.]+$/, '');
+  const out = clips.map(c => clipToEntry(c, c.name && !/^(mixamo\.com|take ?\d*|animation)$/i.test(c.name) ? c.name : base)).filter(Boolean);
+  if (out.length > 1) out.forEach((e, i) => { if (e.name === base) e.name = `${base} ${i + 1}`; });
+  return out;
+}
+async function importAnimationFiles(files) {
+  if (!S.model) { alert('Importe d\'abord un personnage.'); return; }
+  let n = 0;
+  for (const file of files) {
+    try {
+      const { clips } = await parseModelBuffer(await file.arrayBuffer(), file.name);
+      const entries = entriesFromClips(clips, file.name);
+      if (!entries.length) { log(`${file.name} : aucune animation utilisable.`); continue; }
+      pushUndo(); S.clips.push(...entries); S.active = S.clips.length - 1; n += entries.length;
+    } catch (e) { console.error(e); log(`${file.name} : ${e.message}`); }
+  }
+  if (n) { afterProjectChange(); seek(0); log(`${n} animation(s) ajoutée(s) au projet.`); scheduleSave(); }
+}
+
+/* =====================================================================
+   Bones: lookup, selection UI, markers
+   ===================================================================== */
+function findBone(cands) {
+  for (const c of cands) for (const b of S.bones) if (norm(b.name) === c) return b;
+  for (const c of cands) for (const b of S.bones) if (norm(b.name).includes(c)) return b;
+  return null;
+}
+const mirrorName = n => n.replace(/Left|Right|left|right|LEFT|RIGHT/g, m => ({ Left: 'Right', Right: 'Left', left: 'right', right: 'left', LEFT: 'RIGHT', RIGHT: 'LEFT' }[m]))
+  .replace(/([_.])([LRlr])$/, (m, s, c) => s + ({ L: 'R', R: 'L', l: 'r', r: 'l' }[c]));
+const prettyBone = n => n.replace(/^mixamorig\d*[:_]?/, '');
+const isFinger = b => /thumb|index|middle|ring|pinky|finger/i.test(b.name);
+const isLeafEnd = b => /_end$|end$/i.test(b.name) && b.children.filter(c => c.isBone).length === 0;
+const pickable = b => !isLeafEnd(b) && ($('showFingers').checked || !isFinger(b));
+
+const QUICK = [
+  ['Bassin', ['hips', 'pelvis']], ['Torse', ['spine2', 'spine1', 'chest', 'spine']], ['Tête', ['head']],
+  ['Bras G', ['leftarm', 'leftupperarm']], ['Coude G', ['leftforearm', 'leftlowerarm']], ['Main G', ['lefthand']],
+  ['Bras D', ['rightarm', 'rightupperarm']], ['Coude D', ['rightforearm', 'rightlowerarm']], ['Main D', ['righthand']],
+  ['Cuisse G', ['leftupleg', 'leftthigh', 'leftupperleg']], ['Genou G', ['leftleg', 'leftcalf', 'leftlowerleg']], ['Pied G', ['leftfoot']],
+  ['Cuisse D', ['rightupleg', 'rightthigh', 'rightupperleg']], ['Genou D', ['rightleg', 'rightcalf', 'rightlowerleg']], ['Pied D', ['rightfoot']],
+];
+function buildBoneUI() {
+  const sel = $('boneSelect'); sel.innerHTML = '';
+  S.bones.forEach(b => { const o = document.createElement('option'); o.value = b.name; o.textContent = prettyBone(b.name); sel.appendChild(o); });
+  const q = $('quickBones'); q.innerHTML = '';
+  for (const [label, cands] of QUICK) {
+    const b = findBone(cands); if (!b) continue;
+    const btn = document.createElement('button'); btn.textContent = label; btn.dataset.bone = b.name;
+    btn.onclick = () => selectBone(b, S.multi); q.appendChild(btn);
+  }
+}
+function rebuildJointMarkers() {
+  jointGroup.clear(); jointMarkers = [];
+  for (const b of S.bones) { if (!pickable(b)) continue; const m = new THREE.Mesh(jointGeo, jointMatN); m.userData.bone = b; m.renderOrder = 10; jointGroup.add(m); jointMarkers.push(m); }
+  jointGroup.visible = $('showJoints').checked;
+}
+const _v = V3();
+function updateJointMarkers() {
+  if (!jointGroup.visible) return;
+  const s = isTouch ? 0.022 : 0.016;
+  for (const m of jointMarkers) {
+    const b = m.userData.bone, on = S.sel.has(b) && !S.ballSel;
+    b.getWorldPosition(m.position); m.material = on ? jointMatS : jointMatN; m.scale.setScalar(on ? s * 1.5 : s);
+  }
+}
+
+function selectBone(b, additive = false) {
+  if (!b) return;
+  S.ballSel = false;
+  if (!additive) { S.sel.clear(); S.sel.add(b); S.primary = b; }
+  else if (S.sel.has(b) && S.sel.size > 1) { S.sel.delete(b); if (S.primary === b) S.primary = [...S.sel].at(-1); }
+  else { S.sel.add(b); S.primary = b; }
+  afterSelection();
+}
+function selectBones(list, primary) { S.ballSel = false; S.sel = new Set(list); S.primary = primary || list[0] || null; afterSelection(); }
+function selectBall() {
+  const e = cur(); if (!e) { toast('Crée ou importe d\'abord un mouvement.'); return; }
+  if (!e.ball) { pushUndo(); e.ball = { keys: [] }; placeBallDefault(); afterProjectChange(); scheduleSave(); log('Ballon activé pour ce mouvement.'); }
+  S.ballSel = true; afterSelection();
+}
+function afterSelection() {
+  updateGizmo(); syncBoneUI(); syncBallUI(); updateStatus(); drawTimeline();
+  $('ballBtn').classList.toggle('on', S.ballSel); $('ballSelect').classList.toggle('on', S.ballSel);
+}
+function updateGizmo() {
+  if (S.ballSel && ballMesh.visible) { gizmo.attach(ballMesh); return; }
+  if (!S.sel.size || !S.model) { gizmo.detach(); return; }
+  if (S.sel.size === 1) { gizmo.attach(S.primary); return; }
+  const c = V3(); S.sel.forEach(b => c.add(b.getWorldPosition(V3()))); c.multiplyScalar(1 / S.sel.size);
+  groupPivot.position.copy(c); groupPivot.quaternion.identity(); groupPivot.updateMatrixWorld(true);
+  gizmo.attach(groupPivot);
+}
+function updateStatus() {
+  const e = cur();
+  let s = e ? `${e.name}${e.ball ? ' ⚽' : ''}` : (S.model ? 'Aucun mouvement' : 'Aucun personnage');
+  if (S.ballSel) s += ' · Ballon';
+  else if (S.sel.size === 1) s += ' · ' + prettyBone(S.primary.name);
+  else if (S.sel.size > 1) s += ` · ${S.sel.size} os`;
+  $('status').textContent = s;
+  $('selInfo').textContent = S.ballSel ? 'ballon' : S.sel.size ? `${S.sel.size} os` : '—';
+  $('dirtyPill').hidden = !S.dirty;
+  document.querySelectorAll('#quickBones button').forEach(b => b.classList.toggle('on', !S.ballSel && S.sel.has(S.boneByName.get(b.dataset.bone))));
+  if (S.primary) $('boneSelect').value = S.primary.name;
+  const k = e ? keysAtTime(e) : 0;
+  $('keyInfo').textContent = e ? (k ? `clé ici (${k} piste${k > 1 ? 's' : ''})` : 'pas de clé ici') : '';
+}
+
+/* =====================================================================
+   Evaluation (own interpolation, no AnimationMixer: deterministic and edit-friendly)
+   ===================================================================== */
+function makeTrack(name, times, values) {
+  return name.endsWith('.quaternion') ? new THREE.QuaternionKeyframeTrack(name, times, values) : new THREE.VectorKeyframeTrack(name, times, values);
+}
+function trackParts(name) { const i = name.lastIndexOf('.'); return [name.slice(0, i), name.slice(i + 1)]; }
+function invalidate(e) { if (e) { e._bind = null; e._times = null; } }
+function bindEntry(e) {
+  if (e._bind) return e._bind;
+  e._bind = [];
+  for (const tr of e.tracks) {
+    const [node, prop] = trackParts(tr.name);
+    const bone = S.boneByName.get(node);
+    if (bone && (prop === 'quaternion' || prop === 'position' || prop === 'scale')) e._bind.push({ bone, prop, interp: tr.createInterpolant() });
+  }
+  return e._bind;
+}
+function restPose() {
+  for (const b of S.bones) { const r = S.rest.get(b.name); b.quaternion.copy(r.q); b.position.copy(r.p); b.scale.copy(r.s); }
+}
+function applyPose(e, t) {
+  restPose();
+  if (!e) return;
+  for (const k of bindEntry(e)) { const v = k.interp.evaluate(clamp(t, 0, e.duration)); k.bone[k.prop].fromArray(v); if (k.prop === 'quaternion') k.bone.quaternion.normalize(); }
+  S.model?.updateMatrixWorld(true);
+}
+function sampleTrack(tr, t) { return Array.from(tr.createInterpolant().evaluate(t)); }
+
+function ballAt(e, t) {
+  const k = e?.ball?.keys; if (!k || !k.length) return null;
+  if (t <= k[0].t) return { p: V3().fromArray(k[0].p), q: Q().fromArray(k[0].q) };
+  const last = k[k.length - 1]; if (t >= last.t) return { p: V3().fromArray(last.p), q: Q().fromArray(last.q) };
+  let lo = 0, hi = k.length - 1; while (hi - lo > 1) { const m = (lo + hi) >> 1; if (k[m].t <= t) lo = m; else hi = m; }
+  const a = k[lo], b = k[hi], f = (t - a.t) / Math.max(1e-6, b.t - a.t);
+  return { p: V3().fromArray(a.p).lerp(V3().fromArray(b.p), f), q: Q().fromArray(a.q).slerp(Q().fromArray(b.q), f) };
+}
+function applyBall(e, t) {
+  const on = !!e?.ball; ballMesh.visible = on;
+  if (!on) { if (S.ballSel) { S.ballSel = false; afterSelection(); } return; }
+  const s = ballAt(e, t); if (s) { ballMesh.position.copy(s.p); ballMesh.quaternion.copy(s.q); }
+}
+
+function seek(t, fromPlayback = false) {
+  const e = cur();
+  if (S.dirty && !fromPlayback && !$('autoKey').checked) toast('Modification non enregistrée abandonnée (utilise ◆ Clé avant de changer de temps).');
+  S.dirty = false;
+  S.time = clamp(t, 0, e ? e.duration : 0);
+  applyPose(e, S.time); applyBall(e, S.time);
+  if (S.sel.size > 1 && !S.ballSel) updateGizmo();
+  updateTimeUI(fromPlayback);
+}
+function updateTimeUI(fromPlayback) {
+  $('timeLabel').textContent = `${fmt(S.time)} s · ${Math.round(S.time * FPS)}`;
+  if (!fromPlayback) { syncBoneUI(); syncBallUI(); updateStatus(); }
+  drawTimeline();
+}
+
+/* =====================================================================
+   Undo / redo, autosave
+   ===================================================================== */
+function snapshot() {
+  return { active: S.active, inT: S.inT, outT: S.outT, clips: S.clips.map(e => ({ name: e.name, duration: e.duration, tracks: e.tracks.slice(), ball: e.ball ? { keys: e.ball.keys.slice() } : null })) };
+}
+function restore(s) {
+  S.clips = s.clips.map(e => ({ name: e.name, duration: e.duration, tracks: e.tracks.slice(), ball: e.ball ? { keys: e.ball.keys.slice() } : null, _bind: null, _times: null }));
+  S.active = Math.min(s.active, S.clips.length - 1); S.inT = s.inT; S.outT = s.outT;
+}
+function pushUndo() { S.undo.push(snapshot()); if (S.undo.length > UNDO_MAX) S.undo.shift(); S.redo.length = 0; updateUndoUI(); }
+function undo() { if (!S.undo.length) { toast('Rien à annuler.'); return; } S.redo.push(snapshot()); restore(S.undo.pop()); afterProjectChange(); seek(S.time); scheduleSave(); toast('Annulé'); updateUndoUI(); }
+function redo() { if (!S.redo.length) { toast('Rien à rétablir.'); return; } S.undo.push(snapshot()); restore(S.redo.pop()); afterProjectChange(); seek(S.time); scheduleSave(); toast('Rétabli'); updateUndoUI(); }
+function updateUndoUI() { $('qUndo').disabled = !S.undo.length; $('qRedo').disabled = !S.redo.length; }
+
+/* Run a change to the project data: snapshot for undo, apply, refresh everything, save. */
+function mutate(fn) {
+  const e = cur();
+  pushUndo();
+  const r = fn(e);
+  if (r === false) { S.undo.pop(); updateUndoUI(); return false; }
+  S.clips.forEach(invalidate);
+  afterProjectChange(); seek(S.time); scheduleSave();
+  return true;
+}
+function afterProjectChange() {
+  if (S.active >= S.clips.length) S.active = S.clips.length - 1;
+  renderClipList(); updateBallPath(); syncClipUI(); updateStatus(); drawTimeline();
+}
+
+let saveTimer = 0;
+function scheduleSave() { clearTimeout(saveTimer); saveTimer = setTimeout(() => idb.set('project', serializeProject()), 700); }
+
+function serializeEntry(e) {
+  return { name: e.name, duration: e.duration, tracks: e.tracks.map(tr => ({ n: tr.name, t: Array.from(tr.times), v: Array.from(tr.values) })), ball: e.ball ? { keys: e.ball.keys.map(k => ({ t: k.t, p: [...k.p], q: [...k.q] })) } : null };
+}
+function serializeProject() {
+  return { app: 'MotionForge Studio', version: 6, fps: FPS, character: S.modelName, active: S.active, ballRadius: S.ballRadius, clips: S.clips.map(serializeEntry) };
+}
+function loadProjectData(d) {
+  if (!d || typeof d !== 'object') throw new Error('Fichier de projet invalide.');
+  let clips = [];
+  if (d.version >= 6 && Array.isArray(d.clips)) {
+    clips = d.clips.map(c => ({ name: c.name || 'Mouvement', duration: +c.duration || 1, tracks: (c.tracks || []).map(t => makeTrack(t.n, t.t, t.v)), ball: c.ball ? { keys: (c.ball.keys || []).map(k => ({ t: +k.t, p: k.p.slice(0, 3), q: k.q.slice(0, 4) })) } : null, _bind: null, _times: null }));
+  } else if (d.app === 'MotionForge Studio') {
+    // Version 5 files: only the active imported clip and the ball keys can be recovered
+    // (manual pose keys were stored with per-session ids that cannot be matched again).
+    if (d.activeClip?.tracks?.length) {
+      const fake = new THREE.AnimationClip(d.activeClip.name || 'Mouvement', d.activeClip.duration || d.duration || 1, d.activeClip.tracks.map(t => t.name.endsWith('.quaternion') ? new THREE.QuaternionKeyframeTrack(t.name, t.times, t.values) : new THREE.VectorKeyframeTrack(t.name, t.times, t.values)));
+      const e = S.model ? clipToEntry(fake, d.activeClip.name && d.activeClip.name !== 'mixamo.com' ? d.activeClip.name : 'Mouvement importé (V5)') : null;
+      if (e) clips.push(e);
+    }
+    if (d.ballKeys?.length) {
+      const host = clips[0] || { name: 'Ballon (V5)', duration: d.duration || 4, tracks: [], ball: null, _bind: null, _times: null };
+      host.ball = { keys: d.ballKeys.map(k => ({ t: +k.t, p: k.p.slice(0, 3), q: k.q.slice(0, 4) })) };
+      if (!clips.length) clips.push(host);
+    }
+    if (d.keys?.length) log('Projet V5 : les images clés manuelles ne peuvent pas être reprises (seuls le clip importé et le ballon le sont).');
+  } else throw new Error('Ce fichier n\'est pas un projet MotionForge.');
+  S.clips = clips; S.active = clips.length ? clamp(d.active ?? 0, 0, clips.length - 1) : -1;
+  if (d.ballRadius) setBallRadius(+d.ballRadius, false);
+  S.inT = S.outT = null; S.undo.length = 0; S.redo.length = 0; updateUndoUI();
+  afterProjectChange(); seek(0);
+}
+
+/* =====================================================================
+   Writing keys
+   ===================================================================== */
+function falloffFrames(tr) {
+  const v = $('falloff').value;
+  if (v === 'all') return Infinity;
+  if (v !== 'auto') return +v;
+  // Auto: dense capture data (Mixamo has a key on every frame) gets a soft ±6 frame blend,
+  // sparse hand-made keys are edited one by one.
+  const n = tr.times.length, span = tr.times[n - 1] - tr.times[0];
+  return n > 4 && n / Math.max(span, 1e-3) >= FPS * 0.5 ? 6 : 0;
+}
+/* Put value `val` on track `name` at time t. The change (delta from the current curve) is spread
+   with a cosine falloff over neighbouring keys so dense mocap curves stay smooth. */
+function writeKey(e, name, t, val) {
+  const idx = e.tracks.findIndex(tr => tr.name === name);
+  const isQ = name.endsWith('.quaternion'), size = isQ ? 4 : 3;
+  if (idx < 0) { e.tracks.push(makeTrack(name, [t], val)); return; }
+  const tr = e.tracks[idx];
+  const orig = sampleTrack(tr, t), R = falloffFrames(tr) / FPS;
+  const times = Array.from(tr.times), values = Array.from(tr.values);
+  let k = times.findIndex(x => Math.abs(x - t) < EPS);
+  if (k < 0) { k = times.findIndex(x => x > t); if (k < 0) k = times.length; times.splice(k, 0, t); values.splice(k * size, 0, ...orig); }
+  const w = dt => (R === Infinity ? 1 : dt > R ? 0 : 0.5 * (1 + Math.cos(Math.PI * dt / R)));
+  if (isQ) {
+    const dq = Q().fromArray(val).multiply(Q().fromArray(orig).invert());
+    const qi = Q(), id = Q();
+    for (let i = 0; i < times.length; i++) {
+      if (i === k) { for (let j = 0; j < 4; j++) values[i * 4 + j] = val[j]; continue; }
+      const wi = w(Math.abs(times[i] - t)); if (wi <= 0) continue;
+      qi.fromArray(values, i * 4); const d = id.identity().slerp(dq, wi).clone(); d.multiply(qi).normalize(); d.toArray(values, i * 4);
+    }
+  } else {
+    const dv = [val[0] - orig[0], val[1] - orig[1], val[2] - orig[2]];
+    for (let i = 0; i < times.length; i++) {
+      if (i === k) { for (let j = 0; j < 3; j++) values[i * 3 + j] = val[j]; continue; }
+      const wi = w(Math.abs(times[i] - t)); if (wi <= 0) continue;
+      for (let j = 0; j < 3; j++) values[i * 3 + j] += dv[j] * wi;
+    }
+  }
+  e.tracks[idx] = makeTrack(name, times, values);
+}
+function keyBones(list, t = snapT(S.time)) {
+  if (!cur()) { toast('Crée d\'abord un mouvement (onglet Mouvements → + Nouveau).'); return; }
+  if (!list.length) { toast('Sélectionne une articulation.'); return; }
+  mutate(e => {
+    for (const b of list) {
+      writeKey(e, `${b.name}.quaternion`, t, b.quaternion.toArray());
+      const r = S.rest.get(b.name), name = `${b.name}.position`;
+      if (e.tracks.some(tr => tr.name === name) || b.position.distanceTo(r.p) > Math.max(1e-4, r.p.length() * 1e-3)) writeKey(e, name, t, b.position.toArray());
+    }
+    if (t > e.duration) e.duration = t;
+  });
+}
+function deleteKeys(e, bonesList, t) {
+  const names = bonesList ? new Set(bonesList.map(b => b.name)) : null; let n = 0;
+  e.tracks = e.tracks.map(tr => {
+    if (names && !names.has(trackParts(tr.name)[0])) return tr;
+    const size = tr.getValueSize(), times = [], values = [];
+    for (let i = 0; i < tr.times.length; i++) { if (Math.abs(tr.times[i] - t) < EPS) { n++; continue; } times.push(tr.times[i]); for (let j = 0; j < size; j++) values.push(tr.values[i * size + j]); }
+    return times.length === tr.times.length ? tr : times.length ? makeTrack(tr.name, times, values) : null;
+  }).filter(Boolean);
+  return n;
+}
+function keysAtTime(e, t = S.time) { let n = 0; for (const tr of e.tracks) for (const x of tr.times) if (Math.abs(x - t) < EPS) { n++; break; } return n; }
+
+function onEdited() {
+  S.dirty = true;
+  if ($('autoKey').checked) { if (S.ballSel) keyBall(); else keyBones([...S.sel]); }
+  else updateStatus();
+}
+
+/* =====================================================================
+   Gizmo and viewport picking
+   ===================================================================== */
+let groupStart = null, gizmoDragged = false;
+gizmo.addEventListener('dragging-changed', ev => {
+  orbit.enabled = !ev.value;
+  if (ev.value) {
+    gizmoDragged = true;
+    if (gizmo.object === groupPivot) { groupPivot.updateMatrixWorld(true); groupStart = { pivotInv: groupPivot.matrixWorld.clone().invert(), items: [...S.sel].map(b => ({ b, w: b.matrixWorld.clone() })) }; }
+  } else { groupStart = null; onEdited(); }
+});
+gizmo.addEventListener('objectChange', () => {
+  if (groupStart) {
+    groupPivot.updateMatrixWorld(true);
+    const delta = groupPivot.matrixWorld.clone().multiply(groupStart.pivotInv);
+    // Parents first so children are computed against their parent's new matrix.
+    const items = groupStart.items.slice().sort((a, b) => depth(a.b) - depth(b.b));
+    for (const { b, w } of items) {
+      const target = delta.clone().multiply(w);
+      b.parent.updateMatrixWorld(true);
+      target.premultiply(b.parent.matrixWorld.clone().invert());
+      const sc = V3(); target.decompose(b.position, b.quaternion, sc);
+      b.updateMatrixWorld(true);
+    }
+  }
+  if (S.ballSel) syncBallUI(); else syncBoneUI();
+  S.dirty = true; $('dirtyPill').hidden = $('autoKey').checked;
+});
+const depth = o => { let d = 0; while (o.parent) { d++; o = o.parent; } return d; };
+
+const down = { x: 0, y: 0, t: 0 };
+canvas.addEventListener('pointerdown', e => { down.x = e.clientX; down.y = e.clientY; down.t = performance.now(); gizmoDragged = false; }, { capture: true });
+canvas.addEventListener('pointerup', e => {
+  if (gizmoDragged || !S.model) return;
+  if (Math.hypot(e.clientX - down.x, e.clientY - down.y) > 9 || performance.now() - down.t > 650) return;
+  pick(e);
+});
+const ray = new THREE.Raycaster();
+function pick(e) {
+  const r = canvas.getBoundingClientRect(), px = e.clientX - r.left, py = e.clientY - r.top;
+  ray.setFromCamera(new THREE.Vector2(px / r.width * 2 - 1, -(py / r.height) * 2 + 1), camera);
+  const additive = e.shiftKey || S.multi;
+  if (ballMesh.visible && ray.intersectObject(ballMesh, false).length) { selectBall(); return; }
+  // Nearest joint on screen (generous radius for fingers on a phone).
+  let best = null, bd = e.pointerType === 'touch' ? 34 : 18;
+  for (const m of jointMarkers) {
+    const p = m.userData.bone.getWorldPosition(_v).project(camera); if (p.z > 1) continue;
+    const d = Math.hypot((p.x + 1) / 2 * r.width - px, (1 - p.y) / 2 * r.height - py);
+    if (d < bd) { bd = d; best = m.userData.bone; }
+  }
+  if (best) { selectBone(best, additive); return; }
+  const hit = ray.intersectObject(S.model, true).find(h => h.object.isMesh);
+  if (hit) {
+    let nb = null, nd = Infinity;
+    for (const m of jointMarkers) { const d = m.userData.bone.getWorldPosition(_v).distanceTo(hit.point); if (d < nd) { nd = d; nb = m.userData.bone; } }
+    if (nb) selectBone(nb, additive);
+  }
+}
+
+/* =====================================================================
+   Body panel: sliders
+   ===================================================================== */
+function parentScale(b) { return b.parent ? b.parent.getWorldScale(V3()).x || 1 : 1; }
+function syncBoneUI() {
+  const b = S.primary, on = !!b && !S.ballSel;
+  ['rx', 'ry', 'rz', 'px', 'py', 'pz'].forEach(id => $(id).disabled = !on);
+  if (!on) return;
+  const eu = new THREE.Euler().setFromQuaternion(b.quaternion, 'XYZ');
+  ['x', 'y', 'z'].forEach(a => { const v = Math.round(eu[a] * R2D); $('r' + a).value = v; $('r' + a + 'v').textContent = v + '°'; });
+  const r = S.rest.get(b.name), sc = parentScale(b);
+  ['x', 'y', 'z'].forEach(a => { const v = (b.position[a] - r.p[a]) * sc; $('p' + a).value = v; $('p' + a + 'v').textContent = fmt(v); });
+}
+['x', 'y', 'z'].forEach(a => {
+  $('r' + a).addEventListener('input', () => {
+    const b = S.primary; if (!b || S.ballSel) return;
+    const want = Q().setFromEuler(new THREE.Euler(+$('rx').value * D2R, +$('ry').value * D2R, +$('rz').value * D2R, 'XYZ'));
+    const delta = want.clone().multiply(b.quaternion.clone().invert());
+    S.sel.forEach(o => { if (o === b) o.quaternion.copy(want); else o.quaternion.premultiply(delta); });
+    $('r' + a + 'v').textContent = $('r' + a).value + '°'; S.dirty = true;
+  });
+  $('r' + a).addEventListener('change', onEdited);
+  $('p' + a).addEventListener('input', () => {
+    const b = S.primary; if (!b || S.ballSel) return;
+    const r = S.rest.get(b.name), sc = parentScale(b);
+    const delta = (r.p[a] + +$('p' + a).value / sc) - b.position[a];
+    S.sel.forEach(o => { o.position[a] += delta * sc / parentScale(o); });
+    $('p' + a + 'v').textContent = fmt($('p' + a).value); S.dirty = true;
+  });
+  $('p' + a).addEventListener('change', onEdited);
+});
+
+/* =====================================================================
+   Ball editing
+   ===================================================================== */
+function setBallRadius(r, save = true) {
+  S.ballRadius = clamp(r || 0.11, 0.05, 0.3); ballMesh.scale.setScalar(S.ballRadius); $('ballRadius').value = S.ballRadius;
+  if (save) scheduleSave();
+}
+function placeBallDefault() {
+  // In front of the right foot, on the ground.
+  const f = findBone(['righttoebase', 'rightfoot']);
+  const p = f ? f.getWorldPosition(V3()) : V3(0, 0, 0.4);
+  ballMesh.position.set(p.x, S.ballRadius, p.z + S.ballRadius + 0.06); ballMesh.quaternion.identity();
+}
+function setBallKeys(e, keys) { keys.sort((a, b) => a.t - b.t); e.ball = { keys }; }
+function keyBall(t = snapT(S.time)) {
+  const e = cur(); if (!e) return;
+  mutate(e => {
+    if (!e.ball) e.ball = { keys: [] };
+    const k = { t, p: ballMesh.position.toArray(), q: ballMesh.quaternion.toArray() };
+    setBallKeys(e, e.ball.keys.filter(x => Math.abs(x.t - t) >= EPS).concat([k]));
+    if (t > e.duration) e.duration = t;
+  });
+}
+function syncBallUI() {
+  const e = cur(), on = !!e?.ball;
+  $('ballOn').checked = on;
+  ['bx', 'by', 'bz', 'ballKey', 'ballDelKey', 'ballClear', 'ballGround', 'attachApply', 'flightApply', 'ballRoll', 'ballFromHere'].forEach(id => $(id).disabled = !on);
+  const p = ballMesh.position;
+  [['bx', p.x], ['by', p.y], ['bz', p.z]].forEach(([id, v]) => { $(id).value = v; $(id + 'v').textContent = fmt(v); });
+  if (!on) { $('ballInfo').textContent = e ? 'Mouvement sans ballon.' : '—'; return; }
+  const n = e.ball.keys.length, here = e.ball.keys.some(k => Math.abs(k.t - S.time) < EPS);
+  $('ballInfo').textContent = `${n} clé(s) ballon${here ? ' · clé à ce temps' : ''} · vitesse ${fmt(ballSpeed(e, S.time), 1)} m/s`;
+}
+function ballSpeed(e, t) { const a = ballAt(e, t - 0.5 / FPS), b = ballAt(e, t + 0.5 / FPS); return a && b ? a.p.distanceTo(b.p) * FPS : 0; }
+['x', 'y', 'z'].forEach(a => {
+  $('b' + a).addEventListener('input', () => { if (!cur()?.ball) return; if (!S.ballSel) { S.ballSel = true; afterSelection(); } ballMesh.position[a] = +$('b' + a).value; $('b' + a + 'v').textContent = fmt($('b' + a).value); S.dirty = true; });
+  $('b' + a).addEventListener('change', () => { if (cur()?.ball) onEdited(); });
+});
+function updateBallPath() {
+  const e = cur(), k = e?.ball?.keys;
+  if (!k || k.length < 1 || !$('ballPath').checked) { ballPathLine.visible = ballKeyDots.visible = false; return; }
+  const pts = [], t0 = k[0].t, t1 = k[k.length - 1].t;
+  for (let t = t0; t <= t1 + 1e-6; t += 1 / FPS) pts.push(ballAt(e, t).p);
+  if (pts.length < 2) pts.push(pts[0].clone());
+  ballPathLine.geometry.dispose(); ballPathLine.geometry = new THREE.BufferGeometry().setFromPoints(pts); ballPathLine.computeLineDistances();
+  // Only show dots for sparse (hand-made) keys; dense generated paths would just be a blur.
+  const dots = k.length <= 40 ? k.map(x => V3().fromArray(x.p)) : [V3().fromArray(k[0].p), V3().fromArray(k[k.length - 1].p)];
+  ballKeyDots.geometry.dispose(); ballKeyDots.geometry = new THREE.BufferGeometry().setFromPoints(dots);
+  ballPathLine.visible = ballKeyDots.visible = true;
+}
+
+function segment() {
+  const e = cur(); if (!e) return null;
+  if (S.inT != null && S.outT != null && S.outT - S.inT > EPS) return [S.inT, S.outT];
+  return null;
+}
+const ATTACH = {
+  rfoot: ['righttoebase', 'rightfoot'], lfoot: ['lefttoebase', 'leftfoot'], rhand: ['righthand'], lhand: ['lefthand'],
+  chest: ['spine2', 'spine1', 'chest', 'spine'], head: ['head'], rknee: ['rightleg'], lknee: ['leftleg'], hips: ['hips', 'pelvis'],
+};
+function attachBall() {
+  const e = cur(); if (!e?.ball) return;
+  const which = $('attachBone').value, mode = $('attachMode').value;
+  const bonesA = which === 'hands' ? [findBone(ATTACH.rhand), findBone(ATTACH.lhand)] : [findBone(ATTACH[which])];
+  if (bonesA.some(b => !b)) { alert('Os introuvable sur ce personnage.'); return; }
+  const seg = segment(); const t0 = seg ? seg[0] : snapT(S.time), t1 = seg ? seg[1] : e.duration;
+  if (t1 - t0 < EPS) { alert('Le segment est vide : place la tête de lecture plus tôt ou marque un segment.'); return; }
+  // Offset measured now: ball relative to the body part at t0, with the ball where it is shown.
+  const ballNow = ballMesh.position.clone(), ballQNow = ballMesh.quaternion.clone();
+  applyPose(e, t0);
+  const anchor = () => { const p = V3(); bonesA.forEach(b => p.add(b.getWorldPosition(V3()))); return p.multiplyScalar(1 / bonesA.length); };
+  const aq = () => bonesA[0].getWorldQuaternion(Q());
+  const p0 = anchor(), q0 = aq();
+  const worldOff = ballNow.clone().sub(p0);
+  const localOff = worldOff.clone().applyQuaternion(q0.clone().invert());
+  const qOff = q0.clone().invert().multiply(ballQNow);
+  const keys = [];
+  for (let f = Math.round(t0 * FPS); f <= Math.round(t1 * FPS); f++) {
+    const t = f / FPS; applyPose(e, t);
+    const a = anchor();
+    if (mode === 'ground') keys.push({ t, p: [a.x + worldOff.x, S.ballRadius, a.z + worldOff.z], q: ballQNow.toArray() });
+    else { const q = aq(); const p = a.add(localOff.clone().applyQuaternion(q)); keys.push({ t, p: p.toArray(), q: q.multiply(qOff).toArray() }); }
+  }
+  mutate(e => {
+    setBallKeys(e, e.ball.keys.filter(k => k.t < t0 - EPS || k.t > t1 + EPS).concat(keys));
+    if (mode === 'ground') rollBall(e, t0, t1);
+  });
+  log(`Ballon collé (${$('attachBone').selectedOptions[0].text}, ${mode === 'ground' ? 'au sol' : 'collé'}) de ${fmt(t0)} à ${fmt(t1)} s.`);
+}
+function flightBall() {
+  const e = cur(); if (!e?.ball) return;
+  const seg = segment(); if (!seg) { alert('Marque d\'abord un segment : [ au départ du ballon, ] à son arrivée.'); return; }
+  const [t0, t1] = seg; const A = ballAt(e, t0), B = ballAt(e, t1);
+  if (!A) { alert('Pose au moins une clé ballon.'); return; }
+  const H = +$('flightH').value, nb = +$('flightB').value, curve = +$('flightCurve').value, r = S.ballRadius;
+  const P0 = A.p, P1 = B.p, T = t1 - t0;
+  if (P0.distanceTo(P1) < 0.05 && H < 0.05) { alert('Le ballon est au même endroit au début et à la fin du segment : déplace-le à la fin du segment et pose une clé.'); return; }
+  // Arcs: heights decrease with a restitution of 0.5 per bounce; arc durations ∝ √height.
+  const arcs = []; if (H > 0.02) { for (let i = 0; i <= nb; i++) arcs.push(H * Math.pow(0.5, i)); }
+  const weights = arcs.map(h => Math.sqrt(h)), wsum = weights.reduce((s, w) => s + w, 0);
+  const dir = V3().subVectors(P1, P0).setY(0), side = V3(-dir.z, 0, dir.x).normalize();
+  const keys = [];
+  for (let f = Math.round(t0 * FPS); f <= Math.round(t1 * FPS); f++) {
+    const t = f / FPS, u = clamp((t - t0) / T, 0, 1);
+    // Ground passes slow down (rolling friction); aerial balls keep their horizontal speed.
+    const s = arcs.length ? u : 1 - Math.pow(1 - u, 1.7);
+    const p = V3().lerpVectors(P0, P1, s);
+    if (curve) p.addScaledVector(side, curve * Math.sin(Math.PI * s) * dir.length() * 0.12);
+    if (!arcs.length) p.y = THREE.MathUtils.lerp(P0.y, P1.y, s);
+    else {
+      let acc = 0, i = 0; while (i < arcs.length - 1 && u > (acc + weights[i]) / wsum) { acc += weights[i]; i++; }
+      const v = clamp((u * wsum - acc) / weights[i], 0, 1);
+      const yA = i === 0 ? P0.y : r, yB = i === arcs.length - 1 ? P1.y : r;
+      p.y = Math.max(r, THREE.MathUtils.lerp(yA, yB, v) + 4 * arcs[i] * v * (1 - v));
+    }
+    keys.push({ t, p: p.toArray(), q: A.q.toArray() });
+  }
+  mutate(e => { setBallKeys(e, e.ball.keys.filter(k => k.t < t0 - EPS || k.t > t1 + EPS).concat(keys)); rollBall(e, t0, t1); });
+  log(`Trajectoire générée de ${fmt(t0)} à ${fmt(t1)} s (${fmt(P0.distanceTo(P1), 1)} m, hauteur ${fmt(H, 1)} m).`);
+}
+/* Rolling without slipping: rotation axis = up × displacement, angle = distance / radius.
+   Resamples the ball at FPS between t0 and t1 (whole ball range by default). */
+function rollBall(e, t0, t1) {
+  const k = e.ball.keys; if (k.length < 2) return;
+  t0 = t0 ?? k[0].t; t1 = t1 ?? k[k.length - 1].t;
+  const out = k.filter(x => x.t < t0 - EPS || x.t > t1 + EPS);
+  const startQ = ballAt(e, t0).q; let prev = ballAt(e, t0).p, q = startQ.clone();
+  const up = AX.y;
+  for (let f = Math.round(t0 * FPS); f <= Math.round(t1 * FPS); f++) {
+    const t = f / FPS, p = ballAt(e, t).p, d = V3().subVectors(p, prev).setY(0), dist = d.length();
+    if (dist > 1e-5) q = Q().setFromAxisAngle(V3().crossVectors(up, d).normalize(), dist / S.ballRadius).multiply(q).normalize();
+    out.push({ t, p: p.toArray(), q: q.toArray() }); prev = p;
+  }
+  // Keep later keys consistent with the new orientation at t1.
+  const after = out.filter(x => x.t > t1 + EPS);
+  if (after.length) { const fix = q.clone().multiply(Q().fromArray(ballAt(e, t1 + 1e-4)?.q.toArray() || [0, 0, 0, 1]).invert()); after.forEach((x, i) => { const n = { ...x, q: fix.clone().multiply(Q().fromArray(x.q)).toArray() }; out[out.indexOf(x)] = n; }); }
+  setBallKeys(e, out);
+}
+
+/* =====================================================================
+   Clip operations
+   ===================================================================== */
+function newClipFromPose() {
+  if (!S.model) { alert('Importe d\'abord un personnage.'); return; }
+  const name = prompt('Nom du nouveau mouvement :', `Mouvement ${S.clips.length + 1}`); if (name == null) return;
+  const d = clamp(+prompt('Durée (secondes) :', '2') || 2, 0.1, 120);
+  pushUndo();
+  // One key at t=0 with the pose shown right now, for every bone.
+  const tracks = [];
+  for (const b of S.bones) {
+    tracks.push(new THREE.QuaternionKeyframeTrack(`${b.name}.quaternion`, [0], b.quaternion.toArray()));
+    if (b === S.hips) tracks.push(new THREE.VectorKeyframeTrack(`${b.name}.position`, [0], b.position.toArray()));
+  }
+  S.clips.push({ name: name.trim() || 'Mouvement', duration: d, tracks, ball: null, _bind: null, _times: null });
+  S.active = S.clips.length - 1; S.inT = S.outT = null;
+  afterProjectChange(); seek(0); scheduleSave(); log(`Nouveau mouvement « ${name} » (${d} s) créé à partir de la pose actuelle.`);
+}
+function cloneEntry(e, name) { return { name, duration: e.duration, tracks: e.tracks.slice(), ball: e.ball ? { keys: e.ball.keys.slice() } : null, _bind: null, _times: null }; }
+function mirrorEntry(e) {
+  const tracks = e.tracks.map(tr => {
+    const [node, prop] = trackParts(tr.name), v = Array.from(tr.values), s = tr.getValueSize();
+    for (let i = 0; i < v.length; i += s) { if (prop === 'quaternion') { v[i + 1] *= -1; v[i + 2] *= -1; } else if (prop === 'position') v[i] *= -1; }
+    return makeTrack(`${S.boneByName.has(mirrorName(node)) ? mirrorName(node) : node}.${prop}`, Array.from(tr.times), v);
+  });
+  const ball = e.ball ? { keys: e.ball.keys.map(k => ({ t: k.t, p: [-k.p[0], k.p[1], k.p[2]], q: [k.q[0], -k.q[1], -k.q[2], k.q[3]] })) } : null;
+  const nm = /droit/.test(e.name) ? e.name.replace(/droit/g, 'gauche') : /gauche/.test(e.name) ? e.name.replace(/gauche/g, 'droit') : e.name + ' (miroir)';
+  return { name: nm, duration: e.duration, tracks, ball, _bind: null, _times: null };
+}
+/* Remap every key time with fn(t) → t' (or null to drop it) and set a new duration. */
+function retime(e, fn, newDur, extra = []) {
+  e.tracks = e.tracks.map(tr => {
+    const s = tr.getValueSize(), times = [], values = [];
+    const add = (t, val) => { const i = times.findIndex(x => Math.abs(x - t) < EPS); if (i >= 0) { for (let j = 0; j < s; j++) values[i * s + j] = val[j]; } else { times.push(t); values.push(...val); } };
+    for (const [t, tt] of extra) add(tt, sampleTrack(tr, t));
+    for (let i = 0; i < tr.times.length; i++) { const nt = fn(tr.times[i]); if (nt != null) add(nt, Array.from(tr.values.slice(i * s, i * s + s))); }
+    const order = times.map((t, i) => i).sort((a, b) => times[a] - times[b]);
+    return times.length ? makeTrack(tr.name, order.map(i => times[i]), order.flatMap(i => values.slice(i * s, i * s + s))) : null;
+  }).filter(Boolean);
+  if (e.ball) {
+    const keys = [];
+    for (const [t, tt] of extra) { const b = ballAt(e, t); if (b) keys.push({ t: tt, p: b.p.toArray(), q: b.q.toArray() }); }
+    for (const k of e.ball.keys) { const nt = fn(k.t); if (nt != null && !keys.some(x => Math.abs(x.t - nt) < EPS)) keys.push({ ...k, t: nt }); }
+    setBallKeys(e, keys);
+  }
+  e.duration = Math.max(1 / FPS, newDur);
+}
+
+/* =====================================================================
+   Procedural generator
+   Rotations are given around the character's own axes (X = its left, Y = up, Z = forward),
+   so the same recipe works on any skeleton. Conventions (checked on a Mixamo rig):
+     about X: + tilts a limb that points down backwards, tilts the spine forwards
+     about Y: + turns to the character's left
+     about Z: + raises the left arm / lowers the right arm from a T-pose
+   ===================================================================== */
+const GEN_HELP = `Actions : cours / course / sprint, marche, saute, accroupi, tourne / pivote (180 = demi-tour), penche (avant / arrière), tombe, glisse / tacle, frappe / tir, passe, conduis / dribble (avec ballon), lève le bras, regarde à gauche / droite.
+Directions : avant, arrière, gauche, droite. Vitesse : rapide / vite, lentement / doucement. Pied : « pied gauche » (sinon pied droit). Durée : « 3 secondes » ou le champ Durée.
+Avec frappe, tir, passe ou dribble, le ballon est créé et animé automatiquement.`;
+
+function generate(text) {
+  if (!S.model || !S.hips) { alert('Importe d\'abord un personnage avec un squelette.'); return; }
+  const s = ' ' + text.toLowerCase() + ' ';
+  const has = re => re.test(s);
+  const dm = s.match(/(\d+(?:[.,]\d+)?)\s*(?:s\b|sec|seconde)/);
+  const d = clamp(dm ? parseFloat(dm[1].replace(',', '.')) : (+$('genDuration').value || 2), 0.5, 30);
+  const fast = has(/rapide|vite|sprint|puissant|fort/), slow = has(/lent|doucement|calme/);
+  const kick = has(/frappe|tir[ e]|tire |shoot|kick|frapper/), pass = has(/passe|pass /), dribble = has(/dribbl|conduis|conduit|conduite|avec le ballon/);
+  const run = has(/cours|courir|course|run|sprint|footing/) || dribble, walk = has(/marche|walk/);
+  const jump = has(/saute|sauter|saut|jump|tête/) && !has(/regarde/), crouch = has(/accroup|crouch|squat/);
+  const turn = has(/tourne|pivote|demi-tour|rotate|turn/), lean = has(/penche|incline|lean/), fall = has(/tombe|chute|fall/), slide = has(/glisse|tacle|slide|tackle/);
+  const leftFoot = has(/pied gauche|left foot|gauch(er|ère)/);
+  const L = has(/gauche|left/) && !has(/pied gauche|bras gauche|main gauche/), R = has(/droite|right/) && !has(/bras droit|main droite/);
+  const back = has(/arrière|recule|backward/);
+  const loco = run || walk;
+  const dirW = V3(L ? 1 : R ? -1 : 0, 0, back ? -1 : (loco || slide) && !L && !R ? 1 : (has(/avant|avance|forward/) ? 1 : 0));
+  if (dirW.lengthSq() > 0) dirW.normalize();
+
+  const e0 = cur(), t0 = S.time, fromRest = $('genFromRest').checked || !e0;
+  if (fromRest) restPose(); else applyPose(e0, t0);
+  // Start on the spot: keep the pose but bring the body back above the origin.
+  { const r = S.rest.get(S.hips.name); S.hips.position.x = r.p.x; S.hips.position.z = r.p.z; }
+  S.model.updateMatrixWorld(true);
+  const B = n => findBone(n);
+  const hips = S.hips, spine = B(['spine1', 'spine', 'chest']), spine2 = B(['spine2', 'chest', 'spine1']), neck = B(['neck']), head = B(['head']);
+  const side = (l, r) => ({ l: B(l), r: B(r) });
+  const thigh = side(['leftupleg', 'leftthigh'], ['rightupleg', 'rightthigh']), shin = side(['leftleg', 'leftcalf'], ['rightleg', 'rightcalf']), foot = side(['leftfoot'], ['rightfoot']);
+  const arm = side(['leftarm', 'leftupperarm'], ['rightarm', 'rightupperarm']), fore = side(['leftforearm'], ['rightforearm']);
+  const rootQinv = S.model.getWorldQuaternion(Q()).invert();
+  const base = new Map(S.bones.map(b => [b, { q: b.quaternion.clone(), p: b.position.clone(), P: rootQinv.clone().multiply(b.parent.getWorldQuaternion(Q())) }]));
+  const hipsW = hips.getWorldPosition(V3()), H = Math.max(0.3, hipsW.y);
+  const ch = new Map(); // bone -> {x:[],y:[],z:[]} list of functions (u, t) => angle
+  const add = (b, axis, fn) => { if (!b) return; if (!ch.has(b)) ch.set(b, { x: [], y: [], z: [] }); ch.get(b)[axis].push(fn); };
+  const rootFns = []; // (u, t) => Vector3 offset in metres, character frame
+
+  // If we start from a T-pose, bring the arms down first.
+  const armsUp = arm.l && arm.l.getWorldPosition(V3()).y > (B(['leftshoulder'])?.getWorldPosition(V3()).y ?? 0) - 0.08 * H;
+  if (armsUp) { add(arm.l, 'z', () => -1.2); add(arm.r, 'z', () => 1.2); add(fore.l, 'x', () => -0.25); add(fore.r, 'x', () => -0.25); }
+
+  const names = [];
+  if (loco) {
+    names.push(run ? 'course' : 'marche');
+    const speed = (run ? (fast ? 7 : dribble ? 3.6 : 4.6) : (fast ? 2 : 1.35)) * (slow ? 0.6 : 1);
+    let f = (run ? 1.45 : 0.95) * (fast ? 1.15 : 1) * (slow ? 0.75 : 1);
+    f = Math.max(1, Math.round(f * d)) / d; // whole number of cycles → loops cleanly
+    const A = run ? 0.75 : 0.38, K = run ? 1.25 : 0.55, armA = run ? 0.55 : 0.28;
+    const ph = t => 2 * Math.PI * f * t;
+    for (const [sd, sgn] of [['l', 1], ['r', -1]]) {
+      add(thigh[sd], 'x', (u, t) => -A * sgn * Math.sin(ph(t)));
+      add(shin[sd], 'x', (u, t) => K * Math.max(0, Math.sin(ph(t) + sgn * Math.PI / 2)) + (run ? 0.15 : 0.05));
+      add(foot[sd], 'x', (u, t) => -0.25 * sgn * Math.sin(ph(t)));
+      add(arm[sd], 'x', (u, t) => -armA * -sgn * Math.sin(ph(t)));
+      add(fore[sd], 'x', () => run ? -1.1 : -0.25);
+    }
+    add(spine, 'x', () => run ? (fast ? 0.22 : 0.14) : 0.04);
+    add(hips, 'y', (u, t) => 0.12 * Math.sin(ph(t)));
+    add(spine2, 'y', (u, t) => -0.16 * Math.sin(ph(t)));
+    rootFns.push((u, t) => V3().copy(dirW).multiplyScalar(speed * t).setY(-(run ? 0.05 : 0.025) * H * Math.abs(Math.cos(ph(t)))));
+  }
+  if (jump) {
+    names.push('saut');
+    const hJ = (fast ? 0.55 : 0.4) * (H / 1);
+    const env = u => u < 0.25 ? smooth(u / 0.25) : u < 0.4 ? 1 - smooth((u - 0.25) / 0.15) : u < 0.72 ? 0 : u < 0.85 ? smooth((u - 0.72) / 0.13) * 0.8 : 0.8 * (1 - smooth((u - 0.85) / 0.15));
+    const air = u => u < 0.38 || u > 0.76 ? 0 : Math.sin(Math.PI * (u - 0.38) / 0.38);
+    for (const sd of ['l', 'r']) { add(thigh[sd], 'x', u => -0.9 * env(u) - 0.3 * air(u)); add(shin[sd], 'x', u => 1.6 * env(u) + 0.5 * air(u)); add(foot[sd], 'x', u => -0.7 * env(u) + 0.3 * air(u)); }
+    add(spine, 'x', u => 0.45 * env(u));
+    add(arm.l, 'z', u => 1.2 * air(u)); add(arm.r, 'z', u => -1.2 * air(u));
+    rootFns.push(u => V3(0, -0.28 * H * env(u) + hJ * air(u), 0));
+  }
+  if (crouch) {
+    names.push('accroupi');
+    const env = u => smooth(u / 0.3);
+    for (const sd of ['l', 'r']) { add(thigh[sd], 'x', u => -1.3 * env(u)); add(shin[sd], 'x', u => 2.1 * env(u)); add(foot[sd], 'x', u => -0.8 * env(u)); }
+    add(spine, 'x', u => 0.5 * env(u)); rootFns.push(u => V3(0, -0.42 * H * env(u), 0.0));
+  }
+  if (lean) { names.push('penché'); const a = has(/arrière|back/) ? -0.35 : has(/côté|cote|side/) ? 0 : 0.45; add(spine, 'x', u => a * smooth(u / 0.3)); if (L || R) add(spine, 'z', u => (L ? -0.35 : 0.35) * smooth(u / 0.3)); }
+  if (turn) {
+    names.push('rotation');
+    const ang = (has(/180|demi/) ? Math.PI : has(/360|tour complet/) ? 2 * Math.PI : Math.PI / 2) * (R ? -1 : 1);
+    add(hips, 'y', u => ang * smooth(u));
+  }
+  if (fall || slide) {
+    names.push(slide ? 'glissade' : 'chute');
+    const sd = L ? 1 : -1;
+    const env = u => smooth(u / 0.35);
+    add(hips, 'x', u => (slide ? -1.15 : 1.3) * env(u));
+    add(thigh.l, 'x', u => (slide ? -1.5 : -0.5) * env(u)); add(thigh.r, 'x', u => (slide ? -0.6 : -0.3) * env(u)); add(shin.r, 'x', u => (slide ? 1.6 : 0.6) * env(u));
+    add(arm.l, 'z', u => 0.9 * env(u)); add(arm.r, 'z', u => -0.9 * env(u));
+    rootFns.push(u => V3(slide ? sd * 0 : 0, -(slide ? 0.72 : 0.78) * H * env(u), 0).add(V3().copy(dirW.lengthSq() ? dirW : V3(0, 0, 1)).multiplyScalar((slide ? 2.2 : 0.3) * smooth(u / 0.7))));
+  }
+  let kickInfo = null;
+  if (kick || pass) {
+    names.push(kick ? 'frappe' : 'passe');
+    const k = leftFoot ? 'l' : 'r', o = leftFoot ? 'r' : 'l', power = kick ? (fast ? 1.25 : 1) : 0.65;
+    const uC = 0.42; // ball contact
+    // Backswing, then the leg is close to vertical at contact (foot low, at the ball), then follow-through.
+    const hip = u => u < 0.3 ? -0.65 * smooth(u / 0.3) : u < uC ? -0.65 + 0.85 * smooth((u - 0.3) / (uC - 0.3)) : u < 0.62 ? 0.2 + (1.05 * power - 0.2) * smooth((u - uC) / 0.2) : 1.05 * power * (1 - smooth((u - 0.62) / 0.38));
+    const knee = u => u < 0.3 ? 1.45 * smooth(u / 0.3) : u < uC ? 1.45 - 1.2 * smooth((u - 0.3) / (uC - 0.3)) : 0.25 - 0.1 * smooth((u - uC) / 0.2) + 0.25 * smooth((u - 0.62) / 0.38);
+    add(thigh[k], 'x', u => -hip(u)); add(shin[k], 'x', u => knee(u)); add(foot[k], 'x', u => 0.35 * smooth(u / 0.35) * (1 - smooth((u - 0.6) / 0.4)));
+    add(shin[o], 'x', u => 0.35 * Math.sin(Math.PI * clamp(u / 0.8, 0, 1))); add(thigh[o], 'x', u => -0.2 * Math.sin(Math.PI * clamp(u / 0.8, 0, 1)));
+    add(spine, 'x', u => (kick ? -0.18 : 0.05) * Math.sin(Math.PI * clamp((u - 0.25) / 0.6, 0, 1)));
+    add(hips, 'y', u => (k === 'r' ? -0.25 : 0.25) * Math.sin(Math.PI * clamp(u / 0.75, 0, 1)));
+    add(arm[o], 'z', u => (o === 'l' ? 0.9 : -0.9) * Math.sin(Math.PI * clamp(u / 0.8, 0, 1)));
+    add(arm[k], 'x', u => -0.5 * Math.sin(Math.PI * clamp(u / 0.8, 0, 1)));
+    rootFns.push(u => V3(0, 0, 0.35 * smooth(u / uC)));
+    kickInfo = { k, uC, power };
+  }
+  if (has(/lève.*bras|lever.*bras|raise.*arm|bras en l'air|célèbre|celebre/)) { names.push('bras levé'); const both = has(/deux bras|les bras|célèbre|celebre/); const lft = has(/gauche|left/); if (both || lft) add(arm.l, 'z', u => 2.4 * smooth(u / 0.3)); if (both || !lft) add(arm.r, 'z', u => -2.4 * smooth(u / 0.3)); }
+  if (has(/regarde.*gauche|tête.*gauche|look.*left/)) add(neck, 'y', u => 0.7 * smooth(u / 0.3));
+  if (has(/regarde.*droite|tête.*droite|look.*right/)) add(neck, 'y', u => -0.7 * smooth(u / 0.3));
+  if (!ch.size && !rootFns.length) { alert('Aucune action reconnue. Appuie sur « Mots reconnus » pour voir les mots compris.'); return; }
+
+  // Bake at FPS.
+  const frames = Math.round(d * FPS), times = [], qv = new Map(), hipsP = [];
+  for (const b of ch.keys()) qv.set(b, []);
+  const tmpQ = Q(), Rw = Q();
+  const hipsParent = hips.parent;
+  const hipsBaseW = hips.getWorldPosition(V3());
+  for (let f = 0; f <= frames; f++) {
+    const t = f / FPS, u = t / d; times.push(t);
+    for (const [b, c] of ch) {
+      const sum = a => c[a].reduce((s, fn) => s + fn(u, t), 0);
+      Rw.setFromAxisAngle(AX.y, sum('y')).multiply(tmpQ.setFromAxisAngle(AX.x, sum('x'))).multiply(Q().setFromAxisAngle(AX.z, sum('z')));
+      const bs = base.get(b), P = bs.P;
+      const local = P.clone().invert().multiply(Rw).multiply(P).multiply(bs.q).normalize();
+      qv.get(b).push(...local.toArray());
+    }
+    const off = rootFns.reduce((acc, fn) => acc.add(fn(u, t)), V3());
+    off.applyQuaternion(S.model.getWorldQuaternion(Q()));
+    hipsP.push(...hipsParent.worldToLocal(hipsBaseW.clone().add(off)).toArray());
+  }
+  const tracks = [];
+  for (const b of S.bones) {
+    if (qv.has(b)) tracks.push(new THREE.QuaternionKeyframeTrack(`${b.name}.quaternion`, times, qv.get(b)));
+    else tracks.push(new THREE.QuaternionKeyframeTrack(`${b.name}.quaternion`, [0], base.get(b).q.toArray()));
+  }
+  tracks.push(new THREE.VectorKeyframeTrack(`${hips.name}.position`, times, hipsP));
+  const name = (text.trim().slice(0, 32) || names.join(' + ')) + (text.trim().length > 32 ? '…' : '');
+  const entry = { name, duration: d, tracks, ball: null, _bind: null, _times: null };
+
+  // Ball for football actions.
+  if (kickInfo || dribble) {
+    const keys = [], r = S.ballRadius;
+    const kf = kickInfo ? (kickInfo.k === 'l' ? findBone(['lefttoebase', 'leftfoot']) : findBone(['righttoebase', 'rightfoot'])) : null;
+    if (kickInfo) {
+      applyPose(entry, kickInfo.uC * d);
+      const c = kf.getWorldPosition(V3());
+      const spot = V3(c.x, r, c.z + r * 0.9);
+      const aim = V3(L ? 0.5 : R ? -0.5 : 0, 0, 1).normalize();
+      const dist = kick ? (fast ? 22 : 16) : 9, hgt = kick ? (has(/lob|haut|piqué/) ? 4 : 0.9) : 0;
+      const tc = kickInfo.uC * d, flight = d - tc;
+      for (let f = 0; f <= frames; f++) {
+        const t = f / FPS; if (t <= tc) { keys.push({ t, p: spot.toArray(), q: [0, 0, 0, 1] }); continue; }
+        const v = (t - tc) / flight;
+        const sv = hgt > 0 ? v : 1 - Math.pow(1 - v, 1.7);
+        const p = spot.clone().addScaledVector(aim, dist * sv); p.y = r + 4 * hgt * sv * (1 - sv);
+        keys.push({ t, p: p.toArray(), q: [0, 0, 0, 1] });
+      }
+    } else {
+      const sp = run ? 1 : 0;
+      for (let f = 0; f <= frames; f++) {
+        const t = f / FPS; applyPose(entry, t);
+        const hp = hips.getWorldPosition(V3()); const fwd = dirW.lengthSq() ? dirW : V3(0, 0, 1);
+        const cyc = (t * 1.45 * (fast ? 1.15 : 1)) % 1; // one touch per stride cycle
+        const ahead = 0.42 + 0.35 * sp * cyc;
+        keys.push({ t, p: [hp.x + fwd.x * ahead, r, hp.z + fwd.z * ahead], q: [0, 0, 0, 1] });
+      }
+    }
+    entry.ball = { keys }; rollBall(entry);
+  }
+  pushUndo();
+  S.clips.push(entry); S.active = S.clips.length - 1; S.inT = S.outT = null;
+  afterProjectChange(); seek(0); scheduleSave();
+  log(`Mouvement généré : ${names.join(', ') || 'pose'} · ${fmt(d, 1)} s${entry.ball ? ' · avec ballon' : ''}.`);
+}
+
+/* =====================================================================
+   Export / save
+   ===================================================================== */
+function download(blob, name) { const a = document.createElement('a'), u = URL.createObjectURL(blob); a.href = u; a.download = name; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(u), 4000); }
+const slug = s => (s || 'mouvement').normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-zA-Z0-9]+/g, '_').replace(/^_|_$/g, '').toLowerCase() || 'mouvement';
+async function exportGLB(all, withBall) {
+  const list = all ? S.clips : [cur()].filter(Boolean);
+  if (!S.model || !list.length) { alert('Rien à exporter : importe un personnage et crée un mouvement.'); return; }
+  const useBall = withBall && list.some(e => e.ball?.keys.length);
+  const anims = list.map(e => {
+    const tracks = e.tracks.map(t => t.clone());
+    if (useBall && e.ball?.keys.length) {
+      const k = e.ball.keys;
+      tracks.push(new THREE.VectorKeyframeTrack(`${BALL_NODE}.position`, k.map(x => x.t), k.flatMap(x => x.p)));
+      tracks.push(new THREE.QuaternionKeyframeTrack(`${BALL_NODE}.quaternion`, k.map(x => x.t), k.flatMap(x => x.q)));
+    }
+    return new THREE.AnimationClip(e.name, e.duration, tracks);
+  });
+  S.playing = false; updatePlayBtn();
+  const wasSel = gizmo.object; gizmo.detach();
+  restPose(); S.model.updateMatrixWorld(true);
+  const root = new THREE.Group(); root.name = 'MotionForge';
+  root.add(S.model);
+  if (useBall) { const b = makeBallMesh(S.ballRadius); b.name = BALL_NODE; b.position.set(0, S.ballRadius, 0.4); root.add(b); }
+  try {
+    const res = await new GLTFExporter().parseAsync(root, { binary: true, animations: anims, onlyVisible: false });
+    download(new Blob([res], { type: 'model/gltf-binary' }), `${all ? 'motionforge_mouvements' : slug(list[0].name)}.glb`);
+    log(`Export GLB : ${anims.length} animation(s)${useBall ? ' avec ballon' : ''}.`);
+  } catch (err) { console.error(err); alert('Export impossible : ' + (err?.message || err)); }
+  finally { scene.add(S.model); seek(S.time); if (wasSel) updateGizmo(); }
+}
+function saveProject() {
+  if (!S.clips.length) { toast('Le projet est vide.'); return; }
+  download(new Blob([JSON.stringify(serializeProject())], { type: 'application/json' }), `motionforge_${slug(S.modelName.replace(/\.[^.]+$/, ''))}.json`);
+  log('Projet enregistré (fichier .json).');
+}
+
+/* =====================================================================
+   Timeline (canvas)
+   ===================================================================== */
+const tlc = $('tl'), tctx = tlc.getContext('2d');
+const TL = { labelW: 78, rulerH: 18, laneH: 19, lanes: [], v0: 0, span: 1, w: 0, h: 0 };
+function boneTimes(e, name) {
+  const set = []; for (const tr of e.tracks) if (trackParts(tr.name)[0] === name) for (const t of tr.times) set.push(t);
+  return uniqTimes(set);
+}
+function uniqTimes(arr) { arr.sort((a, b) => a - b); const out = []; for (const t of arr) if (!out.length || t - out[out.length - 1] > EPS) out.push(t); return out; }
+function allTimes(e) { if (!e._times) { const a = []; for (const tr of e.tracks) for (const t of tr.times) a.push(t); e._times = uniqTimes(a); } return e._times; }
+function tlTimeToX(t) { return TL.labelW + (t - TL.v0) / TL.span * (TL.w - TL.labelW - 8); }
+function tlXToTime(x) { return TL.v0 + (x - TL.labelW) / (TL.w - TL.labelW - 8) * TL.span; }
+let tlQueued = false;
+function drawTimeline() { if (tlQueued) return; tlQueued = true; requestAnimationFrame(() => { tlQueued = false; renderTimeline(); }); }
+function renderTimeline() {
+  const r = tlc.getBoundingClientRect(); if (r.width < 10) return;
+  const dpr = Math.min(devicePixelRatio, 2);
+  if (tlc.width !== Math.round(r.width * dpr) || tlc.height !== Math.round(r.height * dpr)) { tlc.width = Math.round(r.width * dpr); tlc.height = Math.round(r.height * dpr); }
+  const g = tctx; g.setTransform(dpr, 0, 0, dpr, 0, 0);
+  TL.w = r.width; TL.h = r.height; TL.labelW = r.width < 500 ? 62 : 84;
+  g.fillStyle = '#0d1520'; g.fillRect(0, 0, TL.w, TL.h);
+  const e = cur();
+  if (!e) { g.fillStyle = '#8d9fb4'; g.font = '12px system-ui'; g.fillText('Aucun mouvement : crée-en un (onglet Mouvements) ou importe une animation.', 10, 30); return; }
+  const D = e.duration, zoom = +$('zoom').value;
+  TL.span = D / zoom; TL.v0 = zoom > 1 ? clamp(S.time - TL.span / 2, 0, D - TL.span) : 0;
+  // Lanes
+  const lanes = [{ label: 'Tout', times: allTimes(e), color: '#8fa6c0', kind: 'all' }];
+  if (e.ball) lanes.push({ label: '⚽ Ballon', times: e.ball.keys.map(k => k.t), color: '#ffd36b', kind: 'ball' });
+  const maxL = Math.max(0, Math.floor((TL.h - TL.rulerH) / TL.laneH) - lanes.length);
+  [...S.sel].slice(0, maxL).forEach(b => lanes.push({ label: prettyBone(b.name), times: boneTimes(e, b.name), color: '#5fe3cc', kind: 'bone', bone: b }));
+  TL.lanes = lanes;
+  // Segment
+  if (S.inT != null || S.outT != null) {
+    const a = tlTimeToX(S.inT ?? 0), b = tlTimeToX(S.outT ?? D);
+    g.fillStyle = '#5fe3cc1c'; g.fillRect(Math.max(TL.labelW, a), 0, Math.max(0, b - Math.max(TL.labelW, a)), TL.h);
+    g.fillStyle = '#5fe3cc'; if (S.inT != null) g.fillRect(a - 1, 0, 2, TL.h); if (S.outT != null) g.fillRect(b - 1, 0, 2, TL.h);
+  }
+  // Ruler
+  g.fillStyle = '#121c29'; g.fillRect(TL.labelW, 0, TL.w - TL.labelW, TL.rulerH);
+  const pxPerS = (TL.w - TL.labelW - 8) / TL.span;
+  const step = [1 / FPS, 2 / FPS, 5 / FPS, 0.25, 0.5, 1, 2, 5, 10].find(s => s * pxPerS >= 48) || 10;
+  g.font = '10px system-ui'; g.textBaseline = 'middle';
+  for (let t = Math.ceil(TL.v0 / step) * step; t <= TL.v0 + TL.span + 1e-6; t += step) {
+    const x = tlTimeToX(t); g.fillStyle = '#2a3b50'; g.fillRect(x, TL.rulerH - 6, 1, TL.h); g.fillStyle = '#8d9fb4';
+    g.fillText(step < 0.25 ? String(Math.round(t * FPS)) : (+t.toFixed(2)) + 's', x + 3, TL.rulerH / 2);
+  }
+  // End of clip
+  g.fillStyle = '#ff849433'; const xe = tlTimeToX(D); if (xe < TL.w) g.fillRect(xe, 0, TL.w - xe, TL.h);
+  lanes.forEach((l, i) => {
+    const y = TL.rulerH + i * TL.laneH;
+    g.fillStyle = i % 2 ? '#0f1824' : '#0d1520'; g.fillRect(0, y, TL.w, TL.laneH);
+    g.fillStyle = l.kind === 'bone' && l.bone === S.primary ? '#5fe3cc' : '#b5c4d6'; g.font = '11px system-ui';
+    g.save(); g.beginPath(); g.rect(0, y, TL.labelW - 4, TL.laneH); g.clip(); g.fillText(l.label, 6, y + TL.laneH / 2); g.restore();
+    const cy = y + TL.laneH / 2, dense = l.times.length / Math.max(1, TL.w - TL.labelW) > 0.12;
+    g.fillStyle = l.color;
+    for (const t of l.times) {
+      if (t < TL.v0 - 0.1 || t > TL.v0 + TL.span + 0.1) continue;
+      const x = tlTimeToX(t);
+      if (dense) g.fillRect(x - 0.5, cy - 4, 1.5, 8);
+      else { g.beginPath(); g.moveTo(x, cy - 5); g.lineTo(x + 5, cy); g.lineTo(x, cy + 5); g.lineTo(x - 5, cy); g.closePath(); g.fill(); }
+    }
+  });
+  g.fillStyle = '#253447'; g.fillRect(TL.labelW - 1, 0, 1, TL.h);
+  // Playhead
+  const xp = tlTimeToX(S.time); g.fillStyle = '#ffffff'; g.fillRect(xp - 1, 0, 2, TL.h);
+  g.beginPath(); g.moveTo(xp - 6, 0); g.lineTo(xp + 6, 0); g.lineTo(xp, 8); g.closePath(); g.fill();
+}
+let tlDrag = false;
+function tlSeekFromEvent(ev, snapToKey) {
+  const r = tlc.getBoundingClientRect(), x = ev.clientX - r.left, y = ev.clientY - r.top, e = cur(); if (!e) return;
+  let t = clamp(tlXToTime(Math.max(TL.labelW, x)), 0, e.duration);
+  if (snapToKey) {
+    const li = Math.floor((y - TL.rulerH) / TL.laneH), lane = TL.lanes[li];
+    if (lane) { let best = null, bd = ev.pointerType === 'touch' ? 14 : 8; for (const k of lane.times) { const d = Math.abs(tlTimeToX(k) - x); if (d < bd) { bd = d; best = k; } } if (best != null) { seek(best); return; } }
+  }
+  seek(snapT(t));
+}
+tlc.addEventListener('pointerdown', ev => {
+  const r = tlc.getBoundingClientRect(), x = ev.clientX - r.left, y = ev.clientY - r.top;
+  if (x < TL.labelW) { const lane = TL.lanes[Math.floor((y - TL.rulerH) / TL.laneH)]; if (lane?.kind === 'bone') selectBone(lane.bone); else if (lane?.kind === 'ball') selectBall(); return; }
+  if (S.playing) { S.playing = false; updatePlayBtn(); }
+  tlDrag = true; tlc.setPointerCapture(ev.pointerId); tlSeekFromEvent(ev, true);
+});
+tlc.addEventListener('pointermove', ev => { if (tlDrag) tlSeekFromEvent(ev, false); });
+tlc.addEventListener('pointerup', () => { tlDrag = false; });
+tlc.addEventListener('pointercancel', () => { tlDrag = false; });
+
+/* =====================================================================
+   UI wiring
+   ===================================================================== */
+function renderClipList() {
+  const list = $('clipList'); list.innerHTML = '';
+  S.clips.forEach((e, i) => {
+    const d = document.createElement('div'); d.className = 'clip' + (i === S.active ? ' on' : '');
+    d.innerHTML = `<span class="nm"></span><span class="meta">${e.ball ? '⚽ ' : ''}${fmt(e.duration)} s</span>`;
+    d.querySelector('.nm').textContent = e.name;
+    d.onclick = () => { if (i === S.active) return; S.active = i; S.inT = S.outT = null; S.playing = false; updatePlayBtn(); afterProjectChange(); seek(Math.min(S.time, e.duration)); scheduleSave(); };
+    list.appendChild(d);
+  });
+  if (!S.clips.length) list.innerHTML = '<div class="muted">Aucun mouvement. « + Nouveau » part de la pose actuelle ; « Importer » ajoute un FBX Mixamo.</div>';
+  $('clipCount').textContent = S.clips.length ? `${S.clips.length}` : '';
+}
+function syncClipUI() {
+  const e = cur();
+  $('clipDuration').value = e ? fmt(e.duration) : '';
+  ['clipDup', 'clipRename', 'clipMirror', 'clipDelete', 'applyDuration', 'applySpeed', 'segKeep', 'segDelete', 'segExtract'].forEach(id => $(id).disabled = !e);
+  $('segInfo').textContent = S.inT == null && S.outT == null ? 'aucun' : `${S.inT != null ? fmt(S.inT) : '0'} → ${S.outT != null ? fmt(S.outT) : 'fin'} s`;
+}
+function updatePlayBtn() { $('playBtn').textContent = S.playing ? '⏸' : '▶'; }
+
+// Tabs
+document.querySelectorAll('#tabs button').forEach(b => b.onclick = () => openTab(b.dataset.tab));
+function openTab(name) {
+  document.querySelectorAll('#tabs button').forEach(x => x.classList.toggle('on', x.dataset.tab === name));
+  document.querySelectorAll('.pane').forEach(p => p.classList.toggle('on', p.dataset.pane === name));
+  try { localStorage.setItem('mf-tab', name); } catch (e) {}
+}
+// File menu (phone)
+$('menuBtn').onclick = ev => { ev.stopPropagation(); $('fileMenu').classList.toggle('open'); };
+document.addEventListener('click', ev => { if (!ev.target.closest('#fileMenu')) $('fileMenu').classList.remove('open'); });
+const closeMenu = () => $('fileMenu').classList.remove('open');
+
+$('charFile').onchange = $('charFile2').onchange = ev => { const f = ev.target.files[0]; ev.target.value = ''; closeMenu(); if (f) importCharacterFile(f); };
+$('animFile').onchange = $('animFile2').onchange = ev => { const fs = [...ev.target.files]; ev.target.value = ''; closeMenu(); if (fs.length) importAnimationFiles(fs); };
+$('projFile').onchange = async ev => {
+  const f = ev.target.files[0]; ev.target.value = ''; closeMenu(); if (!f) return;
+  try { if (S.clips.length && !confirm('Remplacer le projet actuel par ce fichier ?')) return; loadProjectData(JSON.parse(await f.text())); scheduleSave(); log(`Projet ouvert : ${f.name} (${S.clips.length} mouvement(s)).`); }
+  catch (e) { alert('Impossible d\'ouvrir ce projet : ' + e.message); }
+};
+$('saveProj').onclick = () => { closeMenu(); saveProject(); };
+$('exportBtn').onclick = () => { closeMenu(); if (!S.clips.length) { alert('Rien à exporter.'); return; } $('exportDlg').showModal(); };
+$('expCancel').onclick = () => $('exportDlg').close();
+$('expGo').onclick = () => { const all = document.querySelector('input[name=expWhich]:checked').value === 'all'; $('exportDlg').close(); exportGLB(all, $('expBall').checked); };
+
+// Viewport tools
+function setMode(m) { gizmo.setMode(m); $('modeRot').classList.toggle('on', m === 'rotate'); $('modeMove').classList.toggle('on', m === 'translate'); }
+$('modeRot').onclick = () => setMode('rotate');
+$('modeMove').onclick = () => setMode('translate');
+$('spaceBtn').onclick = () => { const w = gizmo.space === 'local' ? 'world' : 'local'; gizmo.setSpace(w); $('spaceBtn').textContent = w === 'local' ? 'Loc' : 'Mon'; toast(w === 'local' ? 'Repère local' : 'Repère monde'); };
+$('multiBtn').onclick = () => { S.multi = !S.multi; $('multiBtn').classList.toggle('on', S.multi); toast(S.multi ? 'Sélection multiple : touche plusieurs articulations' : 'Sélection simple'); };
+$('ballBtn').onclick = () => { if (S.ballSel) { S.ballSel = false; afterSelection(); } else selectBall(); };
+$('frameBtn').onclick = frameCamera;
+$('qKey').onclick = () => { if (S.ballSel) keyBall(); else keyBones([...S.sel]); S.dirty = false; updateStatus(); toast('Clé enregistrée à ' + fmt(S.time) + ' s'); };
+$('qUndo').onclick = undo; $('qRedo').onclick = redo;
+
+// Transport
+$('playBtn').onclick = togglePlay;
+function togglePlay() { const e = cur(); if (!e) return; S.playing = !S.playing; if (S.playing) { const seg = segment(); if (seg && $('loopBtn').classList.contains('on') && (S.time < seg[0] || S.time >= seg[1] - EPS)) seek(seg[0]); else if (S.time >= e.duration - EPS) seek(0); } updatePlayBtn(); }
+$('toStart').onclick = () => seek(segment()?.[0] ?? 0);
+$('toEnd').onclick = () => seek(segment()?.[1] ?? dur());
+$('prevFrame').onclick = () => seek(snapT(S.time) - 1 / FPS);
+$('nextFrame').onclick = () => seek(snapT(S.time) + 1 / FPS);
+function jumpKey(dir) { const e = cur(); if (!e) return; const times = S.ballSel && e.ball ? e.ball.keys.map(k => k.t) : S.sel.size ? uniqTimes([...S.sel].flatMap(b => boneTimes(e, b.name))) : allTimes(e); const t = dir > 0 ? times.find(x => x > S.time + EPS) : [...times].reverse().find(x => x < S.time - EPS); if (t != null) seek(t); }
+$('prevKey').onclick = () => jumpKey(-1); $('nextKey').onclick = () => jumpKey(1);
+$('loopBtn').onclick = () => $('loopBtn').classList.toggle('on');
+$('zoom').onchange = drawTimeline;
+const markIn = () => { if (!cur()) return; S.inT = snapT(S.time); if (S.outT != null && S.outT <= S.inT) S.outT = null; syncClipUI(); drawTimeline(); toast('Début du segment : ' + fmt(S.inT) + ' s'); };
+const markOut = () => { if (!cur()) return; S.outT = snapT(S.time); if (S.inT != null && S.inT >= S.outT) S.inT = null; syncClipUI(); drawTimeline(); toast('Fin du segment : ' + fmt(S.outT) + ' s'); };
+$('markIn').onclick = $('markIn2').onclick = markIn;
+$('markOut').onclick = $('markOut2').onclick = markOut;
+$('segClear').onclick = () => { S.inT = S.outT = null; syncClipUI(); drawTimeline(); };
+
+// Clips panel
+$('clipNew').onclick = newClipFromPose;
+$('clipDup').onclick = () => { const e = cur(); if (!e) return; pushUndo(); S.clips.splice(S.active + 1, 0, cloneEntry(e, e.name + ' (copie)')); S.active++; afterProjectChange(); seek(S.time); scheduleSave(); };
+$('clipRename').onclick = () => { const e = cur(); if (!e) return; const n = prompt('Nouveau nom :', e.name); if (n && n.trim()) { pushUndo(); e.name = n.trim(); afterProjectChange(); scheduleSave(); } };
+$('clipMirror').onclick = () => { const e = cur(); if (!e) return; pushUndo(); S.clips.splice(S.active + 1, 0, mirrorEntry(e)); S.active++; afterProjectChange(); seek(S.time); scheduleSave(); log('Version miroir (gauche ↔ droite) créée.'); };
+$('clipDelete').onclick = () => { const e = cur(); if (!e || !confirm(`Supprimer « ${e.name} » ?`)) return; pushUndo(); S.clips.splice(S.active, 1); S.active = Math.min(S.active, S.clips.length - 1); S.inT = S.outT = null; afterProjectChange(); seek(0); scheduleSave(); };
+$('applyDuration').onclick = () => { const v = clamp(+$('clipDuration').value || 1, 0.1, 120); mutate(e => { e.duration = v; }); };
+$('applySpeed').onclick = () => { const k = +$('speedFactor').value; mutate(e => retime(e, t => t / k, e.duration / k)); S.time /= k; seek(S.time); log(`Vitesse ×${k} appliquée.`); };
+$('segKeep').onclick = () => { const s = segment(); if (!s) { alert('Marque un début [ et une fin ].'); return; } const [a, b] = s; mutate(e => retime(e, t => (t >= a - EPS && t <= b + EPS ? t - a : null), b - a, [[a, 0], [b, b - a]])); S.inT = S.outT = null; seek(0); afterProjectChange(); };
+$('segDelete').onclick = () => { const s = segment(); if (!s) { alert('Marque un début [ et une fin ].'); return; } const [a, b] = s; mutate(e => retime(e, t => (t < a - EPS ? t : t > b + EPS ? t - (b - a) : null), e.duration - (b - a), [[a, a], [b, a + 1e-3]].filter(x => x[0] <= e.duration))); S.inT = S.outT = null; seek(a); afterProjectChange(); };
+$('segExtract').onclick = () => { const s = segment(), e = cur(); if (!s || !e) { alert('Marque un début [ et une fin ].'); return; } const [a, b] = s; pushUndo(); const c = cloneEntry(e, e.name + ` (${fmt(a)}–${fmt(b)} s)`); retime(c, t => (t >= a - EPS && t <= b + EPS ? t - a : null), b - a, [[a, 0], [b, b - a]]); S.clips.splice(S.active + 1, 0, c); S.active++; S.inT = S.outT = null; afterProjectChange(); seek(0); scheduleSave(); };
+$('genBtn').onclick = () => generate($('prompt').value);
+$('genHelp').onclick = () => alert(GEN_HELP);
+
+// Body panel
+$('boneSelect').onchange = () => { const b = S.boneByName.get($('boneSelect').value); if (b) selectBone(b, S.multi); };
+$('selChildren').onclick = () => { if (!S.primary) return; const list = []; S.primary.traverse(o => { if (o.isBone && S.boneByName.get(o.name) === o) list.push(o); }); selectBones(list, S.primary); };
+$('selMirror').onclick = () => { const list = [...S.sel].map(b => S.boneByName.get(mirrorName(b.name)) || b); selectBones(list, S.boneByName.get(mirrorName(S.primary?.name || '')) || list[0]); };
+$('selAll').onclick = () => selectBones(S.bones.filter(pickable), S.hips);
+$('keySel').onclick = () => { keyBones([...S.sel]); toast('Clé enregistrée'); };
+$('keyAll').onclick = () => { keyBones(S.bones); toast('Clé corps entier enregistrée'); };
+$('delKeySel').onclick = () => { const t = S.time; let n = 0; mutate(e => { n = deleteKeys(e, [...S.sel], t); if (!n) return false; }); toast(n ? `${n} clé(s) supprimée(s)` : 'Pas de clé à ce temps pour la sélection'); };
+$('delKeyAll').onclick = () => { const t = S.time; let n = 0; mutate(e => { n = deleteKeys(e, null, t); if (!n) return false; }); toast(n ? `${n} clé(s) supprimée(s)` : 'Pas de clé à ce temps'); };
+$('copyPose').onclick = () => { S.clipboard = new Map(S.bones.map(b => [b.name, { q: b.quaternion.toArray(), p: b.position.toArray() }])); toast('Pose copiée'); };
+function pastePose(mirror) {
+  if (!S.clipboard) { toast('Copie d\'abord une pose.'); return; }
+  for (const b of S.bones) {
+    const src = S.clipboard.get(mirror ? mirrorName(b.name) : b.name); if (!src) continue;
+    const q = [...src.q], p = [...src.p];
+    if (mirror) { q[1] *= -1; q[2] *= -1; p[0] *= -1; }
+    b.quaternion.fromArray(q); if (b === S.hips || mirror) b.position.fromArray(p);
+  }
+  keyBones(S.bones); toast(mirror ? 'Pose collée en miroir' : 'Pose collée');
+}
+$('pastePose').onclick = () => pastePose(false);
+$('pasteMirror').onclick = () => pastePose(true);
+$('resetBone').onclick = () => { if (!S.sel.size) return; S.sel.forEach(b => { const r = S.rest.get(b.name); b.quaternion.copy(r.q); b.position.copy(r.p); }); syncBoneUI(); onEdited(); };
+$('autoKey').onchange = () => { try { localStorage.setItem('mf-autokey', $('autoKey').checked ? '1' : '0'); } catch (e) {} };
+
+// Ball panel
+$('ballOn').onchange = () => {
+  const e = cur(); if (!e) { $('ballOn').checked = false; return; }
+  if ($('ballOn').checked) { selectBall(); }
+  else { if (e.ball?.keys.length && !confirm('Retirer le ballon de ce mouvement (ses clés seront effacées) ?')) { $('ballOn').checked = true; return; } S.ballSel = false; mutate(e => { e.ball = null; }); afterSelection(); }
+};
+$('ballSelect').onclick = () => selectBall();
+$('ballGround').onclick = () => { ballMesh.position.y = S.ballRadius; S.ballSel = true; afterSelection(); onEdited(); };
+$('ballKey').onclick = () => { keyBall(); toast('Clé ballon enregistrée'); };
+$('ballDelKey').onclick = () => { const t = S.time; mutate(e => { const n = e.ball.keys.length; e.ball = { keys: e.ball.keys.filter(k => Math.abs(k.t - t) >= EPS) }; if (n === e.ball.keys.length) { toast('Pas de clé ballon à ce temps'); return false; } }); };
+$('ballClear').onclick = () => { if (confirm('Effacer toutes les clés du ballon de ce mouvement ?')) mutate(e => { e.ball = { keys: [] }; }); };
+$('attachApply').onclick = attachBall;
+$('flightApply').onclick = flightBall;
+$('flightH').oninput = () => $('flightHv').textContent = fmt($('flightH').value, 1) + ' m';
+$('ballRoll').onclick = () => mutate(e => { if (!e.ball || e.ball.keys.length < 2) { toast('Il faut au moins 2 clés ballon.'); return false; } const s = segment(); rollBall(e, s?.[0], s?.[1]); });
+$('ballFromHere').onclick = () => { const t = snapT(S.time); mutate(e => { const k = { t, p: ballMesh.position.toArray(), q: ballMesh.quaternion.toArray() }; setBallKeys(e, e.ball.keys.filter(x => x.t < t - EPS).concat([k, { ...k, t: e.duration }])); }); toast('Ballon immobile jusqu\'à la fin'); };
+$('ballPath').onchange = updateBallPath;
+$('ballRadius').onchange = () => { setBallRadius(+$('ballRadius').value); seek(S.time); };
+
+// View panel
+document.querySelectorAll('[data-cam]').forEach(b => b.onclick = () => setCamera(b.dataset.cam));
+function bodyCenter() { return S.hips ? S.hips.getWorldPosition(V3()) : V3(0, 0.9, 0); }
+function setCamera(v) {
+  const c = bodyCenter(), dist = 3.6;
+  if (v === 'frame') return frameCamera();
+  if (v === 'ball') { if (!ballMesh.visible) { toast('Pas de ballon dans ce mouvement.'); return; } const p = ballMesh.position; orbit.target.copy(p); camera.position.set(p.x + 1.2, p.y + 0.9, p.z + 1.6); orbit.update(); return; }
+  const off = { front: [0, 0.3, dist], side: [dist, 0.3, 0], back: [0, 0.3, -dist], top: [0.01, dist * 1.4, 0] }[v];
+  orbit.target.copy(c); camera.position.set(c.x + off[0], c.y + off[1], c.z + off[2]); orbit.update();
+}
+function frameCamera() {
+  if (!S.model) return;
+  const c = bodyCenter(); orbit.target.copy(c);
+  const dir = camera.position.clone().sub(orbit.target); if (dir.lengthSq() < 1e-4) dir.set(1, 0.4, 1.4);
+  dir.normalize().multiplyScalar(3.8); camera.position.copy(c).add(dir); orbit.update();
+}
+$('showJoints').onchange = () => { jointGroup.visible = $('showJoints').checked; };
+$('showFingers').onchange = () => rebuildJointMarkers();
+function toggleSkeleton() { if (skeletonHelper) { scene.remove(skeletonHelper); skeletonHelper = null; } if ($('showSkeleton').checked && S.model) { skeletonHelper = new THREE.SkeletonHelper(S.model); skeletonHelper.material.color.set(0x5fe3cc); scene.add(skeletonHelper); } }
+$('showSkeleton').onchange = toggleSkeleton;
+$('wireframe').onchange = () => S.model?.traverse(o => { if (o.isMesh) (Array.isArray(o.material) ? o.material : [o.material]).forEach(m => { if (m) m.wireframe = $('wireframe').checked; }); });
+$('showPitch').onchange = () => { pitch.visible = $('showPitch').checked; };
+$('forgetChar').onclick = async () => { await idb.del('character'); log('Personnage oublié : il faudra le réimporter au prochain lancement.'); };
+$('newProject').onclick = async () => { if (!confirm('Effacer tous les mouvements du projet ? (Pense à enregistrer avant.)')) return; pushUndo(); S.clips = []; S.active = -1; S.inT = S.outT = null; afterProjectChange(); seek(0); scheduleSave(); log('Nouveau projet.'); };
+
+// Keyboard (PC)
+window.addEventListener('keydown', ev => {
+  if (ev.target.closest('input,textarea,select') && ev.target.type !== 'range' && ev.target.type !== 'checkbox') return;
+  const k = ev.key.toLowerCase(), mod = ev.ctrlKey || ev.metaKey;
+  if (mod && k === 'z') { ev.preventDefault(); ev.shiftKey ? redo() : undo(); return; }
+  if (mod && k === 'y') { ev.preventDefault(); redo(); return; }
+  if (mod && k === 's') { ev.preventDefault(); saveProject(); return; }
+  if (mod) return;
+  if (k === ' ') { ev.preventDefault(); togglePlay(); }
+  else if (k === 'arrowleft') { ev.preventDefault(); $('prevFrame').click(); }
+  else if (k === 'arrowright') { ev.preventDefault(); $('nextFrame').click(); }
+  else if (k === ',') jumpKey(-1); else if (k === '.') jumpKey(1);
+  else if (k === 'home') seek(0); else if (k === 'end') seek(dur());
+  else if (k === 'k') $('qKey').click();
+  else if (k === 'delete' || k === 'backspace') { if (S.ballSel) $('ballDelKey').click(); else $('delKeySel').click(); }
+  else if (k === 'e') setMode('rotate'); else if (k === 'w') setMode('translate');
+  else if (k === 'b') $('ballBtn').click(); else if (k === 'f') frameCamera();
+  else if (k === 'i') markIn(); else if (k === 'o') markOut();
+});
+
+/* =====================================================================
+   Main loop
+   ===================================================================== */
+const clock = new THREE.Clock();
+let followPrev = null;
+function loop() {
+  requestAnimationFrame(loop);
+  const dt = Math.min(clock.getDelta(), 0.1);
+  if (S.playing && cur()) {
+    const e = cur(), seg = segment(), lp = $('loopBtn').classList.contains('on');
+    const a = seg && lp ? seg[0] : 0, b = seg && lp ? seg[1] : e.duration;
+    let t = S.time + dt * (+$('rate').value || 1);
+    if (t > b) { if (lp) t = a + ((t - a) % Math.max(1e-3, b - a)); else { t = b; S.playing = false; updatePlayBtn(); } }
+    seek(t, true);
+  }
+  // Camera follows the player (playback and scrubbing), so root motion never walks out of view.
+  if ($('followCam').checked && S.hips) {
+    const c = bodyCenter();
+    if (followPrev) { const d = c.clone().sub(followPrev); if (d.lengthSq() > 1e-10) { orbit.target.add(d); camera.position.add(d); } }
+    followPrev = c;
+  } else followPrev = null;
+  orbit.update();
+  if (S.model) updateJointMarkers();
+  renderer.render(scene, camera);
+}
+
+/* =====================================================================
+   Boot: reload the remembered character and the autosaved project
+   ===================================================================== */
+async function boot() {
+  updateUndoUI(); renderClipList(); syncClipUI(); syncBallUI(); syncBoneUI(); updatePlayBtn();
+  try { const t = localStorage.getItem('mf-tab'); if (t) openTab(t); if (localStorage.getItem('mf-autokey') === '0') $('autoKey').checked = false; } catch (e) {}
+  loop();
+  const [proj, ch] = await Promise.all([idb.get('project'), idb.get('character')]);
+  const hasProj = proj && proj.clips && proj.clips.length;
+  try {
+    if (ch?.data) {
+      const { root, clips } = await parseModelBuffer(ch.data, ch.name);
+      installCharacter(root, hasProj ? [] : clips, ch.name);
+    } else if (window.MF_EMBEDDED_MODEL) {
+      const m = window.MF_EMBEDDED_MODEL, bin = atob(m.b64), bytes = new Uint8Array(bin.length);
+      for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+      const { root, clips } = await parseModelBuffer(bytes.buffer, m.name);
+      installCharacter(root, hasProj ? [] : clips, m.name);
+    } else log('Importe ton personnage (bouton Personnage).', true);
+  } catch (e) { console.error(e); log('Impossible de recharger le personnage : ' + e.message); }
+  if (hasProj) { try { loadProjectData(proj); log(`Projet restauré : ${S.clips.length} mouvement(s).`, true); } catch (e) { console.error(e); } }
+  if (S.model) { if (S.hips && !S.sel.size) selectBone(S.hips); seek(0); }
+}
+window.MF = { S, camera, ballMesh, seek, generate, keyBones, exportGLB, serializeProject, loadProjectData, attachBall, flightBall, mirrorEntry, selectBone, selectBall, findBone, applyPose, ballAt, cur, undo, redo, mutate, writeKey, retime, deleteKeys };
+boot();
+</script>
+</body>
+</html>

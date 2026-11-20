@@ -17,6 +17,30 @@ A dated log, newest entry first: what was done, what was decided and why, and wh
 
 ## Log
 
+### 2026-11-20 — MotionForge Studio animation editor (tool)
+
+#### Done
+
+- The user's MotionForge Studio animation editor (a single HTML file built on Three.js, previously V5) was rebuilt as V6 in `street-football/tools/motionforge/motionforge.html`. It edits player movements with and without the ball, on both phone and PC.
+- Main points:
+  - Phone layout: 3D view always visible, tabs Mouvements / Corps / Ballon / Vue, tap-to-select joints, Multi selection, camera follows the player.
+  - Several movements per project: import more FBX/GLB animations, mirror left/right, trim/cut segments, speed.
+  - Smooth key edits on motion-capture clips.
+  - Per-movement ball track with "stick to foot/hand" (dribble or carried), a pass/shot/lob generator with bounces and curve, and automatic rolling.
+  - The text generator now also does kick, pass and dribble with the ball.
+  - Undo/redo, browser autosave, project `.json` to move between phone and PC, GLB export (one animation per movement, optional "Ballon" node) for Godot.
+- Tested in headless Chromium at desktop size and with Pixel 7 emulation (tap select, timeline scrub, export, save/reopen, reload restore). Not yet tested by the user on the real phone.
+
+#### Decided
+
+- The folder has a `.gdignore` so Godot ignores it.
+- The Mixamo character (`Running.fbx`) is NOT committed (Mixamo license: use in projects, no redistribution of raw files). `build_embedded.py` builds a local copy with the character embedded.
+
+#### Next
+
+- The user tests the tool on the phone.
+- Later, the GLB animations feed Phase 6 (animations).
+
 ### 2026-11-14 — Phase 2 tested on the phone
 
 #### Done
