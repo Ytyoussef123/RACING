@@ -17,6 +17,25 @@ A dated log, newest entry first: what was done, what was decided and why, and wh
 
 ## Log
 
+### 2026-11-21 — MotionForge: the ball moves with imported movements
+
+Problem reported by the user: after importing a movement, the ball stayed still.
+
+#### Done
+
+- Automatic ball physics in the Ballon tab of `street-football/tools/motionforge/motionforge.html`. Turning the ball on for a movement runs a simulation where the ball reacts to the player's toes, feet, shins, thighs, chest and head (gravity, bounces, rolling friction).
+  - Modes: Conduite (each foot touch keeps the ball just ahead of the running player), Libre (pure physics, for kicks and juggling), Auto (picks Conduite if the player travels).
+  - Settings: start point, touch strength, bounce, hands (goalkeeper).
+- Imported GLB/FBX files that already contain an animated ball (node named ball, ballon, soccer…, for example V5/V6 exports) keep the ball motion. The ball node is removed from the character when such a file is used as the character.
+- Duplicate nested bones from re-imported GLBs are hidden.
+- Tested headless (desktop and Pixel 7 emulation):
+  - On the Mixamo Running clip and a generated 3 s run, the ball stays 0.45 to 1 m in front of the player.
+  - A GLB export with ball re-imports with its ball keys.
+
+#### Next
+
+- The user tests on the phone.
+
 ### 2026-11-20 — MotionForge Studio animation editor (tool)
 
 #### Done

@@ -269,6 +269,16 @@ dialog h3{margin:0 0 8px}
      <div class="muted" id="ballInfo" style="margin-top:6px">—</div>
     </div>
     <div class="sec">
+     <div class="sec-h">Ballon physique automatique</div>
+     <div class="row"><label>Type</label><select id="simMode"><option value="auto">Auto (conduite si le joueur avance)</option><option value="dribble">Conduite : le ballon reste avec le joueur</option><option value="free">Libre : physique pure (frappes, jongles)</option></select></div>
+     <div class="row"><label>Départ</label><select id="simStart"><option value="auto">Auto : là où le pied frappe</option><option value="front">Devant le joueur</option><option value="current">Position actuelle du ballon</option></select></div>
+     <div class="row"><label>Force</label><input type="range" id="simPower" min="0.3" max="2" step="0.05" value="1"><output id="simPowerv" style="min-width:44px;text-align:right">1.00×</output></div>
+     <div class="row"><label>Rebond</label><select id="simBounce"><option value="0.15">Amorti (contrôle, conduite)</option><option value="0.4" selected>Normal</option><option value="0.75">Fort (frappe sèche)</option></select></div>
+     <label class="check"><input type="checkbox" id="simHands"> Les mains touchent aussi (gardien)</label>
+     <button id="simBtn" class="primary" style="width:100%;margin-top:8px">⚽ Simuler le ballon</button>
+     <div class="hint">Le ballon réagit aux pieds, jambes, poitrine et tête du joueur pendant tout le mouvement (ou à partir du début du segment) : gravité, rebonds, roulement. Quand tu actives le ballon sur un mouvement, la simulation se lance toute seule. Relance-la après avoir changé le départ ou la force.</div>
+    </div>
+    <div class="sec">
      <div class="sec-h">Ballon collé au joueur</div>
      <div class="row"><label>Partie</label><select id="attachBone">
       <option value="rfoot">Pied droit</option><option value="lfoot">Pied gauche</option>
@@ -484,12 +494,49 @@ const dur = () => cur()?.duration || 1;
    ===================================================================== */
 async function parseModelBuffer(buf, name) {
   const ext = (name.split('.').pop() || '').toLowerCase();
-  if (ext === 'fbx') { const root = new FBXLoader().parse(buf, ''); return { root, clips: root.animations || [] }; }
-  if (ext === 'glb' || ext === 'gltf') {
+  let root, clips;
+  if (ext === 'fbx') { root = new FBXLoader().parse(buf, ''); clips = root.animations || []; }
+  else if (ext === 'glb' || ext === 'gltf') {
     const gltf = await new Promise((res, rej) => new GLTFLoader().parse(buf, '', res, rej));
-    return { root: gltf.scene || gltf.scenes?.[0], clips: gltf.animations || [] };
+    root = gltf.scene || gltf.scenes?.[0]; clips = gltf.animations || [];
+  } else throw new Error('Format non pris en charge (FBX, GLB ou glTF).');
+  if (root) extractBall(root, clips);
+  return { root, clips };
+}
+
+/* A file can carry an animated ball (GLB exported by MotionForge V5/V6, or any scene with a node
+   called ball / ballon / soccer…). Sample its world motion for each clip so the ball keeps moving
+   after import, then take it out of the character. */
+const BALL_KEYS = new WeakMap();
+const BALL_RE = /ball|ballon|soccer|football|balle/i;
+function extractBall(root, clips) {
+  let node = null;
+  root.traverse(o => {
+    if (node || o === root || o.isBone || !BALL_RE.test(o.name)) return;
+    let skinned = false; o.traverse(c => { if (c.isSkinnedMesh || c.isBone) skinned = true; });
+    if (!skinned) node = o;
+  });
+  if (!node) return;
+  root.updateMatrixWorld(true);
+  const size = new THREE.Box3().setFromObject(node).getSize(V3());
+  const k = size.x / 2 > 1.5 ? 0.01 : 1; // a ball ~11 units wide means the file is in centimetres
+  const names = new Set(); node.traverse(o => names.add(o.name));
+  const saved = []; root.traverse(o => saved.push([o, o.position.clone(), o.quaternion.clone(), o.scale.clone()]));
+  const mixer = new THREE.AnimationMixer(root);
+  for (const clip of clips) {
+    const moves = clip.tracks.some(tr => { try { return names.has(THREE.PropertyBinding.parseTrackName(tr.name).nodeName); } catch (e) { return false; } });
+    if (!moves) continue;
+    const act = mixer.clipAction(clip); act.play();
+    const keys = [], n = Math.round(clip.duration * FPS);
+    for (let f = 0; f <= n; f++) {
+      mixer.setTime(Math.min(f / FPS, clip.duration - 1e-4)); root.updateMatrixWorld(true);
+      keys.push({ t: f / FPS, p: node.getWorldPosition(V3()).multiplyScalar(k).toArray(), q: node.getWorldQuaternion(Q()).toArray() });
+    }
+    mixer.stopAllAction(); mixer.uncacheClip(clip);
+    BALL_KEYS.set(clip, keys);
   }
-  throw new Error('Format non pris en charge (FBX, GLB ou glTF).');
+  for (const [o, p, q, sc] of saved) { o.position.copy(p); o.quaternion.copy(q); o.scale.copy(sc); }
+  node.parent.remove(node);
 }
 
 async function importCharacterFile(file) {
@@ -520,7 +567,8 @@ function installCharacter(root, clips, name) {
   // FBXLoader can nest two bones with the same name (one per skinned mesh): the outer one
   // (found first) is the one animations drive, so keep only the first of each name.
   root.traverse(o => {
-    if (o.isBone && !S.boneByName.has(o.name)) {
+    const alias = o.isBone && o.parent?.isBone && o.name.startsWith(o.parent.name) && /^_?\d+$/.test(o.name.slice(o.parent.name.length)) && o.position.lengthSq() < 1e-8;
+    if (o.isBone && !alias && !S.boneByName.has(o.name)) {
       S.bones.push(o); S.boneByName.set(o.name, o);
       S.rest.set(o.name, { q: o.quaternion.clone(), p: o.position.clone(), s: o.scale.clone() });
     }
@@ -565,9 +613,10 @@ function clipToEntry(clip, name) {
     if (tracks.some(t => t.name === n)) continue;
     tracks.push(prop === 'quaternion' ? new THREE.QuaternionKeyframeTrack(n, Array.from(tr.times), Array.from(v)) : new THREE.VectorKeyframeTrack(n, Array.from(tr.times), Array.from(v)));
   }
-  if (!tracks.length) { log(`« ${name} » : aucune piste ne correspond au squelette (${skipped} ignorée(s)).`); return null; }
+  const bk = BALL_KEYS.get(clip);
+  if (!tracks.length && !bk) { log(`« ${name} » : aucune piste ne correspond au squelette (${skipped} ignorée(s)).`); return null; }
   let d = clip.duration > 0 ? clip.duration : Math.max(...tracks.map(t => t.times[t.times.length - 1] || 0), 0.5);
-  return { name, duration: d, tracks, ball: null, _bind: null, _times: null };
+  return { name, duration: d, tracks, ball: bk ? { keys: bk.map(k => ({ ...k })) } : null, _bind: null, _times: null };
 }
 
 function entriesFromClips(clips, fileName) {
@@ -648,7 +697,14 @@ function selectBone(b, additive = false) {
 function selectBones(list, primary) { S.ballSel = false; S.sel = new Set(list); S.primary = primary || list[0] || null; afterSelection(); }
 function selectBall() {
   const e = cur(); if (!e) { toast('Crée ou importe d\'abord un mouvement.'); return; }
-  if (!e.ball) { pushUndo(); e.ball = { keys: [] }; placeBallDefault(); afterProjectChange(); scheduleSave(); log('Ballon activé pour ce mouvement.'); }
+  if (!e.ball) {
+    pushUndo(); e.ball = { keys: [] };
+    let ok = false;
+    try { ok = simulateBall(e, { start: 'auto' }); } catch (err) { console.error(err); }
+    if (!ok) placeBallDefault();
+    invalidate(e); afterProjectChange(); seek(S.time); scheduleSave();
+    log(ok ? 'Ballon activé : il réagit maintenant aux touches du joueur (onglet Ballon pour régler).' : 'Ballon activé pour ce mouvement.');
+  }
   S.ballSel = true; afterSelection();
 }
 function afterSelection() {
@@ -990,7 +1046,7 @@ function keyBall(t = snapT(S.time)) {
 function syncBallUI() {
   const e = cur(), on = !!e?.ball;
   $('ballOn').checked = on;
-  ['bx', 'by', 'bz', 'ballKey', 'ballDelKey', 'ballClear', 'ballGround', 'attachApply', 'flightApply', 'ballRoll', 'ballFromHere'].forEach(id => $(id).disabled = !on);
+  ['bx', 'by', 'bz', 'ballKey', 'ballDelKey', 'ballClear', 'ballGround', 'attachApply', 'flightApply', 'ballRoll', 'ballFromHere', 'simBtn'].forEach(id => $(id).disabled = !on);
   const p = ballMesh.position;
   [['bx', p.x], ['by', p.y], ['bz', p.z]].forEach(([id, v]) => { $(id).value = v; $(id + 'v').textContent = fmt(v); });
   if (!on) { $('ballInfo').textContent = e ? 'Mouvement sans ballon.' : '—'; return; }
@@ -1101,6 +1157,134 @@ function rollBall(e, t0, t1) {
   const after = out.filter(x => x.t > t1 + EPS);
   if (after.length) { const fix = q.clone().multiply(Q().fromArray(ballAt(e, t1 + 1e-4)?.q.toArray() || [0, 0, 0, 1]).invert()); after.forEach((x, i) => { const n = { ...x, q: fix.clone().multiply(Q().fromArray(x.q)).toArray() }; out[out.indexOf(x)] = n; }); }
   setBallKeys(e, out);
+}
+
+/* =====================================================================
+   Ball physics: the ball reacts to the player's body during the movement.
+   Colliders are spheres placed along bones (toe, foot, shin, thigh, chest, head, hands).
+   Fixed step 1/120 s: gravity, ground bounces, rolling friction, impulses from body contacts.
+   ===================================================================== */
+const SIM = { dt: 1 / 120, g: 9.81, groundRest: 0.55, rollDecel: 0.9, airDrag: 0.05, grip: 0.25, maxSpeed: 40 };
+function bodyColliders(hands) {
+  const C = [];
+  const add = (a, b, f, rad, kind) => { const A = findBone([a]); if (!A) return; C.push({ a: A, b: b ? findBone([b]) : null, f, rad, kind }); };
+  for (const s of ['left', 'right']) {
+    add(s + 'toebase', s + 'toeend', 0.5, 0.045, 'toe');
+    add(s + 'foot', s + 'toebase', 0.2, 0.055, 'foot');
+    add(s + 'leg', s + 'foot', 0.5, 0.06, 'leg');
+    add(s + 'upleg', s + 'leg', 0.7, 0.075, 'leg');
+    if (hands) { add(s + 'hand', null, 0, 0.07, 'hand'); add(s + 'forearm', s + 'hand', 0.5, 0.05, 'hand'); }
+  }
+  add('head', 'headtopend', 0.45, 0.11, 'head');
+  add('spine2', null, 0, 0.14, 'body');
+  add('hips', null, 0, 0.13, 'body');
+  return C;
+}
+function colliderPos(c) { const p = c.a.getWorldPosition(V3()); if (c.b) p.lerp(c.b.getWorldPosition(V3()), c.f); return p; }
+
+/* Where should a still ball wait so the player hits it? The moment a toe moves fastest close to
+   the ground is (almost always) the touch or the kick: put the ball just in front of it. */
+function autoBallStart(e, t0, cols) {
+  const r = S.ballRadius, toes = cols.filter(c => c.kind === 'toe');
+  let best = null;
+  if (toes.length) {
+    const prev = new Map();
+    for (let f = Math.round(t0 * FPS); f <= Math.round(e.duration * FPS); f++) {
+      applyPose(e, f / FPS);
+      for (const c of toes) {
+        const p = colliderPos(c), q = prev.get(c); prev.set(c, p);
+        if (!q || p.y > 0.25) continue;
+        const v = V3().subVectors(p, q).multiplyScalar(FPS).setY(0), sp = v.length();
+        if (!best || sp > best.sp) best = { sp, p, dir: v.normalize(), t: f / FPS };
+      }
+    }
+  }
+  if (best && best.sp > 2.5) return V3(best.p.x, r, best.p.z).addScaledVector(best.dir, r + 0.03);
+  return frontOfPlayer(e, t0);
+}
+function frontOfPlayer(e, t0) {
+  applyPose(e, Math.min(e.duration, t0 + 0.3)); const h2 = S.hips.getWorldPosition(V3());
+  applyPose(e, t0);
+  const h = S.hips.getWorldPosition(V3());
+  let fwd = V3().subVectors(h2, h).setY(0);
+  if (fwd.length() < 0.15) fwd = V3(0, 0, 1).applyQuaternion(S.hips.getWorldQuaternion(Q())).setY(0);
+  if (fwd.lengthSq() < 1e-4) fwd.set(0, 0, 1);
+  fwd.normalize();
+  return V3(h.x, S.ballRadius, h.z).addScaledVector(fwd, 0.45);
+}
+/* Runs the simulation on entry e from the segment start (or 0) to the end; keys before stay. */
+function playerTravel(e) { applyPose(e, 0); const a = S.hips.getWorldPosition(V3()); applyPose(e, e.duration); return a.distanceTo(S.hips.getWorldPosition(V3())); }
+function simulateBall(e, opt = {}) {
+  if (!S.model || !e) return false;
+  let mode = opt.mode || $('simMode').value;
+  if (mode === 'auto') mode = playerTravel(e) / Math.max(0.3, e.duration) > 1.2 ? 'dribble' : 'free';
+  let start = opt.start || $('simStart').value; if (start === 'auto' && mode === 'dribble') start = 'front';
+  const power = opt.power ?? +$('simPower').value, bounce = opt.bounce ?? +$('simBounce').value;
+  const cols = bodyColliders(opt.hands ?? $('simHands').checked); if (!cols.length) return false;
+  const r = S.ballRadius, seg = segment(), t0 = snapT(opt.t0 ?? (seg ? seg[0] : 0)), end = e.duration;
+  let p;
+  if (start === 'current') p = ballMesh.position.clone();
+  else if (start === 'front') p = frontOfPlayer(e, t0);
+  else p = autoBallStart(e, t0, cols);
+  p.y = Math.max(p.y, r);
+  const v = V3(), dt = SIM.dt, steps = Math.max(1, Math.round((end - t0) / dt)), per = Math.round(1 / (FPS * dt));
+  const keys = (e.ball?.keys || []).filter(k => k.t < t0 - EPS);
+  let prevC = null, prevH = null, touches = 0, wasTouching = new Set();
+  const pv = V3();
+  const vrel = V3(), vt = V3(), d = V3(), vc = V3();
+  for (let i = 0; i <= steps; i++) {
+    const t = Math.min(end, t0 + i * dt);
+    applyPose(e, t);
+    const C = cols.map(colliderPos), H = S.hips.getWorldPosition(V3());
+    if (prevH) pv.subVectors(H, prevH).divideScalar(dt).setY(0);
+    prevH = H;
+    if (i > 0) {
+      v.y -= SIM.g * dt; v.multiplyScalar(1 - SIM.airDrag * dt); p.addScaledVector(v, dt);
+      if (p.y < r) { p.y = r; v.y = v.y < -0.6 ? -v.y * SIM.groundRest : 0; }
+      if (p.y <= r + 1e-3) { const h = Math.hypot(v.x, v.z); if (h > 0) { const nh = Math.max(0, h - SIM.rollDecel * dt); v.x *= nh / h; v.z *= nh / h; } }
+      const touching = new Set(), H = prevH;
+      for (let j = 0; j < cols.length; j++) {
+        const c = C[j]; d.subVectors(p, c); const dist = d.length(), md = r + cols[j].rad;
+        if (dist >= md) continue;
+        touching.add(j);
+        vc.subVectors(c, prevC[j]).divideScalar(dt);
+        const n = dist > 1e-6 ? d.divideScalar(dist) : (vc.lengthSq() > 1e-8 ? vc.clone().normalize() : V3(0, 1, 0));
+        p.copy(c).addScaledVector(n, md); if (p.y < r) p.y = r;
+        vrel.subVectors(v, vc); const vn = vrel.dot(n);
+        if (vn < 0) {
+          const ps = pv.length(), legTouch = cols[j].kind !== 'body' && cols[j].kind !== 'head';
+          if (mode === 'dribble' && legTouch && ps > 0.8) {
+            // Controlled touch: the ball goes a bit faster than the player, in the running direction,
+            // nudged by the side the foot pushed it from.
+            const fwd = pv.clone().normalize(), side = V3(-fwd.z, 0, fwd.x);
+            const lat = V3().subVectors(p, H).dot(side); // how far the ball is off the running line
+            const dir = fwd.clone().addScaledVector(side, clamp(-lat * 1.2, -0.35, 0.35)).normalize();
+            const sp = ps * (1.25 + 0.25 * (power - 1));
+            v.set(dir.x * sp, Math.max(0, v.y) * 0.3, dir.z * sp);
+          } else {
+            // A fast foot sends the ball where the foot is going (instep kick), not only along the contact normal.
+            const fs = vc.length();
+            if ((cols[j].kind === 'toe' || cols[j].kind === 'foot') && fs > 3) { n.lerp(vc.clone().divideScalar(fs), 0.6).normalize(); }
+            const vn2 = Math.min(vn, vrel.dot(n));
+            v.addScaledVector(n, -(1 + bounce) * Math.min(0, vn2) * power);
+            vt.copy(vrel).addScaledVector(n, -vn); v.addScaledVector(vt, -SIM.grip);
+          }
+          if (!wasTouching.has(j)) touches++;
+        }
+      }
+      wasTouching = touching;
+      if (v.length() > SIM.maxSpeed) v.setLength(SIM.maxSpeed);
+    }
+    prevC = C;
+    if (i % per === 0 || i === steps) {
+      const kt = i === steps ? end : snapT(t);
+      if (!keys.length || kt - keys[keys.length - 1].t > EPS) keys.push({ t: kt, p: p.toArray(), q: [0, 0, 0, 1] });
+    }
+  }
+  e.ball = { keys }; setBallKeys(e, keys);
+  rollBall(e, t0, end);
+  e._lastSimTouches = touches; e._lastSimMode = mode;
+  return true;
 }
 
 /* =====================================================================
@@ -1590,6 +1774,12 @@ $('ballKey').onclick = () => { keyBall(); toast('Clé ballon enregistrée'); };
 $('ballDelKey').onclick = () => { const t = S.time; mutate(e => { const n = e.ball.keys.length; e.ball = { keys: e.ball.keys.filter(k => Math.abs(k.t - t) >= EPS) }; if (n === e.ball.keys.length) { toast('Pas de clé ballon à ce temps'); return false; } }); };
 $('ballClear').onclick = () => { if (confirm('Effacer toutes les clés du ballon de ce mouvement ?')) mutate(e => { e.ball = { keys: [] }; }); };
 $('attachApply').onclick = attachBall;
+$('simPower').oninput = () => $('simPowerv').textContent = fmt($('simPower').value) + '×';
+$('simBtn').onclick = () => {
+  let n = 0;
+  const ok = mutate(e => { if (!e.ball) e.ball = { keys: [] }; if (!simulateBall(e)) return false; n = e._lastSimTouches || 0; });
+  if (ok) log(`Ballon simulé (${cur()._lastSimMode === 'dribble' ? 'conduite' : 'physique libre'}) : ${n} touche(s) du joueur.${n ? '' : ' Aucune touche : essaie le départ « Auto » ou « Devant le joueur ».'}`);
+};
 $('flightApply').onclick = flightBall;
 $('flightH').oninput = () => $('flightHv').textContent = fmt($('flightH').value, 1) + ' m';
 $('ballRoll').onclick = () => mutate(e => { if (!e.ball || e.ball.keys.length < 2) { toast('Il faut au moins 2 clés ballon.'); return false; } const s = segment(); rollBall(e, s?.[0], s?.[1]); });
@@ -1691,7 +1881,7 @@ async function boot() {
   if (hasProj) { try { loadProjectData(proj); log(`Projet restauré : ${S.clips.length} mouvement(s).`, true); } catch (e) { console.error(e); } }
   if (S.model) { if (S.hips && !S.sel.size) selectBone(S.hips); seek(0); }
 }
-window.MF = { S, camera, ballMesh, seek, generate, keyBones, exportGLB, serializeProject, loadProjectData, attachBall, flightBall, mirrorEntry, selectBone, selectBall, findBone, applyPose, ballAt, cur, undo, redo, mutate, writeKey, retime, deleteKeys };
+window.MF = { simulateBall, BALL_KEYS, S, camera, ballMesh, seek, generate, keyBones, exportGLB, serializeProject, loadProjectData, attachBall, flightBall, mirrorEntry, selectBone, selectBall, findBone, applyPose, ballAt, cur, undo, redo, mutate, writeKey, retime, deleteKeys };
 boot();
 </script>
 </body>
