@@ -442,7 +442,7 @@ const pitch = new THREE.Group(); scene.add(pitch);
 }
 
 const gizmo = new TransformControls(camera, canvas);
-gizmo.setMode('rotate'); gizmo.setSpace('local'); gizmo.setSize(isTouch ? 1.3 : 0.85);
+gizmo.setMode('rotate'); gizmo.setSpace('local'); gizmo.setSize(isTouch ? 1.05 : 0.85);
 scene.add(gizmo);
 const groupPivot = new THREE.Object3D(); scene.add(groupPivot);
 
@@ -950,22 +950,27 @@ function keysAtTime(e, t = S.time) { let n = 0; for (const tr of e.tracks) for (
 
 function onEdited() {
   S.dirty = true;
-  if ($('autoKey').checked) { if (S.ballSel) keyBall(); else keyBones([...S.sel]); }
+  if ($('autoKey').checked) { S.dirty = false; if (S.ballSel) keyBall(); else keyBones([...S.sel]); }
   else updateStatus();
 }
 
 /* =====================================================================
    Gizmo and viewport picking
    ===================================================================== */
-let groupStart = null, gizmoDragged = false;
+let groupStart = null, gizmoDragged = false, gizmoChanged = false;
 gizmo.addEventListener('dragging-changed', ev => {
   orbit.enabled = !ev.value;
   if (ev.value) {
     gizmoDragged = true;
     if (gizmo.object === groupPivot) { groupPivot.updateMatrixWorld(true); groupStart = { pivotInv: groupPivot.matrixWorld.clone().invert(), items: [...S.sel].map(b => ({ b, w: b.matrixWorld.clone() })) }; }
-  } else { groupStart = null; onEdited(); }
+  } else {
+    groupStart = null;
+    // Only a real drag is an edit: a simple tap on the handle must not write a key.
+    if (gizmoChanged) onEdited();
+  }
 });
 gizmo.addEventListener('objectChange', () => {
+  gizmoChanged = true;
   if (groupStart) {
     groupPivot.updateMatrixWorld(true);
     const delta = groupPivot.matrixWorld.clone().multiply(groupStart.pivotInv);
@@ -985,9 +990,11 @@ gizmo.addEventListener('objectChange', () => {
 const depth = o => { let d = 0; while (o.parent) { d++; o = o.parent; } return d; };
 
 const down = { x: 0, y: 0, t: 0 };
-canvas.addEventListener('pointerdown', e => { down.x = e.clientX; down.y = e.clientY; down.t = performance.now(); gizmoDragged = false; }, { capture: true });
+canvas.addEventListener('pointerdown', e => { down.x = e.clientX; down.y = e.clientY; down.t = performance.now(); gizmoDragged = false; gizmoChanged = false; }, { capture: true });
 canvas.addEventListener('pointerup', e => {
-  if (gizmoDragged || !S.model) return;
+  // A tap selects, even when it lands on the rotation handle of the joint already selected
+  // (on a phone the handle covers most of the body). Only an actual drag of the handle is not a tap.
+  if (gizmoChanged || !S.model) return;
   if (Math.hypot(e.clientX - down.x, e.clientY - down.y) > 9 || performance.now() - down.t > 650) return;
   pick(e);
 });
@@ -1743,7 +1750,14 @@ $('spaceBtn').onclick = () => { const w = gizmo.space === 'local' ? 'world' : 'l
 $('multiBtn').onclick = () => { S.multi = !S.multi; $('multiBtn').classList.toggle('on', S.multi); toast(S.multi ? 'Sélection multiple : touche plusieurs articulations' : 'Sélection simple'); };
 $('ballBtn').onclick = () => { if (S.ballSel) { S.ballSel = false; afterSelection(); } else selectBall(); };
 $('frameBtn').onclick = frameCamera;
-$('qKey').onclick = () => { if (S.ballSel) keyBall(); else keyBones([...S.sel]); S.dirty = false; updateStatus(); toast('Clé enregistrée à ' + fmt(S.time) + ' s'); };
+$('qKey').onclick = () => {
+  const e = cur(); if (!e) { toast('Crée d\'abord un mouvement (onglet Mouvements → + Nouveau).'); return; }
+  if (S.ballSel) { keyBall(); S.dirty = false; updateStatus(); toast(`Clé ballon enregistrée à ${fmt(snapT(S.time))} s`); return; }
+  if (!S.sel.size) { toast('Touche d\'abord une articulation (un point) dans la vue 3D.'); return; }
+  S.dirty = false; keyBones([...S.sel]); updateStatus();
+  const who = S.sel.size === 1 ? prettyBone(S.primary.name) : `${S.sel.size} articulations`;
+  toast(`◆ Clé enregistrée : ${who} à ${fmt(snapT(S.time))} s (image ${Math.round(S.time * FPS)})`);
+};
 $('qUndo').onclick = undo; $('qRedo').onclick = redo;
 
 // Transport
@@ -1782,8 +1796,8 @@ $('boneSelect').onchange = () => { const b = S.boneByName.get($('boneSelect').va
 $('selChildren').onclick = () => { if (!S.primary) return; const list = []; S.primary.traverse(o => { if (o.isBone && S.boneByName.get(o.name) === o) list.push(o); }); selectBones(list, S.primary); };
 $('selMirror').onclick = () => { const list = [...S.sel].map(b => S.boneByName.get(mirrorName(b.name)) || b); selectBones(list, S.boneByName.get(mirrorName(S.primary?.name || '')) || list[0]); };
 $('selAll').onclick = () => selectBones(S.bones.filter(pickable), S.hips);
-$('keySel').onclick = () => { keyBones([...S.sel]); toast('Clé enregistrée'); };
-$('keyAll').onclick = () => { keyBones(S.bones); toast('Clé corps entier enregistrée'); };
+$('keySel').onclick = () => { if (!S.sel.size) { toast('Sélectionne d\'abord une articulation.'); return; } S.dirty = false; keyBones([...S.sel]); toast(`◆ Clé enregistrée à ${fmt(snapT(S.time))} s`); };
+$('keyAll').onclick = () => { S.dirty = false; keyBones(S.bones); toast(`◆ Clé corps entier enregistrée à ${fmt(snapT(S.time))} s`); };
 $('delKeySel').onclick = () => { const t = S.time; let n = 0; mutate(e => { n = deleteKeys(e, [...S.sel], t); if (!n) return false; }); toast(n ? `${n} clé(s) supprimée(s)` : 'Pas de clé à ce temps pour la sélection'); };
 $('delKeyAll').onclick = () => { const t = S.time; let n = 0; mutate(e => { n = deleteKeys(e, null, t); if (!n) return false; }); toast(n ? `${n} clé(s) supprimée(s)` : 'Pas de clé à ce temps'); };
 $('copyPose').onclick = () => { S.clipboard = new Map(S.bones.map(b => [b.name, { q: b.quaternion.toArray(), p: b.position.toArray() }])); toast('Pose copiée'); };
@@ -1921,7 +1935,7 @@ async function boot() {
   if (hasProj) { try { loadProjectData(proj); log(`Projet restauré : ${S.clips.length} mouvement(s).`, true); } catch (e) { console.error(e); } }
   if (S.model) { if (S.hips && !S.sel.size) selectBone(S.hips); seek(0); }
 }
-window.MF = { simulateBall, BALL_KEYS, S, camera, ballMesh, seek, generate, keyBones, exportGLB, serializeProject, loadProjectData, attachBall, flightBall, mirrorEntry, selectBone, selectBall, findBone, applyPose, ballAt, cur, undo, redo, mutate, writeKey, retime, deleteKeys };
+window.MF = { gizmo, simulateBall, BALL_KEYS, S, camera, ballMesh, seek, generate, keyBones, exportGLB, serializeProject, loadProjectData, attachBall, flightBall, mirrorEntry, selectBone, selectBall, findBone, applyPose, ballAt, cur, undo, redo, mutate, writeKey, retime, deleteKeys };
 boot();
 </script>
 </body>
