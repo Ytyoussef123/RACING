@@ -17,6 +17,30 @@ A dated log, newest entry first: what was done, what was decided and why, and wh
 
 ## Log
 
+### 2026-11-21 — MotionForge: Scène mode (several players, passes and receptions)
+
+The user asked for a second mode to set up several players: a player passes, another runs and receives, with control of the ball speed and of how the ball is controlled.
+
+#### Done
+
+All in `street-football/tools/motionforge/motionforge.html`. Also since 2026-11-21 the editor got: Ouvrir reads FBX/GLB/glTF and Android file pickers no longer grey out .fbx; tapping a joint on a phone selects it and ◆ Clé saves on it; the ball can be dragged directly with a finger.
+
+- Mode switch at the top: ✏️ Mouvement / 👥 Scène.
+- Scène: copies of the same character, one colour each (J1, J2…), placed by dragging.
+- Pass action: movement, target player or a point tapped on the pitch, ball speed (m/s and km/h), height (lob), delay. The kick moment is found automatically.
+- Receive action: the receiver turns to the ball and runs so his control touch happens exactly where and when the ball arrives. Control options: stop, left, right, in front, behind, with a distance.
+- Passes and receptions can be chained. Warnings when a pass is too slow or a receiver can't arrive in time.
+- Timeline lanes per player; whole scene exported as one GLB; scene saved in the project; undo.
+- Missing run/pass movements are generated automatically ("Course (auto)", "Passe (auto)").
+- Tested headless (desktop and Pixel 7 emulation):
+  - J1→J2→J3 chain: the foot is 8–17 cm from the ball centre at every kick and control.
+  - Finger drag of players and pass-point picking work.
+  - All earlier tests still pass.
+
+#### Next
+
+- The user tests on the phone with their own Mixamo pass / reception / run clips.
+
 ### 2026-11-21 — MotionForge: the ball moves with imported movements
 
 Problem reported by the user: after importing a movement, the ball stayed still.

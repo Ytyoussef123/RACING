@@ -26,6 +26,17 @@ It is not part of the Godot project: the `.gdignore` file keeps Godot from impor
 - **Undo / redo** (60 steps), **autosave** in the browser, **project file** (.json) to move between phone and PC (opens V5 files too: the imported clip and the ball keys).
 - **GLB export** for Godot: the active movement or all of them, one animation each, with an optional `Ballon` node animated alongside the player.
 
+## Scène mode (several players)
+
+Switch at the top between **✏️ Mouvement** (edit one movement) and **👥 Scène** (several players).
+
+- Players are copies of the same character, one colour each (J1, J2…). Tap a player to select it, drag it to place it on the pitch.
+- **⚽ Passe** (for the player who has the ball): choose the movement, the target (a player or a point tapped on the pitch), the ball speed in m/s (shown in km/h too), the height (0 = along the ground, more = lob) and a delay. The passer turns so his kick sends the ball to the target, and the ball leaves at the kick moment of the movement (found automatically, or set by hand).
+- **🦶 Recevoir** (for another player): choose the reception movement and a run movement. The receiver faces the ball and runs by himself so his control touch happens exactly where and when the ball arrives. Choose the control: stop it, or push it to his left, right, in front or behind, with a distance.
+- Chain as many passes and receptions as you like. Warnings tell you when a pass is too slow to arrive or a receiver can't get there in time.
+- The timeline shows each player's run / pass / reception and the ball touches. **Exporter (GLB)** saves the whole scene (all players + ball) as one animation. The scene is saved with the project.
+- Movements come from the project. If there is no run or pass movement yet, simple ones are generated automatically ("Course (auto)", "Passe (auto)"); replace them with your Mixamo clips for better results.
+
 ## Phone layout
 
 The 3D view stays at the top, with the transport bar and the timeline under it, and the tabs Mouvements / Corps / Ballon / Vue below. File actions are in **☰ Fichier**. Tap a joint to select it; turn on **Multi** to select several. The camera follows the player.

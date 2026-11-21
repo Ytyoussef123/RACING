@@ -28,6 +28,12 @@ header{display:flex;align-items:center;gap:10px;padding:7px 12px;border-bottom:1
 .brand{font-weight:800;letter-spacing:.12em;font-size:13px;white-space:nowrap}.brand b{color:var(--accent)}
 #fileMenu{display:flex;gap:6px;margin-left:auto;align-items:center}
 #menuBtn{display:none;margin-left:auto}
+.brand .bs{display:none}
+#modeSw{display:flex;border:1px solid var(--line);border-radius:9px;overflow:hidden;flex:0 0 auto}
+#modeSw button{border:0;border-radius:0;min-height:32px;padding:4px 11px;background:transparent;color:var(--muted);font-weight:650}
+#modeSw button.on{background:var(--accent);color:var(--accent-ink)}
+body.scene #tabs,body.scene .ov-bottom,body.scene #markIn2,body.scene #markOut2{display:none}
+body.scene .ov-tools button:not(#frameBtn){display:none}
 #app{overflow:hidden;max-width:100vw}
 #work>*{min-width:0}
 #work{min-height:0;display:grid;grid-template-columns:minmax(0,1fr) 350px;grid-template-rows:minmax(0,1fr) 200px;gap:8px;padding:8px}
@@ -94,6 +100,8 @@ dialog h3{margin:0 0 8px}
 @media (max-width:760px){
  header{padding:5px 8px}
  .brand{font-size:12px}
+ .brand .bl{display:none}.brand .bs{display:inline}
+ #modeSw button{padding:4px 8px;font-size:12px}
  #menuBtn{display:inline-flex}
  #fileMenu{display:none;position:absolute;top:calc(100% + 4px);right:8px;flex-direction:column;align-items:stretch;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:8px;box-shadow:0 14px 40px #000a;min-width:220px}
  #fileMenu.open{display:flex}
@@ -118,7 +126,8 @@ dialog h3{margin:0 0 8px}
 <body>
 <div id="app">
 <header>
- <div class="brand">MOTION<b>FORGE</b> STUDIO</div>
+ <div class="brand"><span class="bl">MOTION<b>FORGE</b> STUDIO</span><span class="bs">M<b>F</b></span></div>
+ <div id="modeSw"><button data-mode="edit" class="on">✏️ Mouvement</button><button data-mode="scene">👥 Scène</button></div>
  <button id="menuBtn" aria-label="Menu fichier">☰ Fichier</button>
  <div id="fileMenu">
   <label class="btn" title="Importer un personnage (FBX, GLB, glTF)">👤 Personnage<input id="charFile" type="file" hidden></label>
@@ -306,6 +315,29 @@ dialog h3{margin:0 0 8px}
     </div>
    </section>
 
+   <!-- ============ SCÈNE ============ -->
+   <section class="pane" data-pane="scene">
+    <div class="sec">
+     <div class="sec-h">Joueurs <span class="muted">touche un joueur pour le choisir, glisse-le pour le placer</span></div>
+     <div id="scPlayers" class="chips"></div>
+     <div class="grid3"><button id="scAdd">+ Joueur</button><button id="scDel" class="danger">Supprimer</button><button id="scFrame">Voir tout</button></div>
+    </div>
+    <div class="sec">
+     <div class="sec-h">Action pour <span id="scSelName">J1</span></div>
+     <div class="grid2"><button id="scPass" class="primary">⚽ Passe</button><button id="scRecv" class="primary">🦶 Recevoir</button></div>
+     <div class="hint" id="scHolder"></div>
+    </div>
+    <div class="sec" id="scEditor"></div>
+    <div class="sec">
+     <div class="sec-h">Déroulé de la scène <span class="muted" id="scDur"></span></div>
+     <div id="scActions" class="list"></div>
+     <div id="scWarn"></div>
+     <div class="grid2"><button id="scPlay" class="primary">▶ Lire la scène</button><button id="scExport">⬇ Exporter (GLB)</button></div>
+     <button id="scClear" class="danger" style="width:100%;margin-top:6px">Effacer toutes les actions</button>
+     <div class="hint">Les mouvements viennent de ton projet (mode ✏️ Mouvement) : importe tes passes, réceptions et courses Mixamo puis choisis-les ici. S'il en manque, une course et une passe simples sont créées automatiquement.</div>
+    </div>
+   </section>
+
    <!-- ============ VUE ============ -->
    <section class="pane" data-pane="view">
     <div class="sec">
@@ -369,6 +401,7 @@ import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { TransformControls } from 'three/addons/controls/TransformControls.js';
 import { GLTFExporter } from 'three/addons/exporters/GLTFExporter.js';
+import * as SkeletonUtils from 'three/addons/utils/SkeletonUtils.js';
 
 /* =====================================================================
    Constants and helpers
@@ -510,10 +543,10 @@ const S = {
   clips: [], active: -1, time: 0, playing: false,
   sel: new Set(), primary: null, ballSel: false, multi: false,
   inT: null, outT: null, clipboard: null, dirty: false,
-  ballRadius: 0.11, undo: [], redo: [],
+  ballRadius: 0.11, undo: [], redo: [], mode: 'edit',
 };
 const cur = () => S.clips[S.active] || null;
-const dur = () => cur()?.duration || 1;
+const dur = () => S.mode === 'scene' ? (SC.plan?.duration || 1) : (cur()?.duration || 1);
 
 /* =====================================================================
    Character import
@@ -594,6 +627,8 @@ async function importCharacterFile(file) {
 
 function installCharacter(root, clips, name) {
   if (!root) throw new Error('Le fichier ne contient pas de scène 3D.');
+  if (S.mode === 'scene') setAppMode('edit');
+  clearInstances();
   if (S.model) { gizmo.detach(); scene.remove(S.model); }
   if (skeletonHelper) { scene.remove(skeletonHelper); skeletonHelper = null; }
   root.name = 'Personnage';
@@ -762,6 +797,7 @@ function updateGizmo() {
   gizmo.attach(groupPivot);
 }
 function updateStatus() {
+  if (S.mode === 'scene') { $('status').textContent = `Scène · ${SC.data.players.length} joueurs · J${SC.sel + 1} sélectionné${SC.pick != null ? ' · 📍 touche le terrain' : ''}`; $('dirtyPill').hidden = true; return; }
   const e = cur();
   let s = e ? `${e.name}${e.ball ? ' ⚽' : ''}` : (S.model ? 'Aucun mouvement' : 'Aucun personnage');
   if (S.ballSel) s += ' · Ballon';
@@ -820,6 +856,7 @@ function applyBall(e, t) {
 }
 
 function seek(t, fromPlayback = false) {
+  if (S.mode === 'scene') { sceneSeek(t); return; }
   const e = cur();
   if (S.dirty && !fromPlayback && !$('autoKey').checked) toast('Modification non enregistrée abandonnée (utilise ◆ Clé avant de changer de temps).');
   S.dirty = false;
@@ -838,11 +875,12 @@ function updateTimeUI(fromPlayback) {
    Undo / redo, autosave
    ===================================================================== */
 function snapshot() {
-  return { active: S.active, inT: S.inT, outT: S.outT, clips: S.clips.map(e => ({ name: e.name, duration: e.duration, tracks: e.tracks.slice(), ball: e.ball ? { keys: e.ball.keys.slice(), sim: e.ball.sim || null } : null })) };
+  return { sc: JSON.stringify(SC.data), active: S.active, inT: S.inT, outT: S.outT, clips: S.clips.map(e => ({ name: e.name, duration: e.duration, tracks: e.tracks.slice(), ball: e.ball ? { keys: e.ball.keys.slice(), sim: e.ball.sim || null } : null })) };
 }
 function restore(s) {
   S.clips = s.clips.map(e => ({ name: e.name, duration: e.duration, tracks: e.tracks.slice(), ball: e.ball ? { keys: e.ball.keys.slice(), sim: e.ball.sim || null } : null, _bind: null, _times: null }));
   S.active = Math.min(s.active, S.clips.length - 1); S.inT = s.inT; S.outT = s.outT;
+  if (s.sc) { SC.data = JSON.parse(s.sc); SC.sel = Math.min(SC.sel, Math.max(0, SC.data.players.length - 1)); SC.actSel = Math.min(SC.actSel, SC.data.actions.length - 1); }
 }
 function pushUndo() { S.undo.push(snapshot()); if (S.undo.length > UNDO_MAX) S.undo.shift(); S.redo.length = 0; updateUndoUI(); }
 function undo() { if (!S.undo.length) { toast('Rien à annuler.'); return; } S.redo.push(snapshot()); restore(S.undo.pop()); afterProjectChange(); seek(S.time); scheduleSave(); toast('Annulé'); updateUndoUI(); }
@@ -861,7 +899,9 @@ function mutate(fn) {
 }
 function afterProjectChange() {
   if (S.active >= S.clips.length) S.active = S.clips.length - 1;
-  renderClipList(); updateBallPath(); syncClipUI(); updateStatus(); drawTimeline();
+  SC.cache = new WeakMap();
+  if (S.mode === 'scene') { syncInstances(); SC.plan = planScene(); renderScenePanel(); updateBallPathScene(); }
+  renderClipList(); if (S.mode !== 'scene') updateBallPath(); syncClipUI(); updateStatus(); drawTimeline();
 }
 
 let saveTimer = 0;
@@ -871,7 +911,7 @@ function serializeEntry(e) {
   return { name: e.name, duration: e.duration, tracks: e.tracks.map(tr => ({ n: tr.name, t: Array.from(tr.times), v: Array.from(tr.values) })), ball: e.ball ? { keys: e.ball.keys.map(k => ({ t: k.t, p: [...k.p], q: [...k.q] })), sim: e.ball.sim || null } : null };
 }
 function serializeProject() {
-  return { app: 'MotionForge Studio', version: 6, fps: FPS, character: S.modelName, active: S.active, ballRadius: S.ballRadius, clips: S.clips.map(serializeEntry) };
+  return { app: 'MotionForge Studio', version: 6, fps: FPS, character: S.modelName, active: S.active, ballRadius: S.ballRadius, clips: S.clips.map(serializeEntry), scene: SC.data };
 }
 function loadProjectData(d) {
   if (!d || typeof d !== 'object') throw new Error('Fichier de projet invalide.');
@@ -893,6 +933,8 @@ function loadProjectData(d) {
     }
     if (d.keys?.length) log('Projet V5 : les images clés manuelles ne peuvent pas être reprises (seuls le clip importé et le ballon le sont).');
   } else throw new Error('Ce fichier n\'est pas un projet MotionForge.');
+  if (S.mode === 'scene') setAppMode('edit');
+  SC.data = d.scene && Array.isArray(d.scene.players) ? d.scene : { players: [], actions: [] }; SC.sel = 0; SC.actSel = -1; clearInstances();
   S.clips = clips; S.active = clips.length ? clamp(d.active ?? 0, 0, clips.length - 1) : -1;
   if (d.ballRadius) setBallRadius(+d.ballRadius, false);
   S.inT = S.outT = null; S.undo.length = 0; S.redo.length = 0; updateUndoUI();
@@ -1010,6 +1052,7 @@ const depth = o => { let d = 0; while (o.parent) { d++; o = o.parent; } return d
    "Hauteur": the finger moves it up and down. Starts when the press is on (or near) the ball. */
 const BD = { active: false, moved: false, id: null, plane: new THREE.Plane(), off: new THREE.Vector3(), height: false, y0: 0 };
 function ballScreenHit(e) {
+  if (S.mode === 'scene') return false;
   if (!ballMesh.visible || !cur()?.ball) return false;
   const r = canvas.getBoundingClientRect(), px = e.clientX - r.left, py = e.clientY - r.top;
   const c = ballMesh.position.clone().project(camera); if (c.z > 1) return false;
@@ -1067,6 +1110,7 @@ canvas.addEventListener('pointerdown', e => { down.x = e.clientX; down.y = e.cli
 canvas.addEventListener('pointerup', e => {
   // A tap selects, even when it lands on the rotation handle of the joint already selected
   // (on a phone the handle covers most of the body). Only an actual drag of the handle is not a tap.
+  if (S.mode === 'scene') { if (Math.hypot(e.clientX - down.x, e.clientY - down.y) <= 9) sceneTap(e); return; }
   if (gizmoChanged || !S.model) return;
   if (Math.hypot(e.clientX - down.x, e.clientY - down.y) > 9 || performance.now() - down.t > 650) return;
   pick(e);
@@ -1697,6 +1741,7 @@ function renderTimeline() {
   const g = tctx; g.setTransform(dpr, 0, 0, dpr, 0, 0);
   TL.w = r.width; TL.h = r.height; TL.labelW = r.width < 500 ? 62 : 84;
   g.fillStyle = '#0d1520'; g.fillRect(0, 0, TL.w, TL.h);
+  if (S.mode === 'scene') { renderSceneTimeline(g); return; }
   const e = cur();
   if (!e) { g.fillStyle = '#8d9fb4'; g.font = '12px system-ui'; g.fillText('Aucun mouvement : crée-en un (onglet Mouvements) ou importe une animation.', 10, 30); return; }
   const D = e.duration, zoom = +$('zoom').value;
@@ -1743,19 +1788,57 @@ function renderTimeline() {
   const xp = tlTimeToX(S.time); g.fillStyle = '#ffffff'; g.fillRect(xp - 1, 0, 2, TL.h);
   g.beginPath(); g.moveTo(xp - 6, 0); g.lineTo(xp + 6, 0); g.lineTo(xp, 8); g.closePath(); g.fill();
 }
+function renderSceneTimeline(g) {
+  const plan = SC.plan; if (!plan) return;
+  const D = plan.duration, zoom = +$('zoom').value;
+  TL.span = D / zoom; TL.v0 = zoom > 1 ? clamp(S.time - TL.span / 2, 0, D - TL.span) : 0;
+  const lanes = plan.players.map((p, i) => ({ label: `J${i + 1}`, kind: 'player', idx: i, times: plan.marks.filter(m => m.player === i).map(m => m.t), col: hexCss(TEAM_COLORS[i % TEAM_COLORS.length]), segs: p.segs }));
+  lanes.push({ label: '⚽ Ballon', kind: 'ball', times: plan.marks.map(m => m.t) });
+  TL.lanes = lanes;
+  g.fillStyle = '#121c29'; g.fillRect(TL.labelW, 0, TL.w - TL.labelW, TL.rulerH);
+  const pxPerS = (TL.w - TL.labelW - 8) / TL.span, step = [0.25, 0.5, 1, 2, 5, 10].find(s => s * pxPerS >= 48) || 10;
+  g.font = '10px system-ui'; g.textBaseline = 'middle';
+  for (let t = Math.ceil(TL.v0 / step) * step; t <= TL.v0 + TL.span + 1e-6; t += step) { const x = tlTimeToX(t); g.fillStyle = '#2a3b50'; g.fillRect(x, TL.rulerH - 6, 1, TL.h); g.fillStyle = '#8d9fb4'; g.fillText((+t.toFixed(2)) + 's', x + 3, TL.rulerH / 2); }
+  const laneH = Math.max(14, Math.min(TL.laneH, (TL.h - TL.rulerH) / lanes.length));
+  TL.laneH = laneH;
+  lanes.forEach((l, i) => {
+    const y = TL.rulerH + i * laneH, cy = y + laneH / 2;
+    g.fillStyle = i % 2 ? '#0f1824' : '#0d1520'; g.fillRect(0, y, TL.w, laneH);
+    g.fillStyle = l.kind === 'player' && l.idx === SC.sel ? l.col : '#b5c4d6'; g.font = '11px system-ui'; g.fillText(l.label, 6, cy);
+    if (l.segs) for (const sg of l.segs) {
+      const x0 = Math.max(TL.labelW, tlTimeToX(sg.t0)), x1 = Math.min(TL.w, tlTimeToX(Math.min(sg.t1, D)));
+      if (x1 <= x0) continue;
+      if (sg.kind === 'idle') { g.fillStyle = '#3a4a5e'; g.fillRect(x0, cy - 1, x1 - x0, 2); continue; }
+      g.fillStyle = sg.kind === 'run' ? '#4d7dbf' : sg.type === 'pass' ? '#2fae7a' : '#e08a3c';
+      g.fillRect(x0, cy - laneH * 0.3, x1 - x0, laneH * 0.6);
+      if (x1 - x0 > 40) { g.fillStyle = '#0b1118'; g.font = '10px system-ui'; g.fillText(sg.kind === 'run' ? 'course' : sg.type === 'pass' ? 'passe' : 'réception', x0 + 4, cy); }
+    }
+    for (const m of plan.marks) {
+      if (l.kind === 'player' && m.player !== l.idx) continue;
+      const x = tlTimeToX(m.t); g.fillStyle = m.kind === 'kick' ? '#7dffb8' : m.kind === 'control' ? '#ffb36b' : '#ffd36b';
+      g.beginPath(); g.moveTo(x, cy - 5); g.lineTo(x + 5, cy); g.lineTo(x, cy + 5); g.lineTo(x - 5, cy); g.closePath(); g.fill();
+    }
+  });
+  TL.laneH = 19;
+  TL._sceneLaneH = laneH;
+  g.fillStyle = '#253447'; g.fillRect(TL.labelW - 1, 0, 1, TL.h);
+  const xp = tlTimeToX(S.time); g.fillStyle = '#ffffff'; g.fillRect(xp - 1, 0, 2, TL.h);
+  g.beginPath(); g.moveTo(xp - 6, 0); g.lineTo(xp + 6, 0); g.lineTo(xp, 8); g.closePath(); g.fill();
+}
 let tlDrag = false;
 function tlSeekFromEvent(ev, snapToKey) {
-  const r = tlc.getBoundingClientRect(), x = ev.clientX - r.left, y = ev.clientY - r.top, e = cur(); if (!e) return;
-  let t = clamp(tlXToTime(Math.max(TL.labelW, x)), 0, e.duration);
+  const r = tlc.getBoundingClientRect(), x = ev.clientX - r.left, y = ev.clientY - r.top;
+  if (S.mode !== 'scene' && !cur()) return;
+  let t = clamp(tlXToTime(Math.max(TL.labelW, x)), 0, dur());
   if (snapToKey) {
-    const li = Math.floor((y - TL.rulerH) / TL.laneH), lane = TL.lanes[li];
+    const li = Math.floor((y - TL.rulerH) / (S.mode === 'scene' ? TL._sceneLaneH || TL.laneH : TL.laneH)), lane = TL.lanes[li];
     if (lane) { let best = null, bd = ev.pointerType === 'touch' ? 14 : 8; for (const k of lane.times) { const d = Math.abs(tlTimeToX(k) - x); if (d < bd) { bd = d; best = k; } } if (best != null) { seek(best); return; } }
   }
   seek(snapT(t));
 }
 tlc.addEventListener('pointerdown', ev => {
   const r = tlc.getBoundingClientRect(), x = ev.clientX - r.left, y = ev.clientY - r.top;
-  if (x < TL.labelW) { const lane = TL.lanes[Math.floor((y - TL.rulerH) / TL.laneH)]; if (lane?.kind === 'bone') selectBone(lane.bone); else if (lane?.kind === 'ball') selectBall(); return; }
+  if (x < TL.labelW) { const lane = TL.lanes[Math.floor((y - TL.rulerH) / (S.mode === 'scene' ? TL._sceneLaneH || TL.laneH : TL.laneH))]; if (lane?.kind === 'player') selectScenePlayer(lane.idx); else if (lane?.kind === 'bone') selectBone(lane.bone); else if (lane?.kind === 'ball' && S.mode !== 'scene') selectBall(); return; }
   if (S.playing) { S.playing = false; updatePlayBtn(); }
   tlDrag = true; tlc.setPointerCapture(ev.pointerId); tlSeekFromEvent(ev, true);
 });
@@ -1832,7 +1915,7 @@ $('modeMove').onclick = () => setMode('translate');
 $('spaceBtn').onclick = () => { const w = gizmo.space === 'local' ? 'world' : 'local'; gizmo.setSpace(w); $('spaceBtn').textContent = w === 'local' ? 'Loc' : 'Mon'; toast(w === 'local' ? 'Repère local' : 'Repère monde'); };
 $('multiBtn').onclick = () => { S.multi = !S.multi; $('multiBtn').classList.toggle('on', S.multi); toast(S.multi ? 'Sélection multiple : touche plusieurs articulations' : 'Sélection simple'); };
 $('ballBtn').onclick = () => { if (S.ballSel) { S.ballSel = false; afterSelection(); } else selectBall(); };
-$('frameBtn').onclick = frameCamera;
+$('frameBtn').onclick = () => (S.mode === 'scene' ? frameScene() : frameCamera());
 $('qKey').onclick = () => {
   const e = cur(); if (!e) { toast('Crée d\'abord un mouvement (onglet Mouvements → + Nouveau).'); return; }
   if (S.ballSel) { keyBall(); S.dirty = false; updateStatus(); toast(`Clé ballon enregistrée à ${fmt(snapT(S.time))} s`); return; }
@@ -1845,12 +1928,16 @@ $('qUndo').onclick = undo; $('qRedo').onclick = redo;
 
 // Transport
 $('playBtn').onclick = togglePlay;
-function togglePlay() { const e = cur(); if (!e) return; S.playing = !S.playing; if (S.playing) { const seg = segment(); if (seg && $('loopBtn').classList.contains('on') && (S.time < seg[0] || S.time >= seg[1] - EPS)) seek(seg[0]); else if (S.time >= e.duration - EPS) seek(0); } updatePlayBtn(); }
+function togglePlay() {
+  if (S.mode === 'scene') { if (!SC.plan) return; S.playing = !S.playing; if (S.playing && S.time >= dur() - EPS) seek(0); updatePlayBtn(); return; }
+  const e = cur(); if (!e) return; S.playing = !S.playing; if (S.playing) { const seg = segment(); if (seg && $('loopBtn').classList.contains('on') && (S.time < seg[0] || S.time >= seg[1] - EPS)) seek(seg[0]); else if (S.time >= e.duration - EPS) seek(0); } updatePlayBtn(); }
 $('toStart').onclick = () => seek(segment()?.[0] ?? 0);
 $('toEnd').onclick = () => seek(segment()?.[1] ?? dur());
 $('prevFrame').onclick = () => seek(snapT(S.time) - 1 / FPS);
 $('nextFrame').onclick = () => seek(snapT(S.time) + 1 / FPS);
-function jumpKey(dir) { const e = cur(); if (!e) return; const times = S.ballSel && e.ball ? e.ball.keys.map(k => k.t) : S.sel.size ? uniqTimes([...S.sel].flatMap(b => boneTimes(e, b.name))) : allTimes(e); const t = dir > 0 ? times.find(x => x > S.time + EPS) : [...times].reverse().find(x => x < S.time - EPS); if (t != null) seek(t); }
+function jumpKey(dir) {
+  if (S.mode === 'scene') { const ts = uniqTimes((SC.plan?.marks || []).map(m => m.t)); const t = dir > 0 ? ts.find(x => x > S.time + EPS) : [...ts].reverse().find(x => x < S.time - EPS); if (t != null) seek(t); return; }
+  const e = cur(); if (!e) return; const times = S.ballSel && e.ball ? e.ball.keys.map(k => k.t) : S.sel.size ? uniqTimes([...S.sel].flatMap(b => boneTimes(e, b.name))) : allTimes(e); const t = dir > 0 ? times.find(x => x > S.time + EPS) : [...times].reverse().find(x => x < S.time - EPS); if (t != null) seek(t); }
 $('prevKey').onclick = () => jumpKey(-1); $('nextKey').onclick = () => jumpKey(1);
 $('loopBtn').onclick = () => $('loopBtn').classList.toggle('on');
 $('zoom').onchange = drawTimeline;
@@ -1958,6 +2045,7 @@ window.addEventListener('keydown', ev => {
   if (mod && k === 'y') { ev.preventDefault(); redo(); return; }
   if (mod && k === 's') { ev.preventDefault(); saveProject(); return; }
   if (mod) return;
+  if (S.mode === 'scene' && !['arrowleft', 'arrowright', ' ', 'home', 'end', ',', '.', 'f'].includes(k)) return;
   if (k === ' ') { ev.preventDefault(); togglePlay(); }
   else if (k === 'arrowleft') { ev.preventDefault(); $('prevFrame').click(); }
   else if (k === 'arrowright') { ev.preventDefault(); $('nextFrame').click(); }
@@ -1966,9 +2054,555 @@ window.addEventListener('keydown', ev => {
   else if (k === 'k') $('qKey').click();
   else if (k === 'delete' || k === 'backspace') { if (S.ballSel) $('ballDelKey').click(); else $('delKeySel').click(); }
   else if (k === 'e') setMode('rotate'); else if (k === 'w') setMode('translate');
+  else if (k === 'f' && S.mode === 'scene') frameScene();
   else if (k === 'b') $('ballBtn').click(); else if (k === 'h' && S.ballSel) $('ballHeightBtn').click(); else if (k === 'f') frameCamera();
   else if (k === 'i') markIn(); else if (k === 'o') markOut();
 });
+
+/* =====================================================================
+   SCÈNE: several players (same character, one colour each), passes and receptions.
+   Data (saved with the project): players = start spots, actions = ordered list of
+   { type:'pass', player, clip, target:{player}|{point:[x,z]}, speed, height, delay, kickPct }
+   { type:'receive', player, clip, runClip, runSpeed, control, ctrlDist, ctrlPct }
+   planScene() turns that into timed segments per player and a ball path:
+   - the passer turns so his kick sends the ball to the target, the ball leaves at the kick moment;
+   - the ball travels at the chosen speed (rolling friction on the ground, or a lob);
+   - the receiver turns to face the ball and runs so that his control touch happens exactly
+     when and where the ball arrives; then the ball goes where the control sends it.
+   ===================================================================== */
+const TEAM_COLORS = [0x4da3ff, 0xff6b6b, 0xffd34d, 0x7ee081, 0xc58bff, 0xff9f43];
+const SC = { data: { players: [], actions: [] }, inst: [], plan: null, sel: 0, actSel: -1, pick: null, cache: new WeakMap() };
+const INTERP = new WeakMap();
+const sceneDeco = new THREE.Group(); sceneDeco.visible = false; scene.add(sceneDeco);
+const rotY = (v, yaw) => { const c = Math.cos(yaw), s = Math.sin(yaw); return V3(v.x * c + v.z * s, v.y, -v.x * s + v.z * c); };
+const lerpAngle = (a, b, w) => { const d = ((b - a + Math.PI) % (2 * Math.PI) + 2 * Math.PI) % (2 * Math.PI) - Math.PI; return a + d * w; };
+const hexCss = c => '#' + c.toString(16).padStart(6, '0');
+
+function makeLabel(text, col) {
+  const c = document.createElement('canvas'); c.width = 128; c.height = 64; const g = c.getContext('2d');
+  g.fillStyle = hexCss(col); g.beginPath(); g.roundRect(8, 8, 112, 48, 16); g.fill();
+  g.fillStyle = '#07121b'; g.font = 'bold 34px system-ui, sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(text, 64, 34);
+  const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: new THREE.CanvasTexture(c), depthTest: false, transparent: true }));
+  sp.scale.set(0.5, 0.25, 1); sp.renderOrder = 12; return sp;
+}
+function tintMat(m, col) { const c = m.clone(); if (c.color) c.color.setHex(col); c.wireframe = false; return c; }
+function makeInstance(idx) {
+  const m = SkeletonUtils.clone(S.model); m.visible = true;
+  const col = TEAM_COLORS[idx % TEAM_COLORS.length], boneByName = new Map();
+  m.traverse(o => {
+    if (o.isMesh) { o.material = Array.isArray(o.material) ? o.material.map(x => tintMat(x, col)) : tintMat(o.material, col); o.frustumCulled = false; }
+    if (o.isBone && !boneByName.has(o.name)) boneByName.set(o.name, o);
+  });
+  // Unique bone names per player (needed for the GLB export); poses still use the original names.
+  m.traverse(o => { if (o.isBone) o.name = `J${idx + 1}_` + o.name; });
+  const g = new THREE.Group(); g.name = `Joueur${idx + 1}`; g.add(m); scene.add(g);
+  const ring = new THREE.Mesh(new THREE.RingGeometry(0.34, 0.44, 40), new THREE.MeshBasicMaterial({ color: col, transparent: true, opacity: .55, depthTest: false, side: THREE.DoubleSide }));
+  ring.rotation.x = -Math.PI / 2; ring.renderOrder = 3; sceneDeco.add(ring);
+  const label = makeLabel(`J${idx + 1}`, col); sceneDeco.add(label);
+  return { g, m, boneByName, hips: boneByName.get(S.hips.name), ring, label, col };
+}
+function clearInstances() { for (const i of SC.inst) { scene.remove(i.g); sceneDeco.remove(i.ring); sceneDeco.remove(i.label); } SC.inst = []; }
+function syncInstances() {
+  if (!S.model) return;
+  while (SC.inst.length > SC.data.players.length) { const i = SC.inst.pop(); scene.remove(i.g); sceneDeco.remove(i.ring); sceneDeco.remove(i.label); }
+  while (SC.inst.length < SC.data.players.length) SC.inst.push(makeInstance(SC.inst.length));
+}
+function setSceneVisible(on) {
+  for (const i of SC.inst) i.g.visible = on;
+  sceneDeco.visible = on;
+  if (S.model) S.model.visible = !on;
+  jointGroup.visible = !on && $('showJoints').checked;
+  if (skeletonHelper) skeletonHelper.visible = !on;
+}
+
+/* --- pose of one player --- */
+function interpFor(tr) { let i = INTERP.get(tr); if (!i) { i = tr.createInterpolant(); INTERP.set(tr, i); } return i; }
+function poseInst(inst, e, t, strip) {
+  for (const [name, b] of inst.boneByName) { const r = S.rest.get(name); if (r) { b.quaternion.copy(r.q); b.position.copy(r.p); } }
+  if (!e) return;
+  const tt = clamp(t, 0, e.duration);
+  for (const tr of e.tracks) {
+    const [node, prop] = trackParts(tr.name), b = inst.boneByName.get(node);
+    if (!b || (prop !== 'quaternion' && prop !== 'position')) continue;
+    const v = interpFor(tr).evaluate(tt);
+    if (prop === 'quaternion') b.quaternion.fromArray(v).normalize();
+    else { b.position.fromArray(v); if (strip && b === inst.hips) { b.position.x = tr.values[0]; b.position.z = tr.values[2]; } }
+  }
+}
+function placeInst(inst, O, yaw) { inst.g.position.set(O.x, 0, O.z); inst.g.rotation.set(0, yaw, 0); }
+function applySeg(inst, sg, t) {
+  if (sg.kind === 'run') {
+    const u = clamp((t - sg.t0) / Math.max(1e-3, sg.t1 - sg.t0), 0, 1);
+    const root = V3().lerpVectors(sg.A, sg.B, u);
+    const yaw = lerpAngle(sg.yawRun, sg.yawEnd, smooth((t - (sg.t1 - 0.3)) / 0.3));
+    const lt = sg.e ? ((Math.max(0, t - sg.t0) * sg.rate) % sg.e.duration) : 0;
+    poseInst(inst, sg.e || sg.fallback, lt, true);
+    placeInst(inst, root.sub(rotY(sg.h0, yaw)), yaw);
+  } else {
+    poseInst(inst, sg.e, sg.kind === 'idle' ? sg.ct : t - sg.t0, !!sg.strip);
+    placeInst(inst, sg.O, sg.yaw);
+  }
+}
+function evalPlayer(i, t) {
+  const pl = SC.plan?.players[i], inst = SC.inst[i]; if (!pl || !inst || !pl.segs.length) return;
+  let k = pl.segs.findIndex(s => t < s.t1); if (k < 0) k = pl.segs.length - 1;
+  const sg = pl.segs[k];
+  if (k > 0 && t - sg.t0 < 0.18) {
+    // Short crossfade between two segments so the switch is not a jump.
+    const prev = pl.segs[k - 1]; applySeg(inst, prev, prev.t1);
+    const snap = [...inst.boneByName.values()].map(b => [b.quaternion.clone(), b.position.clone()]);
+    applySeg(inst, sg, Math.max(t, sg.t0));
+    const w = smooth((t - sg.t0) / 0.18); let n = 0;
+    for (const b of inst.boneByName.values()) { const [q, p] = snap[n++]; b.quaternion.slerpQuaternions(q, b.quaternion.clone(), w); b.position.lerpVectors(p, b.position.clone(), w); }
+  } else applySeg(inst, sg, Math.max(t, sg.t0));
+  inst.g.updateMatrixWorld(true);
+  const h = inst.hips.getWorldPosition(V3());
+  inst.ring.position.set(h.x, 0.006, h.z); inst.label.position.set(h.x, h.y + 1.05, h.z);
+  const on = i === SC.sel; inst.ring.material.opacity = on ? 1 : 0.5; inst.ring.scale.setScalar(on ? 1.25 : 1);
+}
+function sceneSeek(t) {
+  S.time = clamp(t, 0, dur());
+  for (let i = 0; i < SC.inst.length; i++) evalPlayer(i, S.time);
+  const bk = SC.plan?.ballKeys;
+  if (bk?.length) { const s = ballAt({ ball: { keys: bk } }, S.time); ballMesh.visible = true; ballMesh.position.copy(s.p); ballMesh.quaternion.copy(s.q); }
+  else ballMesh.visible = false;
+  $('timeLabel').textContent = `${fmt(S.time)} s · ${Math.round(S.time * FPS)}`;
+  drawTimeline();
+}
+
+/* --- clip analysis (on the hidden main character, at the origin) --- */
+function hipsLocal(e, t) { applyPose(e, t); return S.hips.getWorldPosition(V3()); }
+const toeBones = () => [findBone(['righttoebase', 'rightfoot']), findBone(['lefttoebase', 'leftfoot'])].filter(Boolean);
+function cached(e, key, fn) { let m = SC.cache.get(e); if (!m) { m = new Map(); SC.cache.set(e, m); } if (!m.has(key)) m.set(key, fn()); return m.get(key); }
+/* The touch: the moment a toe moves fastest near the ground (kick, pass or control). */
+function footStrike(e, lo, hi) {
+  return cached(e, `fs${lo}-${hi}`, () => {
+    const toes = toeBones(); let best = null; const prev = new Map();
+    const f0 = Math.round(e.duration * lo * FPS), f1 = Math.round(e.duration * hi * FPS);
+    for (let f = Math.max(0, f0 - 1); f <= f1; f++) {
+      applyPose(e, f / FPS);
+      for (const b of toes) {
+        const p = b.getWorldPosition(V3()), q = prev.get(b); prev.set(b, p);
+        if (!q || f < f0 || p.y > 0.3) continue;
+        const v = V3().subVectors(p, q).multiplyScalar(FPS).setY(0), sp = v.length();
+        if (!best || sp > best.sp) best = { sp, t: f / FPS, toe: p.clone(), dir: sp > 1e-3 ? v.normalize() : V3(0, 0, 1) };
+      }
+    }
+    return best || strikeAt(e, e.duration * 0.5);
+  });
+}
+function strikeAt(e, t) {
+  return cached(e, `sa${t.toFixed(3)}`, () => {
+    const toes = toeBones(); applyPose(e, Math.max(0, t - 1 / FPS)); const before = toes.map(b => b.getWorldPosition(V3()));
+    applyPose(e, t); const now = toes.map(b => b.getWorldPosition(V3()));
+    let i = 0; if (now.length > 1 && now[1].y < now[0].y) i = 1;
+    const v = now[i] ? V3().subVectors(now[i], before[i]).setY(0) : V3(0, 0, 1);
+    return { t, toe: now[i] || V3(), dir: v.lengthSq() > 1e-8 ? v.normalize() : V3(0, 0, 1), sp: v.length() * FPS };
+  });
+}
+function clipSpeed(e) { return cached(e, 'speed', () => { const a = hipsLocal(e, 0), b = hipsLocal(e, e.duration); return V3().subVectors(b, a).setY(0).length() / Math.max(0.1, e.duration); }); }
+function hips0(e) { return cached(e, 'h0', () => hipsLocal(e, 0).setY(0)); }
+function hipsEnd(e) { return cached(e, 'h1', () => hipsLocal(e, e.duration).setY(0)); }
+const clipByName = n => S.clips.find(c => c.name === n) || null;
+
+function planScene() {
+  const D = SC.data, r = S.ballRadius, dec = SIM.rollDecel;
+  const P = D.players.map(p => ({ root: V3(p.x, 0, p.z), yaw: null, free: 0, segs: [] }));
+  const pieces = [], warn = [], marks = [];
+  let ball = null, pending = null;
+  D.actions.forEach((a, ai) => {
+    a._info = null;
+    const pl = P[a.player]; if (!pl) { warn.push(`Action ${ai + 1} : joueur absent.`); return; }
+    const e = clipByName(a.clip); if (!e) { warn.push(`Action ${ai + 1} : mouvement « ${a.clip} » introuvable.`); return; }
+    if (a.type === 'pass') {
+      if (pending) { warn.push(`Action ${ai + 1} : la passe précédente n'a pas été reçue.`); }
+      const k = a.kickPct != null ? strikeAt(e, a.kickPct * e.duration) : footStrike(e, 0.1, 0.9);
+      const tp = a.target?.point, tgt = a.target?.player;
+      const T = tp ? V3(tp[0], 0, tp[1]) : (P[tgt] ? P[tgt].root.clone() : V3().copy(pl.root).add(V3(0, 0, 8)));
+      const h0 = hips0(e);
+      let yaw = pl.yaw ?? 0;
+      for (let it = 0; it < 4; it++) {
+        const O = V3().copy(pl.root).sub(rotY(h0, yaw)), toeW = O.add(rotY(V3(k.toe.x, 0, k.toe.z), yaw));
+        const dW = V3().subVectors(T, toeW).setY(0); if (dW.lengthSq() < 1e-6) break;
+        yaw = Math.atan2(dW.x, dW.z) - Math.atan2(k.dir.x, k.dir.z);
+      }
+      const O = V3().copy(pl.root).sub(rotY(h0, yaw));
+      const B0 = V3().copy(O).add(rotY(V3(k.toe.x, 0, k.toe.z).addScaledVector(V3(k.dir.x, 0, k.dir.z), r + 0.03), yaw)); B0.y = r;
+      const s = pl.free + (a.delay || 0);
+      if (pl.segs.length === 0 && s > 0) pl.segs.push({ kind: 'idle', t0: 0, t1: s, e, ct: 0, O, yaw });
+      else if (s > pl.free) pl.segs.push({ kind: 'idle', t0: pl.free, t1: s, e, ct: 0, O, yaw });
+      pl.segs.push({ kind: 'clip', t0: s, t1: s + e.duration, e, O, yaw, act: ai, type: 'pass' });
+      const tk = s + k.t;
+      if (!ball) pieces.push({ t0: 0, t1: tk, f: () => B0.clone() });
+      else {
+        if (ball.t > tk + 1e-3) warn.push(`J${a.player + 1} frappe avant d'avoir le ballon : ajoute un délai à la passe ${ai + 1}.`);
+        const from = ball.pos.clone(), t0 = Math.min(ball.t, tk), dd = Math.max(1e-3, tk - t0);
+        pieces.push({ t0, t1: tk, f: t => V3().lerpVectors(from, B0, smooth((t - t0) / dd)).setY(r) });
+      }
+      const dv = V3().subVectors(T, B0).setY(0), d = dv.length(), dirIn = d > 1e-4 ? dv.normalize() : V3(0, 0, 1);
+      let v = clamp(+a.speed || 10, 1, 40), tf, fn; const H = +a.height || 0;
+      if (H < 0.05) {
+        if (v * v < 2 * dec * d + 0.25) { const vmin = Math.sqrt(2 * dec * d) + 0.5; warn.push(`Passe ${ai + 1} trop lente pour arriver à ${fmt(d, 1)} m : vitesse mini ${fmt(vmin, 1)} m/s.`); v = vmin; }
+        tf = (v - Math.sqrt(v * v - 2 * dec * d)) / dec;
+        fn = τ => B0.clone().addScaledVector(dirIn, v * τ - dec * τ * τ / 2).setY(r);
+      } else { tf = Math.max(0.1, d / v); fn = τ => { const u = clamp(τ / tf, 0, 1), p = B0.clone().addScaledVector(dirIn, d * u); p.y = r + 4 * H * u * (1 - u); return p; }; }
+      const ta = tk + tf, vArr = H < 0.05 ? v - dec * tf : v * 0.6;
+      pieces.push({ t0: tk, t1: ta, f: t => fn(t - tk) });
+      marks.push({ t: tk, kind: 'kick', player: a.player }, { t: ta, kind: 'arrive', player: tgt ?? -1 });
+      pending = { T: V3(B0.x, 0, B0.z).addScaledVector(dirIn, d), ta, dirIn, vArr, ai };
+      ball = { pos: fn(tf), t: ta };
+      a._info = { speed: v, dist: d, time: tf, kickT: tk, arriveT: ta };
+      pl.free = s + e.duration; pl.root = V3().copy(O).add(rotY(hipsEnd(e), yaw)); pl.yaw = yaw;
+    } else if (a.type === 'receive') {
+      if (!pending) { warn.push(`Action ${ai + 1} : aucune passe à recevoir avant.`); return; }
+      const c = a.ctrlPct != null ? strikeAt(e, a.ctrlPct * e.duration) : footStrike(e, 0.15, 0.85);
+      const { T, ta, dirIn } = pending, f = dirIn.clone().negate(), yaw = Math.atan2(f.x, f.z);
+      const toeW = V3().copy(T).addScaledVector(dirIn, r + 0.04);
+      const O = V3().copy(toeW).sub(rotY(V3(c.toe.x, 0, c.toe.z), yaw)); O.y = 0;
+      const anchor = V3().copy(O).add(rotY(hips0(e), yaw));
+      const s = ta - c.t;
+      const runE = clipByName(a.runClip), dist = V3().subVectors(anchor, pl.root).setY(0).length();
+      if (s < pl.free - 1e-3) warn.push(`J${a.player + 1} n'a pas fini son action quand le ballon arrive : ajoute un délai à la passe ${pending.ai + 1}.`);
+      if (dist > 0.3) {
+        const rs = clamp(+a.runSpeed || 5.5, 1, 9.5);
+        let runT0 = s - dist / rs;
+        if (runT0 < pl.free) { runT0 = Math.min(pl.free, s - 0.05); const need = dist / Math.max(0.05, s - runT0); if (need > 8.5) warn.push(`J${a.player + 1} devrait courir à ${fmt(need, 1)} m/s pour arriver à temps : rapproche-le, ralentis la passe ou ajoute un délai.`); }
+        const yawRun = Math.atan2(anchor.x - pl.root.x, anchor.z - pl.root.z);
+        const rh0 = runE ? hips0(runE) : hips0(e);
+        if (runT0 > pl.free + 1e-3) pl.segs.push({ kind: 'idle', t0: pl.free, t1: runT0, e: runE || e, ct: 0, O: V3().copy(pl.root).sub(rotY(rh0, yawRun)), yaw: yawRun, strip: !!runE });
+        const sp = dist / Math.max(0.05, s - runT0), cs = runE ? clipSpeed(runE) : 0;
+        pl.segs.push({ kind: 'run', t0: runT0, t1: s, e: runE, fallback: e, A: pl.root.clone(), B: anchor.clone(), yawRun, yawEnd: yaw, h0: rh0, rate: cs > 0.5 ? clamp(sp / cs, 0.5, 1.7) : 1 });
+      } else if (s > pl.free + 1e-3) pl.segs.push({ kind: 'idle', t0: pl.free, t1: s, e, ct: 0, O, yaw });
+      pl.segs.push({ kind: 'clip', t0: s, t1: s + e.duration, e, O, yaw, act: ai, type: 'receive' });
+      const left = rotY(V3(1, 0, 0), yaw);
+      const dirs = { stop: dirIn, left, right: left.clone().negate(), front: f, behind: dirIn };
+      const Dc = (dirs[a.control] || dirIn).clone(), Dd = a.control === 'stop' ? 0.3 : clamp(+a.ctrlDist || 1.5, 0.2, 8);
+      const tD = a.control === 'stop' ? 0.35 : clamp(Dd / 2.5, 0.4, 1.6);
+      const T2 = V3(T.x, r, T.z);
+      pieces.push({ t0: ta, t1: ta + tD, f: t => { const u = clamp((t - ta) / tD, 0, 1); return T2.clone().addScaledVector(Dc, Dd * (1 - (1 - u) * (1 - u))); } });
+      ball = { pos: T2.clone().addScaledVector(Dc, Dd), t: ta + tD };
+      marks.push({ t: ta, kind: 'control', player: a.player });
+      a._info = { ctrlT: ta, runDist: dist };
+      pending = null;
+      pl.free = s + e.duration; pl.root = V3().copy(O).add(rotY(hipsEnd(e), yaw)); pl.yaw = yaw;
+    }
+  });
+  if (pending) {
+    // Nobody receives the last pass: the ball keeps rolling until it stops.
+    const { T, ta, dirIn, vArr } = pending, ts = Math.max(0.05, vArr / dec), T2 = V3(T.x, r, T.z);
+    pieces.push({ t0: ta, t1: ta + ts, f: t => { const τ = clamp(t - ta, 0, ts); return T2.clone().addScaledVector(dirIn, vArr * τ - dec * τ * τ / 2); } });
+  }
+  // Players without any action: stand at their spot and look at the ball.
+  const ball0 = pieces.length ? pieces[0].f(0) : V3(0, r, 0.5);
+  const anyClip = S.clips.find(c => /cours|course|run|idle|attente/i.test(c.name)) || S.clips[0] || null;
+  P.forEach((pl, i) => {
+    if (pl.segs.length) return;
+    const yaw = Math.atan2(ball0.x - pl.root.x, ball0.z - pl.root.z);
+    const e = anyClip; const h = e ? hips0(e) : V3();
+    pl.segs.push({ kind: 'idle', t0: 0, t1: 1e9, e, ct: 0, strip: true, O: V3().copy(pl.root).sub(rotY(h, yaw)), yaw });
+  });
+  // Ball keys at FPS with rolling rotation.
+  const end = Math.max(1, ...P.flatMap(p => p.segs.filter(s => s.t1 < 1e8).map(s => s.t1)), ...pieces.map(p => p.t1)) + 0.4;
+  const evalBall = t => { let pc = null; for (const p of pieces) if (t >= p.t0 - 1e-6) pc = p; if (!pc) pc = pieces[0]; return pc ? pc.f(clamp(t, pc.t0, pc.t1)) : null; };
+  const keys = []; let q = Q(), prev = null;
+  if (pieces.length) for (let f = 0; f <= Math.round(end * FPS); f++) {
+    const t = f / FPS, p = evalBall(t);
+    if (prev) { const dd = V3().subVectors(p, prev).setY(0), dist = dd.length(); if (dist > 1e-5) q = Q().setFromAxisAngle(V3().crossVectors(AX.y, dd).normalize(), dist / r).multiply(q).normalize(); }
+    keys.push({ t, p: p.toArray(), q: q.toArray() }); prev = p;
+  }
+  // The main character was used to measure the clips: put it back.
+  if (S.mode !== 'scene') seekEditPose();
+  return { players: P, ballKeys: keys, duration: end, warn, marks };
+}
+function seekEditPose() { applyPose(cur(), S.time); applyBall(cur(), S.time); }
+
+/* --- defaults: pick movements by name, create simple ones if the project has none --- */
+function findClipLike(re, exclude) { return S.clips.find(c => re.test(c.name) && c.name !== exclude)?.name || null; }
+function ensureClip(re, text, name) {
+  const found = findClipLike(re); if (found) return found;
+  const keepActive = S.active, keepRest = $('genFromRest').checked, keepMode = S.mode;
+  S.mode = 'edit'; $('genFromRest').checked = true; generate(text); $('genFromRest').checked = keepRest; S.mode = keepMode;
+  const e = S.clips[S.clips.length - 1]; e.name = name; if (e.ball && !/passe|pass/i.test(name)) e.ball = null;
+  S.active = keepActive >= 0 ? keepActive : S.active; renderClipList();
+  log(`Mouvement « ${name} » créé automatiquement pour la scène (remplace-le par le tien dans la liste quand tu veux).`, true);
+  return name;
+}
+const RUN_RE = /cours|course|run|sprint|jog/i, PASS_RE = /passe|pass|frappe|tir|kick|shoot|strike/i, RECV_RE = /re[cç]e|receiv|contr[oô]l|amorti|trap|stop/i;
+function defaultRunClip() { return ensureClip(RUN_RE, 'cours 2 secondes', 'Course (auto)'); }
+function defaultPassClip() { return ensureClip(PASS_RE, 'passe du pied droit 1.4 secondes', 'Passe (auto)'); }
+function defaultRecvClip() { return findClipLike(RECV_RE) || findClipLike(PASS_RE) || defaultPassClip(); }
+
+/* --- mode switch --- */
+function setAppMode(m) {
+  if (m === S.mode) return;
+  if (m === 'scene' && !S.model) { toast('Importe d\'abord un personnage.'); return; }
+  S.playing = false; updatePlayBtn();
+  if (m === 'scene') {
+    if (!SC.data.players.length) SC.data = { players: [{ x: 0, z: 0 }, { x: 4, z: 9 }, { x: -6, z: 14 }], actions: [] };
+    S.mode = 'scene'; S.ballSel = false; gizmo.detach();
+    syncInstances(); setSceneVisible(true); SC.plan = planScene();
+    document.body.classList.add('scene');
+    document.querySelectorAll('.pane').forEach(p => p.classList.toggle('on', p.dataset.pane === 'scene'));
+    renderScenePanel(); frameScene(); seek(0);
+    updateBallPathScene();
+  } else {
+    S.mode = 'edit'; document.body.classList.remove('scene'); setSceneVisible(false);
+    let t = 'clips'; try { t = localStorage.getItem('mf-tab') || 'clips'; } catch (e) {}
+    openTab(t); afterProjectChange(); updateGizmo(); seek(Math.min(S.time, dur()));
+  }
+  document.querySelectorAll('#modeSw button').forEach(b => b.classList.toggle('on', b.dataset.mode === S.mode));
+  updateStatus();
+}
+function replan(keepPanel) {
+  if (S.mode !== 'scene') return;
+  syncInstances(); SC.plan = planScene(); sceneSeek(S.time); updateBallPathScene();
+  if (!keepPanel) renderScenePanel(); else renderSceneInfo();
+  scheduleSave();
+}
+function updateBallPathScene() {
+  const k = SC.plan?.ballKeys;
+  if (!k?.length || !$('ballPath').checked) { ballPathLine.visible = ballKeyDots.visible = false; return; }
+  ballPathLine.geometry.dispose(); ballPathLine.geometry = new THREE.BufferGeometry().setFromPoints(k.map(x => V3().fromArray(x.p))); ballPathLine.computeLineDistances();
+  const dots = (SC.plan.marks || []).map(m => ballAt({ ball: { keys: k } }, m.t).p);
+  ballKeyDots.geometry.dispose(); ballKeyDots.geometry = new THREE.BufferGeometry().setFromPoints(dots.length ? dots : [V3().fromArray(k[0].p)]);
+  ballPathLine.visible = ballKeyDots.visible = true;
+}
+function frameScene() {
+  const pts = SC.data.players.map(p => V3(p.x, 0, p.z)); if (!pts.length) return;
+  const box = new THREE.Box3().setFromPoints(pts), c = box.getCenter(V3()), size = box.getSize(V3());
+  // Fit a sphere around all players (+ room for bodies and the ball path) in the smaller field of view.
+  const R = Math.max(3.5, Math.hypot(size.x, size.z) / 2 + 1.2);
+  const vf = camera.fov * D2R, hf = 2 * Math.atan(Math.tan(vf / 2) * camera.aspect);
+  const D = R / Math.sin(Math.min(vf, hf) / 2);
+  const dir = V3(-0.3, 0.75, -0.8).normalize();
+  orbit.target.set(c.x, 0.5, c.z); camera.position.copy(orbit.target).addScaledVector(dir, D); orbit.update();
+}
+
+/* --- scene panel --- */
+function holderInfo() {
+  const A = SC.data.actions, last = A[A.length - 1];
+  if (!last) return { canPass: i => true, text: 'Le premier joueur qui fait une passe a le ballon au départ.' };
+  if (last.type === 'pass') return { canPass: () => false, needRecv: true, text: 'Le ballon est en route : choisis le joueur qui le reçoit et appuie sur « Recevoir ».' };
+  return { canPass: i => i === last.player, text: `Le ballon est chez J${last.player + 1}.` };
+}
+function selectScenePlayer(i) { SC.sel = i; const A = SC.data.actions; let k = -1; A.forEach((a, j) => { if (a.player === i) k = j; }); SC.actSel = k; renderScenePanel(); sceneSeek(S.time); }
+function sceneUndoable(fn, keepPanel) { pushUndo(); fn(); replan(keepPanel); }
+function addPass() {
+  const i = SC.sel, h = holderInfo();
+  if (!h.canPass(i)) { toast(h.needRecv ? 'Il faut d\'abord recevoir la passe en cours.' : h.text + ' Sélectionne ce joueur pour faire la passe.'); return; }
+  const others = SC.data.players.map((p, j) => j).filter(j => j !== i);
+  const me = SC.data.players[i], tgt = others.sort((a, b) => Math.hypot(SC.data.players[a].x - me.x, SC.data.players[a].z - me.z) - Math.hypot(SC.data.players[b].x - me.x, SC.data.players[b].z - me.z))[0];
+  const clip = defaultPassClip();
+  sceneUndoable(() => { SC.data.actions.push({ type: 'pass', player: i, clip, target: tgt != null ? { player: tgt } : { point: [me.x, me.z + 10] }, speed: 12, height: 0, delay: 0, kickPct: null }); SC.actSel = SC.data.actions.length - 1; });
+  toast(`J${i + 1} fait une passe${tgt != null ? ` vers J${tgt + 1}` : ''}. Règle la vitesse ci-dessous.`);
+}
+function addReceive() {
+  const i = SC.sel, A = SC.data.actions, last = A[A.length - 1];
+  if (!last || last.type !== 'pass') { toast('Il faut d\'abord une passe (sélectionne le joueur qui a le ballon → Passe).'); return; }
+  if (last.player === i) { toast('Le passeur ne peut pas recevoir sa propre passe : choisis un autre joueur.'); return; }
+  const run = defaultRunClip(), clip = defaultRecvClip();
+  sceneUndoable(() => {
+    if (last.target?.player != null) last.target = { player: i };
+    A.push({ type: 'receive', player: i, clip, runClip: run, runSpeed: 5.5, control: 'stop', ctrlDist: 1.5, ctrlPct: null }); SC.actSel = A.length - 1;
+  });
+  toast(`J${i + 1} court et reçoit le ballon. Choisis son contrôle ci-dessous.`);
+}
+const CTRL_TXT = { stop: 'Amorti (le ballon s\'arrête)', left: 'Orienté vers sa gauche', right: 'Orienté vers sa droite', front: 'Devant lui', behind: 'Derrière lui (il se retourne)' };
+function actionText(a, i) {
+  if (a.type === 'pass') { const to = a.target?.point ? 'un point' : `J${(a.target?.player ?? 0) + 1}`; return `${i + 1}. J${a.player + 1} ⚽ passe → ${to} · ${fmt(a.speed, 1)} m/s${+a.height > 0.05 ? ` · lob ${fmt(a.height, 1)} m` : ''}`; }
+  return `${i + 1}. J${a.player + 1} 🦶 reçoit · ${CTRL_TXT[a.control] || ''}`;
+}
+function opts(list, val) { return list.map(([v, t]) => `<option value="${String(v).replace(/"/g, '&quot;')}"${String(v) === String(val) ? ' selected' : ''}>${t.replace(/</g, '&lt;')}</option>`).join(''); }
+function renderScenePanel() {
+  const D = SC.data;
+  $('scPlayers').innerHTML = '';
+  D.players.forEach((p, i) => {
+    const b = document.createElement('button'); b.className = i === SC.sel ? 'on' : '';
+    b.innerHTML = `<span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${hexCss(TEAM_COLORS[i % TEAM_COLORS.length])}"></span> J${i + 1}`;
+    b.onclick = () => selectScenePlayer(i); $('scPlayers').appendChild(b);
+  });
+  $('scSelName').textContent = `J${SC.sel + 1}`;
+  const h = holderInfo(); $('scHolder').textContent = h.text;
+  // editor
+  const a = D.actions[SC.actSel], ed = $('scEditor'), clipOpts = S.clips.map(c => [c.name, c.name]);
+  if (!a) { ed.innerHTML = '<div class="muted">Choisis un joueur, puis « Passe » ou « Recevoir ». Touche une action dans le déroulé pour la modifier.</div>'; }
+  else if (a.type === 'pass') {
+    const tv = a.target?.point ? 'point' : String(a.target?.player ?? 0);
+    const tOpts = D.players.map((p, j) => j).filter(j => j !== a.player).map(j => [j, `J${j + 1}`]).concat([['point', '📍 Un point du terrain']]);
+    ed.innerHTML = `<div class="sec-h">Passe de J${a.player + 1} <span class="muted">action ${SC.actSel + 1}</span></div>
+     <div class="row"><label>Mouvement</label><select data-k="clip">${opts(clipOpts, a.clip)}</select></div>
+     <div class="row"><label>Vers</label><select data-k="target">${opts(tOpts, tv)}</select></div>
+     ${tv === 'point' ? '<button data-act="pick" style="width:100%;margin-top:6px">📍 Toucher le terrain pour choisir le point</button>' : ''}
+     <div class="row"><label>Vitesse</label><input type="range" data-k="speed" min="3" max="32" step="0.5" value="${a.speed}"><output data-o="speed"></output></div>
+     <div class="row"><label>Hauteur</label><input type="range" data-k="height" min="0" max="5" step="0.1" value="${a.height || 0}"><output data-o="height"></output></div>
+     <div class="row"><label>Délai</label><input type="range" data-k="delay" min="0" max="3" step="0.1" value="${a.delay || 0}"><output data-o="delay"></output></div>
+     <label class="check"><input type="checkbox" data-k="kickAuto"${a.kickPct == null ? ' checked' : ''}> Moment de la frappe automatique</label>
+     ${a.kickPct != null ? `<div class="row"><label>Frappe à</label><input type="range" data-k="kickPct" min="0" max="1" step="0.01" value="${a.kickPct}"><output data-o="kickPct"></output></div>` : ''}
+     <div class="muted" data-o="info" style="margin-top:6px"></div>
+     <button data-act="del" class="danger" style="width:100%;margin-top:8px">Supprimer cette action (et les suivantes)</button>`;
+  } else {
+    const ctrl = Object.entries(CTRL_TXT);
+    ed.innerHTML = `<div class="sec-h">Réception de J${a.player + 1} <span class="muted">action ${SC.actSel + 1}</span></div>
+     <div class="row"><label>Mouvement</label><select data-k="clip">${opts(clipOpts, a.clip)}</select></div>
+     <div class="row"><label>Course</label><select data-k="runClip">${opts([['', '(aucune : glisse)'], ...clipOpts], a.runClip || '')}</select></div>
+     <div class="row"><label>Vit. course</label><input type="range" data-k="runSpeed" min="1.5" max="9" step="0.1" value="${a.runSpeed}"><output data-o="runSpeed"></output></div>
+     <div class="row"><label>Contrôle</label><select data-k="control">${opts(ctrl, a.control)}</select></div>
+     ${a.control !== 'stop' ? `<div class="row"><label>Distance</label><input type="range" data-k="ctrlDist" min="0.3" max="6" step="0.1" value="${a.ctrlDist}"><output data-o="ctrlDist"></output></div>` : ''}
+     <label class="check"><input type="checkbox" data-k="ctrlAuto"${a.ctrlPct == null ? ' checked' : ''}> Moment du contrôle automatique</label>
+     ${a.ctrlPct != null ? `<div class="row"><label>Contrôle à</label><input type="range" data-k="ctrlPct" min="0" max="1" step="0.01" value="${a.ctrlPct}"><output data-o="ctrlPct"></output></div>` : ''}
+     <div class="muted" data-o="info" style="margin-top:6px"></div>
+     <button data-act="del" class="danger" style="width:100%;margin-top:8px">Supprimer cette action (et les suivantes)</button>`;
+  }
+  // actions list
+  const L = $('scActions'); L.innerHTML = '';
+  D.actions.forEach((x, i) => {
+    const d = document.createElement('div'); d.className = 'clip' + (i === SC.actSel ? ' on' : '');
+    d.innerHTML = '<span class="nm"></span>'; d.querySelector('.nm').textContent = actionText(x, i);
+    d.onclick = () => { SC.actSel = i; SC.sel = x.player; renderScenePanel(); const inf = x._info; seek(x.type === 'pass' ? Math.max(0, (inf?.kickT ?? 0) - 0.4) : Math.max(0, (inf?.ctrlT ?? 0) - 0.6)); };
+    L.appendChild(d);
+  });
+  if (!D.actions.length) L.innerHTML = '<div class="muted">Pas encore d\'action.</div>';
+  renderSceneInfo();
+}
+function renderSceneInfo() {
+  const a = SC.data.actions[SC.actSel], ed = $('scEditor');
+  const set = (k, v) => { const o = ed.querySelector(`[data-o="${k}"]`); if (o) o.textContent = v; };
+  if (a) {
+    if (a.type === 'pass') {
+      set('speed', `${fmt(a.speed, 1)} m/s`); set('height', +a.height > 0.05 ? `${fmt(a.height, 1)} m` : 'au sol'); set('delay', `${fmt(a.delay || 0, 1)} s`);
+      if (a.kickPct != null) set('kickPct', `${Math.round(a.kickPct * 100)} %`);
+      const i = a._info; set('info', i ? `≈ ${Math.round(i.speed * 3.6)} km/h · distance ${fmt(i.dist, 1)} m · arrive en ${fmt(i.time, 2)} s (à ${fmt(i.arriveT, 2)} s)` : '');
+    } else {
+      set('runSpeed', `${fmt(a.runSpeed, 1)} m/s`); set('ctrlDist', `${fmt(a.ctrlDist, 1)} m`);
+      if (a.ctrlPct != null) set('ctrlPct', `${Math.round(a.ctrlPct * 100)} %`);
+      const i = a._info; set('info', i ? `Course de ${fmt(i.runDist, 1)} m · contrôle à ${fmt(i.ctrlT, 2)} s` : '');
+    }
+  }
+  $('scActions').querySelectorAll('.clip .nm').forEach((el, i) => { const x = SC.data.actions[i]; if (x) el.textContent = actionText(x, i); });
+  const w = SC.plan?.warn || [];
+  $('scWarn').innerHTML = w.map(x => `<div class="notice">⚠ ${x.replace(/</g, '&lt;')}</div>`).join('');
+  $('scDur').textContent = SC.plan ? `${fmt(SC.plan.duration, 1)} s` : '';
+  updateStatus();
+}
+// Editor events (delegated): ranges update live, selects/checkboxes re-render.
+$('scEditor').addEventListener('pointerdown', ev => { if (ev.target.matches('input[type=range]')) pushUndo(); });
+$('scEditor').addEventListener('input', ev => {
+  const el = ev.target, a = SC.data.actions[SC.actSel]; if (!a || !el.dataset.k || el.type !== 'range') return;
+  a[el.dataset.k] = +el.value; replan(true);
+});
+$('scEditor').addEventListener('change', ev => {
+  const el = ev.target, a = SC.data.actions[SC.actSel]; if (!a || !el.dataset.k || el.type === 'range') return;
+  const k = el.dataset.k;
+  sceneUndoable(() => {
+    if (k === 'target') a.target = el.value === 'point' ? { point: a.target?.point || [SC.data.players[a.player].x, SC.data.players[a.player].z + 10] } : { player: +el.value };
+    else if (k === 'kickAuto') a.kickPct = el.checked ? null : +(clipByName(a.clip) ? footStrike(clipByName(a.clip), 0.1, 0.9).t / clipByName(a.clip).duration : 0.4).toFixed(2);
+    else if (k === 'ctrlAuto') a.ctrlPct = el.checked ? null : +(clipByName(a.clip) ? footStrike(clipByName(a.clip), 0.15, 0.85).t / clipByName(a.clip).duration : 0.4).toFixed(2);
+    else a[k] = el.value;
+  });
+  if (k === 'target' && el.value === 'point') startPick();
+});
+$('scEditor').addEventListener('click', ev => {
+  const act = ev.target.dataset?.act; if (!act) return;
+  if (act === 'pick') startPick();
+  if (act === 'del') { const i = SC.actSel; sceneUndoable(() => { SC.data.actions.splice(i); SC.actSel = SC.data.actions.length - 1; }); }
+});
+function startPick() { SC.pick = SC.actSel; toast('Touche le terrain à l\'endroit où la passe doit arriver.'); }
+$('scPass').onclick = addPass;
+$('scRecv').onclick = addReceive;
+$('scAdd').onclick = () => {
+  if (SC.data.players.length >= 10) { toast('10 joueurs maximum.'); return; }
+  const n = SC.data.players.length, a = n * 1.3;
+  sceneUndoable(() => { SC.data.players.push({ x: Math.round(Math.cos(a) * 7), z: Math.round(6 + Math.sin(a) * 7) }); SC.sel = n; SC.actSel = -1; });
+};
+$('scDel').onclick = () => {
+  const i = SC.sel; if (SC.data.players.length <= 1) { toast('Il faut au moins un joueur.'); return; }
+  if (SC.data.actions.some(a => a.player === i) && !confirm(`J${i + 1} a des actions : les supprimer aussi ?`)) return;
+  sceneUndoable(() => {
+    const k = SC.data.actions.findIndex(a => a.player === i || a.target?.player === i); if (k >= 0) SC.data.actions.splice(k);
+    SC.data.players.splice(i, 1);
+    SC.data.actions.forEach(a => { if (a.player > i) a.player--; if (a.target?.player > i) a.target.player--; });
+    SC.sel = Math.max(0, i - 1); SC.actSel = SC.data.actions.length - 1; clearInstances();
+  });
+};
+$('scFrame').onclick = frameScene;
+$('scPlay').onclick = () => { if (S.time >= dur() - EPS) seek(0); S.playing = true; updatePlayBtn(); };
+$('scClear').onclick = () => { if (!SC.data.actions.length || !confirm('Effacer toutes les actions de la scène ?')) return; sceneUndoable(() => { SC.data.actions = []; SC.actSel = -1; }); };
+$('scExport').onclick = () => exportSceneGLB();
+document.querySelectorAll('#modeSw button').forEach(b => b.onclick = () => setAppMode(b.dataset.mode));
+
+/* --- touch / mouse in the scene: select and drag players, pick a pass point --- */
+const PD = { active: false, i: -1, id: null, moved: false, off: V3(), snap: null };
+const groundPlane = new THREE.Plane(V3(0, 1, 0), 0);
+function groundHit(e) { const r = canvas.getBoundingClientRect(); ray.setFromCamera(new THREE.Vector2((e.clientX - r.left) / r.width * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1), camera); return ray.ray.intersectPlane(groundPlane, V3()); }
+function playerAt(e) {
+  const r = canvas.getBoundingClientRect(), px = e.clientX - r.left, py = e.clientY - r.top; let best = -1, bd = e.pointerType === 'touch' ? 44 : 30;
+  SC.inst.forEach((inst, i) => {
+    for (const y of [0, 0.5, 1.0, 1.4]) {
+      const h = inst.hips.getWorldPosition(V3()); h.y = y; const p = h.project(camera); if (p.z > 1) continue;
+      const d = Math.hypot((p.x + 1) / 2 * r.width - px, (1 - p.y) / 2 * r.height - py); if (d < bd) { bd = d; best = i; }
+    }
+  });
+  return best;
+}
+canvas.addEventListener('pointerdown', e => {
+  if (S.mode !== 'scene' || e.button > 0 || SC.pick != null) return;
+  const i = playerAt(e); if (i < 0) return;
+  e.stopImmediatePropagation(); e.preventDefault();
+  if (S.playing) { S.playing = false; updatePlayBtn(); }
+  if (SC.sel !== i) selectScenePlayer(i);
+  const hit = groundHit(e), p = SC.data.players[i];
+  PD.active = true; PD.i = i; PD.id = e.pointerId; PD.moved = false; PD.snap = snapshot(); PD.off.set(p.x - (hit?.x ?? p.x), 0, p.z - (hit?.z ?? p.z));
+  canvas.setPointerCapture(e.pointerId);
+}, { capture: true });
+canvas.addEventListener('pointermove', e => {
+  if (!PD.active || e.pointerId !== PD.id) return; e.stopImmediatePropagation();
+  const hit = groundHit(e); if (!hit) return;
+  const p = SC.data.players[PD.i]; p.x = +(hit.x + PD.off.x).toFixed(2); p.z = +(hit.z + PD.off.z).toFixed(2); PD.moved = true;
+  replan(true);
+}, { capture: true });
+const endPlayerDrag = e => {
+  if (!PD.active || e.pointerId !== PD.id) return; e.stopImmediatePropagation(); PD.active = false;
+  try { canvas.releasePointerCapture(e.pointerId); } catch (err) {}
+  if (PD.moved) { S.undo.push(PD.snap); S.redo.length = 0; updateUndoUI(); replan(); toast(`J${PD.i + 1} placé`); }
+};
+canvas.addEventListener('pointerup', endPlayerDrag, { capture: true });
+canvas.addEventListener('pointercancel', endPlayerDrag, { capture: true });
+function sceneTap(e) {
+  if (SC.pick == null) return;
+  const a = SC.data.actions[SC.pick], hit = groundHit(e); SC.pick = null;
+  if (!a || !hit) return;
+  sceneUndoable(() => { a.target = { point: [+hit.x.toFixed(2), +hit.z.toFixed(2)] }; });
+  toast('Point de passe choisi : le receveur va courir jusque-là.');
+}
+
+/* --- export the whole scene --- */
+async function exportSceneGLB() {
+  if (!SC.plan || !SC.inst.length) return;
+  S.playing = false; updatePlayBtn();
+  const D = SC.plan.duration, n = Math.round(D * FPS), times = [];
+  const rec = SC.inst.map(inst => ({ inst, gp: [], gq: [], bones: [...inst.boneByName.values()].map(b => ({ b, q: [], p: b === inst.hips ? [] : null })) }));
+  const bp = [], bq = [];
+  for (let f = 0; f <= n; f++) {
+    const t = f / FPS; times.push(t); sceneSeek(t);
+    for (const r of rec) { r.gp.push(...r.inst.g.position.toArray()); r.gq.push(...r.inst.g.quaternion.toArray()); for (const x of r.bones) { x.q.push(...x.b.quaternion.toArray()); if (x.p) x.p.push(...x.b.position.toArray()); } }
+    bp.push(...ballMesh.position.toArray()); bq.push(...ballMesh.quaternion.toArray());
+  }
+  const tracks = [];
+  for (const r of rec) {
+    tracks.push(new THREE.VectorKeyframeTrack(`${r.inst.g.name}.position`, times, r.gp), new THREE.QuaternionKeyframeTrack(`${r.inst.g.name}.quaternion`, times, r.gq));
+    for (const x of r.bones) { tracks.push(new THREE.QuaternionKeyframeTrack(`${x.b.name}.quaternion`, times, x.q)); if (x.p) tracks.push(new THREE.VectorKeyframeTrack(`${x.b.name}.position`, times, x.p)); }
+  }
+  tracks.push(new THREE.VectorKeyframeTrack(`${BALL_NODE}.position`, times, bp), new THREE.QuaternionKeyframeTrack(`${BALL_NODE}.quaternion`, times, bq));
+  const root = new THREE.Group(); root.name = 'MotionForge_Scene';
+  SC.inst.forEach(i => root.add(i.g));
+  const b = makeBallMesh(S.ballRadius); b.name = BALL_NODE; root.add(b);
+  try {
+    const res = await new GLTFExporter().parseAsync(root, { binary: true, animations: [new THREE.AnimationClip('Scene', D, tracks)], onlyVisible: false });
+    download(new Blob([res], { type: 'model/gltf-binary' }), 'motionforge_scene.glb');
+    log(`Scène exportée : ${SC.inst.length} joueurs + ballon, ${fmt(D, 1)} s.`);
+  } catch (err) { console.error(err); alert('Export impossible : ' + (err?.message || err)); }
+  finally { SC.inst.forEach(i => scene.add(i.g)); sceneSeek(S.time); }
+}
 
 /* =====================================================================
    Main loop
@@ -1978,15 +2612,15 @@ let followPrev = null;
 function loop() {
   requestAnimationFrame(loop);
   const dt = Math.min(clock.getDelta(), 0.1);
-  if (S.playing && cur()) {
-    const e = cur(), seg = segment(), lp = $('loopBtn').classList.contains('on');
-    const a = seg && lp ? seg[0] : 0, b = seg && lp ? seg[1] : e.duration;
+  if (S.playing && (S.mode === 'scene' ? SC.plan : cur())) {
+    const seg = S.mode === 'scene' ? null : segment(), lp = $('loopBtn').classList.contains('on');
+    const a = seg && lp ? seg[0] : 0, b = seg && lp ? seg[1] : dur();
     let t = S.time + dt * (+$('rate').value || 1);
     if (t > b) { if (lp) t = a + ((t - a) % Math.max(1e-3, b - a)); else { t = b; S.playing = false; updatePlayBtn(); } }
     seek(t, true);
   }
   // Camera follows the player (playback and scrubbing), so root motion never walks out of view.
-  if ($('followCam').checked && S.hips) {
+  if ($('followCam').checked && S.hips && S.mode !== 'scene') {
     const c = bodyCenter();
     if (followPrev) { const d = c.clone().sub(followPrev); if (d.lengthSq() > 1e-10) { orbit.target.add(d); camera.position.add(d); } }
     followPrev = c;
@@ -2020,7 +2654,7 @@ async function boot() {
   if (hasProj) { try { loadProjectData(proj); log(`Projet restauré : ${S.clips.length} mouvement(s).`, true); } catch (e) { console.error(e); } }
   if (S.model) { if (S.hips && !S.sel.size) selectBone(S.hips); seek(0); }
 }
-window.MF = { gizmo, ballShadow, simulateBall, BALL_KEYS, S, camera, ballMesh, seek, generate, keyBones, exportGLB, serializeProject, loadProjectData, attachBall, flightBall, mirrorEntry, selectBone, selectBall, findBone, applyPose, ballAt, cur, undo, redo, mutate, writeKey, retime, deleteKeys };
+window.MF = { SC, setAppMode, planScene, sceneSeek, addPass, addReceive, exportSceneGLB, selectScenePlayer, gizmo, ballShadow, simulateBall, BALL_KEYS, S, camera, ballMesh, seek, generate, keyBones, exportGLB, serializeProject, loadProjectData, attachBall, flightBall, mirrorEntry, selectBone, selectBall, findBone, applyPose, ballAt, cur, undo, redo, mutate, writeKey, retime, deleteKeys };
 boot();
 </script>
 </body>
