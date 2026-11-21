@@ -120,9 +120,9 @@ dialog h3{margin:0 0 8px}
  <div class="brand">MOTION<b>FORGE</b> STUDIO</div>
  <button id="menuBtn" aria-label="Menu fichier">☰ Fichier</button>
  <div id="fileMenu">
-  <label class="btn" title="Importer un personnage (FBX, GLB, glTF)">👤 Personnage<input id="charFile" type="file" accept=".fbx,.glb,.gltf" hidden></label>
-  <label class="btn" title="Ajouter les animations d'un autre fichier au projet">➕ Animation<input id="animFile" type="file" accept=".fbx,.glb,.gltf" multiple hidden></label>
-  <label class="btn" title="Ouvrir un projet .json">📂 Ouvrir<input id="projFile" type="file" accept=".json,application/json" hidden></label>
+  <label class="btn" title="Importer un personnage (FBX, GLB, glTF)">👤 Personnage<input id="charFile" type="file" hidden></label>
+  <label class="btn" title="Ajouter les animations d'un autre fichier au projet">➕ Animation<input id="animFile" type="file" multiple hidden></label>
+  <label class="btn" title="Ouvrir un projet (.json) ou un fichier 3D (FBX, GLB, glTF)">📂 Ouvrir<input id="projFile" type="file" hidden></label>
   <button id="saveProj" title="Ctrl+S">💾 Enregistrer</button>
   <button id="exportBtn" class="primary">⬇ Exporter GLB</button>
  </div>
@@ -145,7 +145,7 @@ dialog h3{margin:0 0 8px}
    <button id="qUndo" title="Annuler (Ctrl+Z)">↶</button>
    <button id="qRedo" title="Rétablir (Ctrl+Y)">↷</button>
   </div>
-  <div id="empty"><div class="card"><div style="font-size:30px">◇</div><h3>Importe ton personnage</h3><p class="muted">FBX (Mixamo), GLB ou glTF. Il est mémorisé dans ce navigateur : tu n'auras pas à le réimporter.</p><label class="btn primary">Choisir un fichier 3D<input id="charFile2" type="file" accept=".fbx,.glb,.gltf" hidden></label></div></div>
+  <div id="empty"><div class="card"><div style="font-size:30px">◇</div><h3>Importe ton personnage</h3><p class="muted">FBX (Mixamo), GLB ou glTF. Il est mémorisé dans ce navigateur : tu n'auras pas à le réimporter.</p><label class="btn primary">Choisir un fichier 3D<input id="charFile2" type="file" hidden></label></div></div>
   <div id="toast"></div>
  </section>
 
@@ -188,7 +188,7 @@ dialog h3{margin:0 0 8px}
       <button id="clipDup">Dupliquer</button>
       <button id="clipRename">Renommer</button>
       <button id="clipMirror" title="Crée la version gauche ↔ droite">Miroir G↔D</button>
-      <label class="btn" title="Ajouter les animations d'un fichier FBX / GLB">Importer<input id="animFile2" type="file" accept=".fbx,.glb,.gltf" multiple hidden></label>
+      <label class="btn" title="Ajouter les animations d'un fichier FBX / GLB">Importer<input id="animFile2" type="file" multiple hidden></label>
       <button id="clipDelete" class="danger">Supprimer</button>
      </div>
      <div class="hint">Un mouvement « avec ballon » a sa propre piste ballon (onglet <b>Ballon</b>). Les mouvements sans ballon n'en ont pas.</div>
@@ -347,6 +347,16 @@ dialog h3{margin:0 0 8px}
  <div class="grid2" style="margin-top:12px"><button id="expCancel">Annuler</button><button id="expGo" class="primary">Exporter</button></div>
 </dialog>
 
+<dialog id="openDlg">
+ <h3>Fichier 3D : <span id="openName"></span></h3>
+ <p class="muted">Que veux-tu faire avec ce fichier ?</p>
+ <div style="display:grid;gap:8px;margin-top:10px">
+  <button id="openAsAnim" class="primary">➕ Ajouter ses animations au projet</button>
+  <button id="openAsChar">👤 L'utiliser comme personnage</button>
+  <button id="openCancel">Annuler</button>
+ </div>
+</dialog>
+
 <!--MF_EMBED-->
 <script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"}}</script>
 <script type="module">
@@ -492,14 +502,29 @@ const dur = () => cur()?.duration || 1;
 /* =====================================================================
    Character import
    ===================================================================== */
-async function parseModelBuffer(buf, name) {
+/* Find the real format from the file content (Android can give odd names or no extension). */
+function sniffFormat(buf, name) {
+  const b = new Uint8Array(buf, 0, Math.min(buf.byteLength, 64));
+  const head = String.fromCharCode(...b);
+  if (head.startsWith('Kaydara FBX Binary')) return 'fbx';
+  if (head.startsWith('glTF')) return 'glb';
+  const txt = head.replace(/^\uFEFF/, '').trimStart();
+  if (txt.startsWith('; FBX') || /FBXHeaderExtension/.test(head)) return 'fbx';
+  if (txt.startsWith('{')) {
+    try { const j = JSON.parse(new TextDecoder().decode(buf)); return j.asset && (j.nodes || j.scenes) ? 'gltf' : 'json'; } catch (e) { return 'json'; }
+  }
   const ext = (name.split('.').pop() || '').toLowerCase();
+  return ['fbx', 'glb', 'gltf', 'json'].includes(ext) ? ext : 'unknown';
+}
+async function parseModelBuffer(buf, name) {
+  const ext = sniffFormat(buf, name);
   let root, clips;
   if (ext === 'fbx') { root = new FBXLoader().parse(buf, ''); clips = root.animations || []; }
   else if (ext === 'glb' || ext === 'gltf') {
     const gltf = await new Promise((res, rej) => new GLTFLoader().parse(buf, '', res, rej));
     root = gltf.scene || gltf.scenes?.[0]; clips = gltf.animations || [];
-  } else throw new Error('Format non pris en charge (FBX, GLB ou glTF).');
+  } else if (ext === 'json') throw new Error('c\'est un fichier de projet (.json) : utilise « Ouvrir ».');
+  else throw new Error('format non reconnu (FBX, GLB ou glTF attendu).');
   if (root) extractBall(root, clips);
   return { root, clips };
 }
@@ -545,7 +570,7 @@ async function importCharacterFile(file) {
     const buf = await file.arrayBuffer();
     const { root, clips } = await parseModelBuffer(buf, file.name);
     let add = true;
-    if (S.clips.length && clips.length) add = confirm(`Ajouter aussi les ${clips.length} animation(s) de ${file.name} au projet ?`);
+    if (S.clips.length && clips.length) add = confirm(`Ajouter aussi les animations de ${file.name} au projet ?`);
     installCharacter(root, add ? clips : [], file.name);
     idb.set('character', { name: file.name, data: buf });
   } catch (e) { console.error(e); log('Import impossible : ' + e.message); alert('Impossible de lire ce fichier : ' + e.message); }
@@ -634,7 +659,7 @@ async function importAnimationFiles(files) {
       const entries = entriesFromClips(clips, file.name);
       if (!entries.length) { log(`${file.name} : aucune animation utilisable.`); continue; }
       pushUndo(); S.clips.push(...entries); S.active = S.clips.length - 1; n += entries.length;
-    } catch (e) { console.error(e); log(`${file.name} : ${e.message}`); }
+    } catch (e) { console.error(e); log(`${file.name} : ${e.message}`); alert(`Impossible de lire ${file.name} : ${e.message}`); }
   }
   if (n) { afterProjectChange(); seek(0); log(`${n} animation(s) ajoutée(s) au projet.`); scheduleSave(); }
 }
@@ -1685,11 +1710,26 @@ const closeMenu = () => $('fileMenu').classList.remove('open');
 
 $('charFile').onchange = $('charFile2').onchange = ev => { const f = ev.target.files[0]; ev.target.value = ''; closeMenu(); if (f) importCharacterFile(f); };
 $('animFile').onchange = $('animFile2').onchange = ev => { const fs = [...ev.target.files]; ev.target.value = ''; closeMenu(); if (fs.length) importAnimationFiles(fs); };
+/* « Ouvrir » takes anything: a project .json, or an FBX / GLB / glTF (then asks what to do). */
+let pendingOpen = null;
 $('projFile').onchange = async ev => {
   const f = ev.target.files[0]; ev.target.value = ''; closeMenu(); if (!f) return;
-  try { if (S.clips.length && !confirm('Remplacer le projet actuel par ce fichier ?')) return; loadProjectData(JSON.parse(await f.text())); scheduleSave(); log(`Projet ouvert : ${f.name} (${S.clips.length} mouvement(s)).`); }
-  catch (e) { alert('Impossible d\'ouvrir ce projet : ' + e.message); }
+  let buf;
+  try { buf = await f.arrayBuffer(); } catch (e) { alert('Impossible de lire ce fichier : ' + e.message); return; }
+  const kind = sniffFormat(buf, f.name);
+  if (kind === 'json') {
+    try { const d = JSON.parse(new TextDecoder().decode(buf)); if (S.clips.length && !confirm('Remplacer le projet actuel par ce fichier ?')) return; loadProjectData(d); scheduleSave(); log(`Projet ouvert : ${f.name} (${S.clips.length} mouvement(s)).`); }
+    catch (e) { alert('Impossible d\'ouvrir ce projet : ' + e.message); }
+    return;
+  }
+  if (kind === 'unknown') { alert(`« ${f.name} » n'est ni un projet (.json) ni un fichier 3D (FBX, GLB, glTF).`); return; }
+  const file = new File([buf], f.name);
+  if (!S.model) { importCharacterFile(file); return; }
+  pendingOpen = file; $('openName').textContent = f.name; $('openDlg').showModal();
 };
+$('openAsAnim').onclick = () => { $('openDlg').close(); if (pendingOpen) importAnimationFiles([pendingOpen]); pendingOpen = null; };
+$('openAsChar').onclick = () => { $('openDlg').close(); if (pendingOpen) importCharacterFile(pendingOpen); pendingOpen = null; };
+$('openCancel').onclick = () => { $('openDlg').close(); pendingOpen = null; };
 $('saveProj').onclick = () => { closeMenu(); saveProject(); };
 $('exportBtn').onclick = () => { closeMenu(); if (!S.clips.length) { alert('Rien à exporter.'); return; } $('exportDlg').showModal(); };
 $('expCancel').onclick = () => $('exportDlg').close();
