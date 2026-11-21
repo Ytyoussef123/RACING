@@ -17,6 +17,30 @@ A dated log, newest entry first: what was done, what was decided and why, and wh
 
 ## Log
 
+### 2026-11-21 — MotionForge: scene uses loaded movements, smart correction between keys
+
+User feedback:
+- In Scène, actions must use the movements already loaded in the project, not auto-generated ones.
+- After retouching a joint at two keys (for example frames 7 and 12), the frames in between kept the original pose, so the movement was bumpy.
+
+#### Done
+
+- Scène: each action picks one of the loaded movements from a list; nothing is generated any more.
+  - New "▶ Jouer" action plays a movement (run, celebration...) without touching the ball, with a facing option and a delay.
+  - The receiver's run uses a loaded run movement if there is one.
+- Smart correction: the app remembers the original curve of a channel at the first retouch, and the times of the user's keys. Between two consecutive user keys, the frames get a smooth blend of the two retouches on top of the original motion.
+  - Automatic after each key (keys up to 2 s apart, checkbox in the Corps tab).
+  - A button applies it to the whole movement, the selection or a segment.
+  - Saved in the project and kept by undo. Trimming or speed changes reset it.
+- Fix: the scene crossfade between two movements no longer blends the hips' ground position and ends before the touch. Passes and controls stay on the ball (foot 14-24 cm from the ball centre in tests, even with a running clip).
+- Test: retouching the right arm at frames 2 and 17 of the Running clip.
+  - Without correction, frames 8-11 dropped back to 0 degrees.
+  - With it, they go smoothly from 34 to 17 degrees.
+
+#### Next
+
+- The user tests on the phone with their own movements.
+
 ### 2026-11-21 — MotionForge: Scène mode (several players, passes and receptions)
 
 The user asked for a second mode to set up several players: a player passes, another runs and receives, with control of the ball speed and of how the ball is controlled.
