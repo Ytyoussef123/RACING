@@ -17,7 +17,7 @@ It is not part of the Godot project: the `.gdignore` file keeps Godot from impor
 - **Ball** (per movement: a movement has a ball track or it doesn't):
   - **automatic ball physics**: when you turn the ball on for a movement, it reacts to the player's toes, feet, shins, thighs, chest and head (gravity, bounces, rolling friction). Modes: *Conduite* (each foot touch sends the ball just ahead of the player, so it stays with them while running), *Libre* (pure physics, for kicks and juggling), or *Auto* (conduite if the player travels, otherwise libre). You can set the start point (where the foot strikes, in front of the player, or where the ball is now), the touch strength, the bounce and whether hands count (goalkeeper);
   - imported GLB/FBX files that already contain an animated ball (node named ball / ballon / soccer…, for example V5 or V6 exports) keep their ball motion;
-  - drag the ball or use the sliders, and set ball keys;
+  - **drag the ball directly** with a finger or the mouse (no axis arrows): it slides on the pitch, or up and down with the *⇕ Hauteur* button. A ring on the ground shows where it is. On a simulated ball the physics restarts from where you drop it; on other dense paths the neighbouring frames follow smoothly. Sliders and ball keys are still there for precise values;
   - **stick the ball** to a foot, hand, both hands, chest, head, knee or hips: "Au sol" (dribble: follows the foot along the ground and rolls) or "Collé" (follows the bone in 3D);
   - **pass / shot / lob**: between the two segment marks, with a height, a number of bounces and an optional curve;
   - automatic **rolling rotation** computed from the ball's movement;
