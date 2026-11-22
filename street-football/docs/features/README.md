@@ -25,6 +25,7 @@ feature, so the last change to one feature is found in one place.
 | Player stats, ratings, positions, players and crews | [player-stats.md](player-stats.md) |
 | Match flow: kick-off, goals, restarts, clock, results, formations | [match-flow.md](match-flow.md) |
 | Player body and animation | [player-body-and-animation.md](player-body-and-animation.md) |
+| MotionForge pipeline (one GLB of movements from the user's animation app, naming contract) | [motionforge-pipeline.md](motionforge-pipeline.md) |
 | Camera | [camera.md](camera.md) |
 | Touch controls and match HUD | [touch-controls-and-hud.md](touch-controls-and-hud.md) |
 | Menus, settings, translations | [menus-and-settings.md](menus-and-settings.md) |
