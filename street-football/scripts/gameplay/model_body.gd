@@ -4,6 +4,10 @@ extends RefCounted
 ## The model follows the same RigPose as the coded body (running, touches, tackles: each joint
 ## angle turns the matching bone from its T-pose), and a kick or a pass plays the recorded
 ## animation on the whole skeleton, blended in and out; running plays a recorded jog in a loop.
+## The model and its movements come from one GLB exported by MotionForge Studio (the user's
+## animation app): each action plays the movement of the same name (body.json model_clips "anim");
+## a kick starts at the moment the movement's ball ("Ballon") leaves the foot. The game moves the
+## player on the pitch: only the height of the hips is taken from a movement, never its way forward.
 ## Files and numbers: data/config/body.json (model_*), data/config/animation.json (model_clip_*).
 
 var _model: Node3D
@@ -30,23 +34,30 @@ var _tick: int = 0
 ## Animation -> its tracks for the posed bones: [[track, bone, is_position]...], found once.
 static var _tracks: Dictionary = {}
 
-static var _animations: Dictionary = {}
 
 
 ## Loads the model under `parent`, sized to `height` meters. False when it cannot be used.
 func build(parent: Node3D, height: float) -> bool:
-	var scene: PackedScene = _load_scene(str(_cfg("model_scene", "")))
+	var scene: PackedScene = ModelLibrary.load_scene(str(_cfg("model_scene", "")))
 	if scene == null:
 		return false
 	_model = scene.instantiate()
 	parent.add_child(_model)
-	_skeleton = _find(_model, "Skeleton3D") as Skeleton3D
+	# The ball exported with the movements is not part of the player.
+	var ball := _model.find_child("Ballon", true, false)
+	if ball != null:
+		ball.get_parent().remove_child(ball)
+		ball.free()
+	_skeleton = ModelLibrary.find(_model, "Skeleton3D") as Skeleton3D
 	if _skeleton == null:
 		_model.queue_free()
 		return false
 	for i in range(_skeleton.get_bone_count()):
-		_bones[_short(_skeleton.get_bone_name(i))] = i
 		_order.append(i)
+		var key := ModelLibrary.short(_skeleton.get_bone_name(i))
+		# A second copy of a bone (one per skinned mesh, nested in the first): it follows the first.
+		if not _is_alias(i) and not _bones.has(key):
+			_bones[key] = i
 	for key in ["Hips", "Spine", "Neck", "LeftUpLeg", "LeftLeg", "RightUpLeg", "RightLeg",
 			"LeftArm", "LeftForeArm", "RightArm", "RightForeArm"]:
 		if not _bones.has(key):
@@ -64,23 +75,32 @@ func build(parent: Node3D, height: float) -> bool:
 	for i in _order:
 		_rest_local.append(_skeleton.get_bone_rest(i).basis.orthonormalized())
 		_rest_global.append(_skeleton.get_bone_global_rest(i).basis.orthonormalized())
-		var bone_name := _short(_skeleton.get_bone_name(i))
+		var bone_name := ModelLibrary.short(_skeleton.get_bone_name(i))
 		var other := bone_name.replace("Left", "Right") if bone_name.contains("Left") else bone_name.replace("Right", "Left")
 		_opposite.append(int(_bones.get(other, i)))
-		if not _is_detail(bone_name):
+		if not _is_detail(bone_name) and not _is_alias(i):
 			_active.append(i)
 	if bool(_cfg("model_hide_joints", false)):
 		for mesh in _meshes:
 			if mesh.name.to_lower().contains("joint"):
 				mesh.visible = false
-	# model_clips: action -> {"file", "start" (s), "rate", "out" (share of the action where it fades)}.
+	# model_clips: action -> {"anim" (movement name in the GLB) or "file", "start" (s), "rate",
+	# "out" (share of the action where it fades), "start_at_kick" (start when its ball leaves)}.
 	var clips: Dictionary = _cfg("model_clips", {})
 	for action in clips:
 		var setup: Dictionary = clips[action]
-		var anim := _animation(str(_cfg("model_folder", "")) + str(setup.get("file", "")))
-		if anim != null:
-			_clips[action] = anim
-			_setups[action] = setup
+		var anim: Animation = null
+		if setup.has("anim"):
+			anim = ModelLibrary.animation_named(str(_cfg("model_scene", "")), str(setup["anim"]))
+		else:
+			anim = ModelLibrary.animation(str(_cfg("model_folder", "")) + str(setup.get("file", "")))
+		if anim == null:
+			continue
+		if bool(setup.get("start_at_kick", false)) and ModelLibrary.kick_time(anim) >= 0.0:
+			setup = setup.duplicate()
+			setup["start"] = ModelLibrary.kick_time(anim) - float(setup.get("before_kick", 0.0))
+		_clips[action] = anim
+		_setups[action] = setup
 	_phase = fposmod(float(_model.get_instance_id()) * 0.37, 1.0)
 	return true
 
@@ -246,7 +266,7 @@ func _tracks_of(anim: Animation) -> Array:
 		var path := anim.track_get_path(track)
 		if path.get_subname_count() == 0:
 			continue
-		var name_key := _short(str(path.get_subname(0)))
+		var name_key := ModelLibrary.short(str(path.get_subname(0)))
 		if not _bones.has(name_key) or _is_detail(name_key):
 			continue
 		var kind := anim.track_get_type(track)
@@ -271,51 +291,15 @@ func _collect_meshes(node: Node) -> void:
 		_collect_meshes(child)
 
 
-static func _find(node: Node, type: String) -> Node:
-	if node.is_class(type):
-		return node
-	for child in node.get_children():
-		var found := _find(child, type)
-		if found != null:
-			return found
-	return null
-
-
-static func _load_scene(path: String) -> PackedScene:
-	if path.is_empty() or not ResourceLoader.exists(path):
-		return null
-	return load(path) as PackedScene
-
-
-## The animation of a file, loaded once for all players.
-static func _animation(path: String) -> Animation:
-	if not _animations.has(path):
-		_animations[path] = _load_animation(path)
-	return _animations[path]
-
-
-## The animation of an imported file with the most tracks (the real take).
-static func _load_animation(path: String) -> Animation:
-	var scene := _load_scene(path)
-	if scene == null:
-		return null
-	var node := scene.instantiate()
-	var player := _find(node, "AnimationPlayer") as AnimationPlayer
-	var best: Animation = null
-	if player != null:
-		for anim_name in player.get_animation_list():
-			var anim := player.get_animation(anim_name)
-			if anim_name != "RESET" and (best == null or anim.get_track_count() > best.get_track_count()
-					or (anim.get_track_count() == best.get_track_count() and str(anim_name).contains("mixamo"))):
-				best = anim
-	node.free()
-	return best
-
-
-## "mixamorig:LeftArm" or "mixamorig_LeftArm" -> "LeftArm".
-static func _short(bone: String) -> String:
-	var cut := maxi(bone.rfind(":"), bone.find("_") if bone.begins_with("mixamorig") else -1)
-	return bone.substr(cut + 1)
+## A copy of its parent bone (same name, no offset): skinned meshes exported by MotionForge
+## (three.js) have one set of bones each, the second nested in the first.
+func _is_alias(bone: int) -> bool:
+	var parent := _skeleton.get_bone_parent(bone)
+	if parent < 0:
+		return false
+	var rest := _skeleton.get_bone_rest(bone)
+	return _skeleton.get_bone_name(bone).begins_with(_skeleton.get_bone_name(parent)) \
+		and rest.origin.length() < 0.001 and rest.basis.is_equal_approx(Basis.IDENTITY)
 
 
 static func _cfg(key: String, fallback: Variant) -> Variant:
